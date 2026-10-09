@@ -1,0 +1,3 @@
+namespace FamilyManagement.Application.UseCases.Families.Queries.GetActiveFamilies;
+
+public sealed record GetActiveFamiliesQuery;

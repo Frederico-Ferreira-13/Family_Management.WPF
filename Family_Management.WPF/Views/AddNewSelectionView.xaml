@@ -1,0 +1,54 @@
+﻿<UserControl x:Class="Family_Management.WPF.Views.AddNewSelectionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Shell"
+             xmlns:navigation="clr-namespace:Family_Management.WPF.Services.Navigation"
+             d:DataContext="{d:DesignInstance Type=viewmodels:AddNewSelectionViewModel}"
+             mc:Ignorable="d"
+             d:DesignWidth="300"
+             d:DesignHeight="330"
+             Width="300">
+
+    <Border Background="White"
+            Padding="20"
+            CornerRadius="10">
+
+        <StackPanel>
+
+            <TextBlock Text="O que deseja adicionar?"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       Margin="0,0,0,20"
+                       HorizontalAlignment="Center"
+                       Foreground="{StaticResource PrimaryColorBrush}" />
+
+            <Button Content="Transação"
+                    Command="{Binding NavigateToNewItemCommand}"
+                    CommandParameter="{x:Static navigation:AppScreen.Transactions}"
+                    Style="{StaticResource MenuButton}"
+                    Margin="0,5" />
+
+            <Button Content="Orçamento"
+                    Command="{Binding NavigateToNewItemCommand}"
+                    CommandParameter="{x:Static navigation:AppScreen.Budget}"
+                    Style="{StaticResource MenuButton}"
+                    Margin="0,5" />
+
+            <Button Content="Objetivo"
+                    Command="{Binding NavigateToNewItemCommand}"
+                    CommandParameter="{x:Static navigation:AppScreen.Goal}"
+                    Style="{StaticResource MenuButton}"
+                    Margin="0,5" />
+
+            <Button Content="Cancelar"
+                    Command="{Binding CloseCommand}"
+                    Style="{StaticResource HyperlinkLikeButton}"
+                    Margin="0,20,0,0" />
+
+        </StackPanel>
+
+    </Border>
+
+</UserControl>

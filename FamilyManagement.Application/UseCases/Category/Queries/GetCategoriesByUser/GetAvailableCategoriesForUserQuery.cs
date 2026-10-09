@@ -1,0 +1,3 @@
+namespace FamilyManagement.Application.UseCases.Categories.Queries.GetAvailableCategoriesForUser;
+
+public sealed record GetAvailableCategoriesForUserQuery(Guid UserId);

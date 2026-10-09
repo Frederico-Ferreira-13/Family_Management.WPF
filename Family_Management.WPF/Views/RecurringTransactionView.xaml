@@ -1,0 +1,561 @@
+﻿<UserControl x:Class="Family_Management.WPF.Views.RecurringTransactionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.RecurringTransactions"
+             mc:Ignorable="d"
+             d:DesignHeight="800"
+             d:DesignWidth="1200"
+             d:DataContext="{d:DesignInstance Type=viewmodels:RecurringTransactionViewModel}"
+             Background="{StaticResource GrayBackground}">
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ===================================================== -->
+        <!-- CABEÇALHO                                             -->
+        <!-- ===================================================== -->
+
+        <Grid Grid.Row="0"
+              Margin="0,0,0,20">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+
+                <TextBlock Text="{Binding Title}"
+                           Style="{StaticResource TitleStyle}" />
+
+                <TextBlock Text="Configure movimentos que se repetem automaticamente ao longo do tempo."
+                           Foreground="#666"
+                           FontSize="13"
+                           Margin="0,5,0,0" />
+
+            </StackPanel>
+
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Center">
+
+                <Button Content="Atualizar"
+                        Command="{Binding LoadDataCommand}"
+                        Style="{StaticResource SecondaryButton}"
+                        Margin="0,0,10,0"
+                        MinWidth="100"
+                        Height="38" />
+
+                <Button Content="Gerar Pendentes"
+                        Command="{Binding GenerateTransactionsCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        MinWidth="150"
+                        Height="38" />
+
+            </StackPanel>
+
+        </Grid>
+
+        <!-- ===================================================== -->
+        <!-- CONTEÚDO                                              -->
+        <!-- ===================================================== -->
+
+        <Grid Grid.Row="1">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="380" />
+                <ColumnDefinition Width="15" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ================================================= -->
+            <!-- CRIAR RECORRÊNCIA                                 -->
+            <!-- ================================================= -->
+
+            <Border Grid.Column="0"
+                    Style="{StaticResource CardBorderStyle}"
+                    Padding="20">
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+
+                    <StackPanel>
+
+                        <TextBlock Text="Nova recorrência"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextDarkBrush}"
+                                   Margin="0,0,0,20" />
+
+                        <!-- DESCRIÇÃO -->
+
+                        <TextBlock Text="Descrição"
+                                   Style="{StaticResource FieldLabelStyle}" />
+
+                        <TextBox Text="{Binding NewDescription,
+                                              Mode=TwoWay,
+                                              UpdateSourceTrigger=PropertyChanged,
+                                              ValidatesOnDataErrors=True,
+                                              NotifyOnValidationError=True}"
+                                 Style="{StaticResource ErrorTextBoxStyle}" />
+
+                        <!-- VALOR -->
+
+                        <TextBlock Text="Valor"
+                                   Style="{StaticResource FieldLabelStyle}"
+                                   Margin="0,12,0,5" />
+
+                        <TextBox Text="{Binding NewAmount,
+                                              Mode=TwoWay,
+                                              UpdateSourceTrigger=PropertyChanged,
+                                              ValidatesOnDataErrors=True,
+                                              NotifyOnValidationError=True}"
+                                 Style="{StaticResource ErrorTextBoxStyle}" />
+
+                        <!-- TIPO -->
+
+                        <TextBlock Text="Tipo"
+                                   Style="{StaticResource FieldLabelStyle}"
+                                   Margin="0,12,0,5" />
+
+                        <ComboBox ItemsSource="{Binding TransactionTypes}"
+                                  SelectedItem="{Binding NewType,
+                                                        Mode=TwoWay}"
+                                  Style="{StaticResource DefaultComboBoxStyle}" />
+
+                        <!-- FREQUÊNCIA -->
+
+                        <TextBlock Text="Frequência"
+                                   Style="{StaticResource FieldLabelStyle}"
+                                   Margin="0,12,0,5" />
+
+                        <ComboBox ItemsSource="{Binding Frequencies}"
+                                  SelectedItem="{Binding NewFrequency,
+                                                        Mode=TwoWay}"
+                                  Style="{StaticResource DefaultComboBoxStyle}" />
+
+                        <!-- CONTA -->
+
+                        <TextBlock Text="Conta"
+                                   Style="{StaticResource FieldLabelStyle}"
+                                   Margin="0,12,0,5" />
+
+                        <ComboBox ItemsSource="{Binding Accounts}"
+                                  SelectedItem="{Binding NewSelectedAccount,
+                                                        Mode=TwoWay,
+                                                        ValidatesOnDataErrors=True,
+                                                        NotifyOnValidationError=True}"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource ErrorComboBoxStyle}" />
+
+                        <!-- CATEGORIA -->
+
+                        <TextBlock Text="Categoria"
+                                   Style="{StaticResource FieldLabelStyle}"
+                                   Margin="0,12,0,5" />
+
+                        <ComboBox ItemsSource="{Binding Categories}"
+                                  SelectedItem="{Binding NewSelectedCategory,
+                                                        Mode=TwoWay,
+                                                        ValidatesOnDataErrors=True,
+                                                        NotifyOnValidationError=True}"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource ErrorComboBoxStyle}" />
+
+                        <!-- DATA INÍCIO -->
+
+                        <TextBlock Text="Data de início"
+                                   Style="{StaticResource FieldLabelStyle}"
+                                   Margin="0,12,0,5" />
+
+                        <DatePicker SelectedDate="{Binding NewStartDate,
+                                                          Mode=TwoWay}"
+                                    Style="{StaticResource DefaultDatePickerStyle}" />
+
+                        <!-- DATA FIM -->
+
+                        <TextBlock Text="Data de fim (opcional)"
+                                   Style="{StaticResource FieldLabelStyle}"
+                                   Margin="0,12,0,5" />
+
+                        <DatePicker SelectedDate="{Binding NewEndDate,
+                                                          Mode=TwoWay,
+                                                          ValidatesOnDataErrors=True,
+                                                          NotifyOnValidationError=True}"
+                                    Style="{StaticResource ErrorDatePickerStyle}" />
+
+                        <!-- ADICIONAR -->
+
+                        <Button Content="Adicionar recorrência"
+                                Command="{Binding AddRecurringTransactionCommand}"
+                                Style="{StaticResource PrimaryButton}"
+                                Height="42"
+                                Margin="0,25,0,0" />
+
+                    </StackPanel>
+
+                </ScrollViewer>
+
+            </Border>
+
+            <!-- ================================================= -->
+            <!-- LISTA + EDIÇÃO                                    -->
+            <!-- ================================================= -->
+
+            <Grid Grid.Column="2">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="15" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- ============================================= -->
+                <!-- LISTA                                         -->
+                <!-- ============================================= -->
+
+                <Border Grid.Row="0"
+                        Style="{StaticResource CardBorderStyle}"
+                        Padding="20">
+
+                    <Grid>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0"
+                              Margin="0,0,0,15">
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+
+                                <TextBlock Text="Transações recorrentes"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextDarkBrush}" />
+
+                                <TextBlock Text="Selecione uma recorrência para consultar ou editar."
+                                           Foreground="#777"
+                                           FontSize="12"
+                                           Margin="0,4,0,0" />
+
+                            </StackPanel>
+
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding RecurringTransactions.Count,
+                                                      StringFormat='{}{0} registo(s)'}"
+                                       Foreground="#777"
+                                       VerticalAlignment="Center" />
+
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding RecurringTransactions}"
+                                  SelectedItem="{Binding SelectedRecurringTransaction,
+                                                        Mode=TwoWay}"
+                                  Style="{StaticResource CustomDataGridStyle}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow">
+
+                            <DataGrid.Columns>
+
+                                <DataGridTextColumn Header="Descrição"
+                                                    Binding="{Binding Description}"
+                                                    Width="*" />
+
+                                <DataGridTextColumn Header="Valor"
+                                                    Binding="{Binding Amount,
+                                                                      StringFormat=N2}"
+                                                    Width="90" />
+
+                                <DataGridTextColumn Header="Moeda"
+                                                    Binding="{Binding Currency}"
+                                                    Width="70" />
+
+                                <DataGridTextColumn Header="Tipo"
+                                                    Binding="{Binding TypeDisplay}"
+                                                    Width="100" />
+
+                                <DataGridTextColumn Header="Frequência"
+                                                    Binding="{Binding FrequencyDisplay}"
+                                                    Width="110" />
+
+                                <DataGridTextColumn Header="Próxima"
+                                                    Binding="{Binding NextDueDate,
+                                                                      StringFormat=dd/MM/yyyy}"
+                                                    Width="100" />
+
+                                <DataGridTextColumn Header="Conta"
+                                                    Binding="{Binding AccountName,
+                                                                      TargetNullValue='—'}"
+                                                    Width="120" />
+
+                                <DataGridTextColumn Header="Categoria"
+                                                    Binding="{Binding CategoryName,
+                                                                      TargetNullValue='—'}"
+                                                    Width="120" />
+
+                            </DataGrid.Columns>
+
+                        </DataGrid>
+
+                    </Grid>
+
+                </Border>
+
+                <!-- ============================================= -->
+                <!-- DETALHE / EDIÇÃO                               -->
+                <!-- ============================================= -->
+
+                <Border Grid.Row="2"
+                        Style="{StaticResource CardBorderStyle}"
+                        Padding="20"
+                        MaxHeight="390">
+
+                    <Grid>
+
+                        <!-- SEM SELEÇÃO -->
+
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Margin="20"
+                                    Visibility="{Binding SelectedRecurringTransaction,
+                                                         Converter={StaticResource InverseUniversalVis}}">
+
+                            <TextBlock Text="Nenhuma recorrência selecionada"
+                                       FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextDarkBrush}"
+                                       HorizontalAlignment="Center" />
+
+                            <TextBlock Text="Selecione um registo na lista acima para o editar."
+                                       Foreground="#777"
+                                       TextAlignment="Center"
+                                       Margin="0,6,0,0" />
+
+                        </StackPanel>
+
+                        <!-- COM SELEÇÃO -->
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      Visibility="{Binding SelectedRecurringTransaction,
+                                                           Converter={StaticResource UniversalVis}}">
+
+                            <StackPanel>
+
+                                <Grid Margin="0,0,0,15">
+
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+
+                                        <TextBlock Text="Editar recorrência"
+                                                   FontSize="20"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextDarkBrush}" />
+
+                                        <TextBlock Text="{Binding SelectedRecurringTransaction.Description}"
+                                                   Foreground="#777"
+                                                   FontSize="12"
+                                                   Margin="0,3,0,0" />
+
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+
+                                        <TextBlock Text="Ativa"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource SecondaryColorBrush}"
+                                                   Visibility="{Binding IsSelectedRecurringTransactionActive,
+                                                                        Converter={StaticResource BoolToVis}}" />
+
+                                        <TextBlock Text="Inativa"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource DangerColorBrush}"
+                                                   Visibility="{Binding IsSelectedRecurringTransactionInactive,
+                                                                        Converter={StaticResource BoolToVis}}" />
+
+                                    </StackPanel>
+
+                                </Grid>
+
+                                <Grid>
+
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="15" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- COLUNA ESQUERDA -->
+
+                                    <StackPanel Grid.Column="0">
+
+                                        <TextBlock Text="Descrição"
+                                                   Style="{StaticResource FieldLabelStyle}" />
+
+                                        <TextBox Text="{Binding EditDescription,
+                                                              Mode=TwoWay,
+                                                              UpdateSourceTrigger=PropertyChanged,
+                                                              ValidatesOnDataErrors=True,
+                                                              NotifyOnValidationError=True}"
+                                                 Style="{StaticResource ErrorTextBoxStyle}" />
+
+                                        <TextBlock Text="Valor"
+                                                   Style="{StaticResource FieldLabelStyle}"
+                                                   Margin="0,10,0,5" />
+
+                                        <TextBox Text="{Binding EditAmount,
+                                                              Mode=TwoWay,
+                                                              UpdateSourceTrigger=PropertyChanged,
+                                                              ValidatesOnDataErrors=True,
+                                                              NotifyOnValidationError=True}"
+                                                 Style="{StaticResource ErrorTextBoxStyle}" />
+
+                                        <TextBlock Text="Tipo"
+                                                   Style="{StaticResource FieldLabelStyle}"
+                                                   Margin="0,10,0,5" />
+
+                                        <ComboBox ItemsSource="{Binding TransactionTypes}"
+                                                  SelectedItem="{Binding EditType,
+                                                                        Mode=TwoWay}"
+                                                  Style="{StaticResource DefaultComboBoxStyle}" />
+
+                                        <TextBlock Text="Frequência"
+                                                   Style="{StaticResource FieldLabelStyle}"
+                                                   Margin="0,10,0,5" />
+
+                                        <ComboBox ItemsSource="{Binding Frequencies}"
+                                                  SelectedItem="{Binding EditFrequency,
+                                                                        Mode=TwoWay}"
+                                                  Style="{StaticResource DefaultComboBoxStyle}" />
+
+                                    </StackPanel>
+
+                                    <!-- COLUNA DIREITA -->
+
+                                    <StackPanel Grid.Column="2">
+
+                                        <TextBlock Text="Conta"
+                                                   Style="{StaticResource FieldLabelStyle}" />
+
+                                        <ComboBox ItemsSource="{Binding Accounts}"
+                                                  SelectedItem="{Binding EditSelectedAccount,
+                                                                        Mode=TwoWay,
+                                                                        ValidatesOnDataErrors=True,
+                                                                        NotifyOnValidationError=True}"
+                                                  DisplayMemberPath="Name"
+                                                  Style="{StaticResource ErrorComboBoxStyle}" />
+
+                                        <TextBlock Text="Categoria"
+                                                   Style="{StaticResource FieldLabelStyle}"
+                                                   Margin="0,10,0,5" />
+
+                                        <ComboBox ItemsSource="{Binding Categories}"
+                                                  SelectedItem="{Binding EditSelectedCategory,
+                                                                        Mode=TwoWay,
+                                                                        ValidatesOnDataErrors=True,
+                                                                        NotifyOnValidationError=True}"
+                                                  DisplayMemberPath="Name"
+                                                  Style="{StaticResource ErrorComboBoxStyle}" />
+
+                                        <TextBlock Text="Data de início"
+                                                   Style="{StaticResource FieldLabelStyle}"
+                                                   Margin="0,10,0,5" />
+
+                                        <TextBox Text="{Binding EditStartDate,
+                                                              StringFormat=dd/MM/yyyy}"
+                                                 IsReadOnly="True"
+                                                 Style="{StaticResource DefaultTextBoxStyle}" />
+
+                                        <TextBlock Text="Data de fim (opcional)"
+                                                   Style="{StaticResource FieldLabelStyle}"
+                                                   Margin="0,10,0,5" />
+
+                                        <DatePicker SelectedDate="{Binding EditEndDate,
+                                                                          Mode=TwoWay,
+                                                                          ValidatesOnDataErrors=True,
+                                                                          NotifyOnValidationError=True}"
+                                                    Style="{StaticResource ErrorDatePickerStyle}" />
+
+                                    </StackPanel>
+
+                                </Grid>
+
+                                <!-- AÇÕES -->
+
+                                <Grid Margin="0,20,0,0">
+
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- ESTADO -->
+
+                                    <StackPanel Grid.Column="0"
+                                                Orientation="Horizontal">
+
+                                        <Button Content="Desativar"
+                                                Command="{Binding DeactivateRecurringTransactionCommand}"
+                                                Style="{StaticResource DangerButton}"
+                                                MinWidth="100"
+                                                Margin="0,0,10,0"
+                                                Visibility="{Binding IsSelectedRecurringTransactionActive,
+                                                                     Converter={StaticResource BoolToVis}}" />
+
+                                        <Button Content="Reativar"
+                                                Command="{Binding ReactivateRecurringTransactionCommand}"
+                                                Style="{StaticResource SecondaryButton}"
+                                                MinWidth="100"
+                                                Visibility="{Binding IsSelectedRecurringTransactionInactive,
+                                                                     Converter={StaticResource BoolToVis}}" />
+
+                                    </StackPanel>
+
+                                    <!-- GUARDAR -->
+
+                                    <Button Grid.Column="1"
+                                            Content="Guardar alterações"
+                                            Command="{Binding UpdateRecurringTransactionCommand}"
+                                            Style="{StaticResource PrimaryButton}"
+                                            MinWidth="150"
+                                            Height="38" />
+
+                                </Grid>
+
+                            </StackPanel>
+
+                        </ScrollViewer>
+
+                    </Grid>
+
+                </Border>
+
+            </Grid>
+
+        </Grid>
+
+    </Grid>
+
+</UserControl>

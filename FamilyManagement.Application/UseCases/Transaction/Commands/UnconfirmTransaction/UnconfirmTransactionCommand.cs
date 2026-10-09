@@ -1,0 +1,3 @@
+namespace FamilyManagement.Application.UseCases.Transactions.Commands.UnconfirmTransaction;
+
+public sealed record UnconfirmTransactionCommand(Guid TransactionId);

@@ -1,0 +1,131 @@
+﻿<UserControl x:Class="Family_Management.WPF.Views.UserManagementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Users"
+             mc:Ignorable="d"
+             d:DesignHeight="650"
+             d:DesignWidth="1000"
+             d:DataContext="{d:DesignInstance Type=viewmodels:UserManagementViewModel,
+                                             IsDesignTimeCreatable=False}">
+
+    <Grid Background="{StaticResource GrayBackground}"
+          Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Cabeçalho -->
+        <Grid Grid.Row="0"
+              Margin="0,0,0,20">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+
+                <TextBlock Text="{Binding Title}"
+                           Style="{StaticResource TitleStyle}"/>
+
+                <TextBlock Text="Visualize e gira os utilizadores do sistema."
+                           Foreground="#666"
+                           FontSize="14"
+                           Margin="0,5,0,0"/>
+
+            </StackPanel>
+
+            <Button Grid.Column="1"
+                    Content="Atualizar"
+                    Command="{Binding LoadUsersCommand}"
+                    Style="{StaticResource SecondaryButton}"
+                    VerticalAlignment="Center"/>
+
+        </Grid>
+
+        <!-- Lista -->
+        <Border Grid.Row="1"
+                Style="{StaticResource CardBorderStyle}"
+                Padding="15"
+                Margin="0,0,0,20">
+
+            <Grid>
+
+                <DataGrid ItemsSource="{Binding Users}"
+                          SelectedItem="{Binding SelectedUser,
+                                                 Mode=TwoWay,
+                                                 UpdateSourceTrigger=PropertyChanged}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          Style="{StaticResource CustomDataGridStyle}">
+
+                    <DataGrid.Columns>
+
+                        <DataGridTextColumn Header="Nome de utilizador"
+                                            Binding="{Binding UserName}"
+                                            Width="2*"/>
+
+                        <DataGridTextColumn Header="E-mail"
+                                            Binding="{Binding Email}"
+                                            Width="3*"/>
+
+                        <DataGridTextColumn Header="Família"
+                                            Binding="{Binding FamilyName,
+                                                              TargetNullValue=Sem família}"
+                                            Width="2*"/>
+
+                        <DataGridCheckBoxColumn Header="Administrador"
+                                                Binding="{Binding IsAdmin}"
+                                                Width="120"/>
+
+                        <DataGridCheckBoxColumn Header="Ativo"
+                                                Binding="{Binding IsActive}"
+                                                Width="90"/>
+
+                    </DataGrid.Columns>
+
+                </DataGrid>
+
+                <TextBlock Text="Não existem utilizadores para apresentar."
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontSize="15"
+                           Foreground="#777"
+                           Visibility="{Binding Users.Count,
+                                                Converter={StaticResource InverseUniversalVis}}"/>
+
+            </Grid>
+
+        </Border>
+
+        <!-- Ações -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+
+            <Button Content="Editar"
+                    Command="{Binding EditUserCommand}"
+                    Style="{StaticResource SecondaryButton}"
+                    Margin="0,0,10,0"/>
+
+            <Button Content="Desativar"
+                    Command="{Binding DeactivateUserCommand}"
+                    Style="{StaticResource DangerButton}"
+                    Margin="0,0,10,0"/>
+
+            <Button Content="Ativar"
+                    Command="{Binding ActivateUserCommand}"
+                    Style="{StaticResource PrimaryButton}"/>
+
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>

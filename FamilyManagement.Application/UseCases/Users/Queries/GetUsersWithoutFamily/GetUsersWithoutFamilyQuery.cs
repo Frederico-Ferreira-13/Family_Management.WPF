@@ -1,0 +1,3 @@
+namespace FamilyManagement.Application.UseCases.Users.Queries.GetUsersWithoutFamily;
+
+public sealed record GetUsersWithoutFamilyQuery;

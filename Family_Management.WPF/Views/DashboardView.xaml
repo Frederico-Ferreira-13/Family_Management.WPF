@@ -1,0 +1,590 @@
+﻿<UserControl x:Class="Family_Management.WPF.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Dashboard"
+             mc:Ignorable="d"
+             d:DesignHeight="700"
+             d:DesignWidth="1100"
+             d:DataContext="{d:DesignInstance Type=viewmodels:DashboardViewModel}">
+
+    <UserControl.Resources>
+
+        <ResourceDictionary>
+
+            <ResourceDictionary.MergedDictionaries>
+
+                <ResourceDictionary Source="/Family_Management.WPF;component/Styles/DesignResources.xaml" />
+
+                <ResourceDictionary Source="/Family_Management.WPF;component/Styles/Styles.ButtonsAndValidation.xaml" />
+
+                <ResourceDictionary Source="/Family_Management.WPF;component/Styles/Styles.TextAndValidation.xaml" />
+
+                <ResourceDictionary Source="/Family_Management.WPF;component/Styles/Styles.InteractiveControls.xaml" />
+
+                <ResourceDictionary Source="/Family_Management.WPF;component/Styles/converters.xaml" />
+
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- =================================================
+                 CARTÕES DE MÉTRICAS
+                 ================================================= -->
+
+            <Style x:Key="MetricCardStyle"
+                   TargetType="Border">
+
+                <Setter Property="Background"
+                        Value="White" />
+
+                <Setter Property="CornerRadius"
+                        Value="12" />
+
+                <Setter Property="Padding"
+                        Value="20" />
+
+                <Setter Property="Margin"
+                        Value="10" />
+
+                <Setter Property="BorderThickness"
+                        Value="1" />
+
+                <Setter Property="BorderBrush"
+                        Value="{StaticResource BorderLightBrush}" />
+
+                <Setter Property="Effect">
+
+                    <Setter.Value>
+
+                        <DropShadowEffect ShadowDepth="1"
+                                          Opacity="0.05"
+                                          BlurRadius="10" />
+
+                    </Setter.Value>
+
+                </Setter>
+
+            </Style>
+
+            <Style x:Key="MetricLabelStyle"
+                   TargetType="TextBlock">
+
+                <Setter Property="Foreground"
+                        Value="#95A5A6" />
+
+                <Setter Property="FontWeight"
+                        Value="SemiBold" />
+
+                <Setter Property="Margin"
+                        Value="0,0,0,8" />
+
+            </Style>
+
+            <Style x:Key="MetricValueStyle"
+                   TargetType="TextBlock">
+
+                <Setter Property="FontSize"
+                        Value="28" />
+
+                <Setter Property="FontWeight"
+                        Value="Bold" />
+
+                <Setter Property="Foreground"
+                        Value="{StaticResource TextDarkBrush}" />
+
+            </Style>
+
+            <Style x:Key="SectionTitleStyle"
+                   TargetType="TextBlock">
+
+                <Setter Property="FontSize"
+                        Value="18" />
+
+                <Setter Property="FontWeight"
+                        Value="Bold" />
+
+                <Setter Property="Foreground"
+                        Value="{StaticResource TextDarkBrush}" />
+
+                <Setter Property="Margin"
+                        Value="0,0,0,20" />
+
+            </Style>
+
+        </ResourceDictionary>
+
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource GrayBackground}">
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+
+            <Border Padding="30">
+
+                <StackPanel>
+
+                    <!-- =================================================
+                         CABEÇALHO
+                         ================================================= -->
+
+                    <Grid Margin="0,0,0,25">
+
+                        <Grid.ColumnDefinitions>
+
+                            <ColumnDefinition Width="*" />
+
+                            <ColumnDefinition Width="Auto" />
+
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+
+                            <TextBlock Text="Painel de Controlo"
+                                       FontSize="32"
+                                       FontWeight="ExtraBold"
+                                       Foreground="{StaticResource PrimaryColorBrush}" />
+
+                            <TextBlock Text="{Binding WelcomeMessage}"
+                                       FontSize="16"
+                                       Foreground="#7F8C8D"
+                                       Margin="0,5,0,0" />
+
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+
+                            <Button Content="Exportar para Excel (CSV)"
+                                    Command="{Binding ExportCommand}"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Margin="0,0,10,0" />
+
+                            <Button Content="Atualizar dados"
+                                    Command="{Binding RefreshCommand}"
+                                    Style="{StaticResource SecondaryButton}" />
+
+                        </StackPanel>
+
+                    </Grid>
+
+                    <!-- =================================================
+                         AVISO DE CONFIGURAÇÃO
+                         ================================================= -->
+
+                    <Border Padding="15"
+                            Margin="10,0,10,20"
+                            Background="#FFF8E1"
+                            BorderBrush="#FFE082"
+                            BorderThickness="1"
+                            CornerRadius="8">
+
+                        <Border.Style>
+
+                            <Style TargetType="Border">
+
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+
+                                <Style.Triggers>
+
+                                    <DataTrigger Binding="{Binding IsSetupRequired}"
+                                                 Value="True">
+
+                                        <Setter Property="Visibility"
+                                                Value="Visible" />
+
+                                    </DataTrigger>
+
+                                </Style.Triggers>
+
+                            </Style>
+
+                        </Border.Style>
+
+                        <StackPanel>
+
+                            <TextBlock Text="Configuração incompleta"
+                                       FontWeight="Bold"
+                                       FontSize="15"
+                                       Foreground="#795548" />
+
+                            <TextBlock Text="Existem elementos essenciais da gestão financeira que ainda precisam de ser configurados."
+                                       TextWrapping="Wrap"
+                                       Foreground="#795548"
+                                       Margin="0,4,0,0" />
+
+                        </StackPanel>
+
+                    </Border>
+
+                    <!-- =================================================
+                         MÉTRICAS PRINCIPAIS
+                         ================================================= -->
+
+                    <UniformGrid Columns="3"
+                                 Margin="-10,0">
+
+                        <!-- Saldo total -->
+
+                        <Border Style="{StaticResource MetricCardStyle}">
+
+                            <StackPanel>
+
+                                <TextBlock Text="Saldo Total"
+                                           Style="{StaticResource MetricLabelStyle}" />
+
+                                <TextBlock Style="{StaticResource MetricValueStyle}">
+
+                                    <Run Text="{Binding TotalBalance,
+                                                       StringFormat={}{0:N2}}" />
+
+                                    <Run Text="{Binding DefaultCurrencySymbol}"
+                                         FontSize="18"
+                                         Foreground="{StaticResource PrimaryColorBrush}" />
+
+                                </TextBlock>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <!-- Receitas -->
+
+                        <Border Style="{StaticResource MetricCardStyle}">
+
+                            <StackPanel>
+
+                                <TextBlock Text="Receitas (Mês)"
+                                           Style="{StaticResource MetricLabelStyle}" />
+
+                                <TextBlock Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource SecondaryColorBrush}">
+
+                                    <Run Text="{Binding TotalIncome,
+                                                       StringFormat={}{0:N2}}" />
+
+                                    <Run Text="{Binding DefaultCurrencySymbol}"
+                                         FontSize="18" />
+
+                                </TextBlock>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <!-- Despesas -->
+
+                        <Border Style="{StaticResource MetricCardStyle}">
+
+                            <StackPanel>
+
+                                <TextBlock Text="Despesas (Mês)"
+                                           Style="{StaticResource MetricLabelStyle}" />
+
+                                <TextBlock Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource DangerColorBrush}">
+
+                                    <Run Text="{Binding TotalExpenses,
+                                                       StringFormat={}{0:N2}}" />
+
+                                    <Run Text="{Binding DefaultCurrencySymbol}"
+                                         FontSize="18" />
+
+                                </TextBlock>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <!-- Movimentos -->
+
+                        <Border Style="{StaticResource MetricCardStyle}">
+
+                            <StackPanel>
+
+                                <TextBlock Text="Movimentos (Mês)"
+                                           Style="{StaticResource MetricLabelStyle}" />
+
+                                <TextBlock Text="{Binding TransactionsThisMonth}"
+                                           Style="{StaticResource MetricValueStyle}" />
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <!-- Disponível para poupar -->
+
+                        <Border Style="{StaticResource MetricCardStyle}">
+
+                            <StackPanel>
+
+                                <TextBlock Text="Disponível para poupar (Mês)"
+                                           Style="{StaticResource MetricLabelStyle}" />
+
+                                <TextBlock Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource PrimaryColorBrush}">
+
+                                    <Run Text="{Binding AvailableToSave,
+                                                       StringFormat={}{0:N2}}" />
+
+                                    <Run Text="{Binding DefaultCurrencySymbol}"
+                                         FontSize="18" />
+
+                                </TextBlock>
+
+                            </StackPanel>
+
+                        </Border>
+
+                    </UniformGrid>
+
+                    <!-- =================================================
+                         DESPESAS FIXAS / VARIÁVEIS
+                         ================================================= -->
+
+                    <UniformGrid Columns="2"
+                                 Margin="-10,0">
+
+                        <Border Style="{StaticResource MetricCardStyle}">
+
+                            <StackPanel>
+
+                                <TextBlock Text="Despesas fixas (Mês)"
+                                           Style="{StaticResource MetricLabelStyle}" />
+
+                                <TextBlock Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource DangerColorBrush}">
+
+                                    <Run Text="{Binding FixedExpenses,
+                                                       StringFormat={}{0:N2}}" />
+
+                                    <Run Text="{Binding DefaultCurrencySymbol}"
+                                         FontSize="18" />
+
+                                </TextBlock>
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <Border Style="{StaticResource MetricCardStyle}">
+
+                            <StackPanel>
+
+                                <TextBlock Text="Despesas variáveis (Mês)"
+                                           Style="{StaticResource MetricLabelStyle}" />
+
+                                <TextBlock Style="{StaticResource MetricValueStyle}"
+                                           Foreground="{StaticResource DangerColorBrush}">
+
+                                    <Run Text="{Binding VariableExpenses,
+                                                       StringFormat={}{0:N2}}" />
+
+                                    <Run Text="{Binding DefaultCurrencySymbol}"
+                                         FontSize="18" />
+
+                                </TextBlock>
+
+                            </StackPanel>
+
+                        </Border>
+
+                    </UniformGrid>
+
+                    <!-- =================================================
+                         HISTÓRICO + TOP DESPESAS
+                         ================================================= -->
+
+                    <Grid Margin="0,20,0,0">
+
+                        <Grid.ColumnDefinitions>
+
+                            <ColumnDefinition Width="1.5*" />
+
+                            <ColumnDefinition Width="*" />
+
+                        </Grid.ColumnDefinitions>
+
+                        <!-- =============================================
+                             RESULTADO DOS ÚLTIMOS 6 MESES
+                             ============================================= -->
+
+                        <Border Grid.Column="0"
+                                Style="{StaticResource MetricCardStyle}"
+                                MinHeight="300"
+                                Margin="0,10,10,10">
+
+                            <StackPanel>
+
+                                <TextBlock Text="Resultado mensal (Últimos 6 meses)"
+                                           Style="{StaticResource SectionTitleStyle}" />
+
+                                <ItemsControl ItemsSource="{Binding MonthlyBalanceData}">
+
+                                    <ItemsControl.ItemsPanel>
+
+                                        <ItemsPanelTemplate>
+
+                                            <UniformGrid Columns="3" />
+
+                                        </ItemsPanelTemplate>
+
+                                    </ItemsControl.ItemsPanel>
+
+                                    <ItemsControl.ItemTemplate>
+
+                                        <DataTemplate>
+
+                                            <Border Margin="5"
+                                                    Padding="15"
+                                                    CornerRadius="8"
+                                                    BorderThickness="1"
+                                                    BorderBrush="{StaticResource BorderLightBrush}">
+
+                                                <StackPanel>
+
+                                                    <TextBlock Text="{Binding Month}"
+                                                               HorizontalAlignment="Center"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="#7F8C8D"
+                                                               Margin="0,0,0,8" />
+
+                                                    <TextBlock HorizontalAlignment="Center"
+                                                               FontSize="18"
+                                                               FontWeight="Bold">
+
+                                                        <TextBlock.Style>
+
+                                                            <Style TargetType="TextBlock">
+
+                                                                <Setter Property="Foreground"
+                                                                        Value="{StaticResource SecondaryColorBrush}" />
+
+                                                                <Style.Triggers>
+
+                                                                    <DataTrigger Binding="{Binding Balance}"
+                                                                                 Value="0">
+
+                                                                        <Setter Property="Foreground"
+                                                                                Value="#7F8C8D" />
+
+                                                                    </DataTrigger>
+
+                                                                </Style.Triggers>
+
+                                                            </Style>
+
+                                                        </TextBlock.Style>
+
+                                                        <Run Text="{Binding Balance,
+                                                                           StringFormat={}{0:N2}}" />
+
+                                                        <Run Text="{Binding DataContext.DefaultCurrencySymbol,
+                                                                           RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                             FontSize="13" />
+
+                                                    </TextBlock>
+
+                                                </StackPanel>
+
+                                            </Border>
+
+                                        </DataTemplate>
+
+                                    </ItemsControl.ItemTemplate>
+
+                                </ItemsControl>
+
+                                <TextBlock Margin="5,15,5,0"
+                                           FontSize="11"
+                                           Foreground="#7F8C8D"
+                                           TextWrapping="Wrap"
+                                           Text="O resultado mensal corresponde à diferença entre receitas e despesas confirmadas." />
+
+                            </StackPanel>
+
+                        </Border>
+
+                        <!-- =============================================
+                             TOP DESPESAS
+                             ============================================= -->
+
+                        <Border Grid.Column="1"
+                                Style="{StaticResource MetricCardStyle}"
+                                MinHeight="300"
+                                Margin="10,10,0,10">
+
+                            <DockPanel>
+
+                                <TextBlock DockPanel.Dock="Top"
+                                           Text="Maiores Despesas (Mês)"
+                                           Style="{StaticResource SectionTitleStyle}" />
+
+                                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                              HorizontalScrollBarVisibility="Disabled">
+
+                                    <ItemsControl ItemsSource="{Binding TopExpenses}">
+
+                                        <ItemsControl.ItemTemplate>
+
+                                            <DataTemplate>
+
+                                                <Border BorderThickness="0,0,0,1"
+                                                        BorderBrush="#F1F1F1"
+                                                        Padding="0,12">
+
+                                                    <Grid>
+
+                                                        <Grid.ColumnDefinitions>
+
+                                                            <ColumnDefinition Width="*" />
+
+                                                            <ColumnDefinition Width="Auto" />
+
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <StackPanel Grid.Column="0"
+                                                                    Margin="0,0,10,0">
+
+                                                            <TextBlock Text="{Binding CategoryName}"
+                                                                       FontWeight="Bold"
+                                                                       Foreground="#34495E"
+                                                                       TextTrimming="CharacterEllipsis" />
+
+                                                            <TextBlock Text="Categoria"
+                                                                       FontSize="10"
+                                                                       Foreground="#BDC3C7" />
+
+                                                        </StackPanel>
+
+                                                        <TextBlock Grid.Column="1"
+                                                                   VerticalAlignment="Center"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="{StaticResource DangerColorBrush}">
+
+                                                            <Run Text="- " />
+
+                                                            <Run Text="{Binding Amount,
+                                                                               StringFormat={}{0:N2}}" />
+
+                                                            <Run Text="{Binding DataContext.DefaultCurrencySymbol,
+                                                                               RelativeSource={RelativeSource AncestorType=UserControl}}" />
+
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

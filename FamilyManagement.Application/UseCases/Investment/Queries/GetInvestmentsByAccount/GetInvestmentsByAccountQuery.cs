@@ -1,0 +1,3 @@
+namespace FamilyManagement.Application.UseCases.Investments.Queries.GetInvestmentsByAccount;
+
+public sealed record GetInvestmentsByAccountQuery(Guid AccountId);

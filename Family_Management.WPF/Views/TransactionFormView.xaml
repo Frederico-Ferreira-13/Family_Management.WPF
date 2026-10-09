@@ -1,0 +1,302 @@
+<UserControl x:Class="Family_Management.WPF.Views.TransactionFormView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Transactions"
+             mc:Ignorable="d"
+             d:DesignHeight="800"
+             d:DesignWidth="900"
+             d:DataContext="{d:DesignInstance Type=viewmodels:TransactionFormViewModel,
+                                              IsDesignTimeCreatable=False}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+        <Grid Margin="24"
+              MaxWidth="750"
+              HorizontalAlignment="Center">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- CABEÇALHO -->
+
+            <StackPanel Grid.Row="0"
+                        Margin="0,0,0,20">
+
+                <TextBlock Text="{Binding Title}"
+                           Style="{StaticResource TitleStyle}" />
+
+                <TextBlock Text="Preencha os dados do movimento financeiro."
+                           Foreground="#666"
+                           Margin="0,5,0,0" />
+
+            </StackPanel>
+
+            <!-- FORMULÁRIO -->
+
+            <Border Grid.Row="1"
+                    Style="{StaticResource CardBorderStyle}">
+
+                <Grid>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="20" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- DATA -->
+
+                    <StackPanel Grid.Row="0"
+                                Grid.Column="0">
+
+                        <TextBlock Text="Data"
+                                   Style="{StaticResource FieldLabelStyle}" />
+
+                        <DatePicker SelectedDate="{Binding Date,
+                                                          Mode=TwoWay,
+                                                          UpdateSourceTrigger=PropertyChanged,
+                                                          ValidatesOnDataErrors=True}"
+                                    IsEnabled="{Binding CanEditTransactionStructure}"
+                                    Style="{StaticResource ErrorDatePickerStyle}" />
+
+                    </StackPanel>
+
+                    <!-- TIPO -->
+
+                    <StackPanel Grid.Row="0"
+                                Grid.Column="2">
+
+                        <TextBlock Text="Tipo"
+                                   Style="{StaticResource FieldLabelStyle}" />
+
+                        <ComboBox ItemsSource="{Binding TransactionTypes}"
+                                  SelectedItem="{Binding Type,
+                                                        Mode=TwoWay}"
+                                  IsEnabled="{Binding CanEditTransactionStructure}"
+                                  Style="{StaticResource DefaultComboBoxStyle}" />
+
+                    </StackPanel>
+
+                    <!-- DESCRIÇÃO -->
+
+                    <StackPanel Grid.Row="1"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="3"
+                                Margin="0,15,0,0">
+
+                        <TextBlock Text="Descrição"
+                                   Style="{StaticResource FieldLabelStyle}" />
+
+                        <TextBox Text="{Binding Description,
+                                               Mode=TwoWay,
+                                               UpdateSourceTrigger=PropertyChanged,
+                                               ValidatesOnDataErrors=True,
+                                               NotifyOnValidationError=True}"
+                                 Style="{StaticResource ErrorTextBoxStyle}" />
+
+                    </StackPanel>
+
+                    <!-- VALOR -->
+
+                    <StackPanel Grid.Row="2"
+                                Grid.Column="0"
+                                Margin="0,15,0,0">
+
+                        <TextBlock Text="Valor"
+                                   Style="{StaticResource FieldLabelStyle}" />
+
+                        <TextBox Text="{Binding Amount,
+                                               Mode=TwoWay,
+                                               UpdateSourceTrigger=PropertyChanged,
+                                               ValidatesOnDataErrors=True,
+                                               NotifyOnValidationError=True}"
+                                 Style="{StaticResource ErrorTextBoxStyle}" />
+
+                    </StackPanel>
+
+                    <!-- CONTA ORIGEM -->
+
+                    <StackPanel Grid.Row="2"
+                                Grid.Column="2"
+                                Margin="0,15,0,0">
+
+                        <TextBlock Text="Conta"
+                                   Style="{StaticResource FieldLabelStyle}" />
+
+                        <ComboBox ItemsSource="{Binding Accounts}"
+                                  SelectedItem="{Binding SelectedAccount,
+                                                        Mode=TwoWay,
+                                                        ValidatesOnDataErrors=True}"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource ErrorComboBoxStyle}" />
+
+                    </StackPanel>
+
+                    <!-- CONTA DESTINO -->
+
+                    <StackPanel Grid.Row="3"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="3"
+                                Margin="0,15,0,0"
+                                Visibility="{Binding IsTransfer,
+                                                     Converter={StaticResource BoolToVis}}">
+
+                        <TextBlock Text="Conta de destino"
+                                   Style="{StaticResource FieldLabelStyle}" />
+
+                        <ComboBox ItemsSource="{Binding Accounts}"
+                                  SelectedItem="{Binding SelectedTargetAccount,
+                                                        Mode=TwoWay,
+                                                        ValidatesOnDataErrors=True}"
+                                  DisplayMemberPath="Name"
+                                  IsEnabled="{Binding CanEditTransactionStructure}"
+                                  Style="{StaticResource ErrorComboBoxStyle}" />
+
+                    </StackPanel>
+
+                    <!-- CATEGORIA -->
+
+                    <StackPanel Grid.Row="3"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="3"
+                                Margin="0,15,0,0"
+                                Visibility="{Binding UsesCategory,
+                                                     Converter={StaticResource BoolToVis}}">
+
+                        <TextBlock Text="Categoria"
+                                   Style="{StaticResource FieldLabelStyle}" />
+
+                        <ComboBox ItemsSource="{Binding Categories}"
+                                  SelectedItem="{Binding SelectedCategory,
+                                                        Mode=TwoWay,
+                                                        ValidatesOnDataErrors=True}"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource ErrorComboBoxStyle}" />
+
+                    </StackPanel>
+
+                    <!-- ORÇAMENTO -->
+
+                    <StackPanel Grid.Row="4"
+                                Grid.Column="0"
+                                Margin="0,15,0,0"
+                                IsEnabled="{Binding CanSelectBudget}">
+
+                        <TextBlock Text="Orçamento"
+                                   Style="{StaticResource FieldLabelStyle}" />
+
+                        <ComboBox ItemsSource="{Binding Budgets}"
+                                  SelectedItem="{Binding SelectedBudget,
+                                                        Mode=TwoWay}"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource DefaultComboBoxStyle}" />
+
+                    </StackPanel>
+
+                    <!-- OBJETIVO -->
+
+                    <StackPanel Grid.Row="4"
+                                Grid.Column="2"
+                                Margin="0,15,0,0"
+                                IsEnabled="{Binding CanSelectGoal}">
+
+                        <TextBlock Text="Objetivo"
+                                   Style="{StaticResource FieldLabelStyle}" />
+
+                        <ComboBox ItemsSource="{Binding Goals}"
+                                  SelectedItem="{Binding SelectedGoal,
+                                                        Mode=TwoWay}"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource DefaultComboBoxStyle}" />
+
+                    </StackPanel>
+
+                    <!-- NOTAS -->
+
+                    <StackPanel Grid.Row="5"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="3"
+                                Margin="0,15,0,0">
+
+                        <TextBlock Text="Notas"
+                                   Style="{StaticResource FieldLabelStyle}" />
+
+                        <TextBox Text="{Binding Notes,
+                                               Mode=TwoWay,
+                                               UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource DefaultTextBoxStyle}"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MinHeight="80"
+                                 VerticalScrollBarVisibility="Auto" />
+
+                    </StackPanel>
+
+                    <!-- CONFIRMAÇÃO -->
+
+                    <CheckBox Grid.Row="6"
+                              Grid.Column="0"
+                              Grid.ColumnSpan="3"
+                              Content="Transação confirmada"
+                              IsChecked="{Binding IsConfirmed,
+                                                 Mode=TwoWay}"
+                              IsEnabled="{Binding CanEditTransactionStructure}"
+                              Margin="0,20,0,0" />
+
+                </Grid>
+
+            </Border>
+
+            <!-- AÇÕES -->
+
+            <Grid Grid.Row="2"
+                  Margin="0,20,0,0">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <ProgressBar Grid.Column="0"
+                             IsIndeterminate="True"
+                             Width="120"
+                             Height="4"
+                             HorizontalAlignment="Left"
+                             VerticalAlignment="Center"
+                             Visibility="{Binding IsBusy,
+                                                  Converter={StaticResource BoolToVis}}" />
+
+                <Button Grid.Column="1"
+                        Content="Cancelar"
+                        Command="{Binding CancelCommand}"
+                        Style="{StaticResource DefaultButton}"
+                        Margin="0,0,10,0" />
+
+                <Button Grid.Column="2"
+                        Content="Guardar"
+                        Command="{Binding SaveCommand}"
+                        Style="{StaticResource PrimaryButton}" />
+
+            </Grid>
+
+        </Grid>
+
+    </ScrollViewer>
+
+</UserControl>

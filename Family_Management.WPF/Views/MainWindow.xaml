@@ -1,0 +1,243 @@
+﻿<Window x:Class="Family_Management.WPF.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:navigation="clr-namespace:Family_Management.WPF.Services.Navigation"
+        Title="{Binding Title}"
+        Height="750"
+        Width="1200"
+        MinHeight="600"
+        MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource GrayBackground}">
+
+    <Grid>
+
+        <Grid.ColumnDefinitions>
+
+            <!-- MENU LATERAL -->
+            <ColumnDefinition>
+                <ColumnDefinition.Style>
+                    <Style TargetType="ColumnDefinition">
+
+                        <Setter Property="Width"
+                                Value="0" />
+
+                        <Style.Triggers>
+
+                            <DataTrigger Binding="{Binding IsLoggedIn}"
+                                         Value="True">
+
+                                <Setter Property="Width"
+                                        Value="220" />
+
+                            </DataTrigger>
+
+                        </Style.Triggers>
+
+                    </Style>
+                </ColumnDefinition.Style>
+            </ColumnDefinition>
+
+            <!-- CONTEÚDO -->
+            <ColumnDefinition Width="*" />
+
+        </Grid.ColumnDefinitions>
+
+        <!-- ===================================================== -->
+        <!-- MENU LATERAL                                          -->
+        <!-- ===================================================== -->
+
+        <Border Grid.Column="0"
+                Background="White"
+                BorderThickness="0,0,1,0"
+                BorderBrush="{StaticResource BorderLightBrush}">
+
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- ================================================= -->
+                <!-- IDENTIFICAÇÃO                                     -->
+                <!-- ================================================= -->
+
+                <Border Grid.Row="0"
+                        Padding="20,20,20,15"
+                        BorderBrush="{StaticResource BorderLightBrush}"
+                        BorderThickness="0,0,0,1">
+
+                    <StackPanel>
+
+                        <TextBlock Text="GESTÃO FAMILIAR"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource PrimaryColorBrush}" />
+
+                        <TextBlock Text="{Binding CurrentUserName}"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextDarkBrush}"
+                                   Margin="0,10,0,0"
+                                   TextTrimming="CharacterEllipsis" />
+
+                        <TextBlock Text="Sessão iniciada"
+                                   FontSize="11"
+                                   Foreground="#7F8C8D"
+                                   Margin="0,2,0,0" />
+
+                    </StackPanel>
+
+                </Border>
+
+                <!-- ================================================= -->
+                <!-- NAVEGAÇÃO                                        -->
+                <!-- ================================================= -->
+
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+
+                    <StackPanel Margin="15,20">
+
+                        <TextBlock Text="MENU"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="#95A5A6"
+                                   Margin="10,0,0,15" />
+
+                        <!-- DASHBOARD -->
+
+                        <Button Content="Dashboard"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static navigation:AppScreen.Dashboard}"
+                                Style="{StaticResource NavButtonStyle}"
+                                Tag="{x:Static navigation:AppScreen.Dashboard}"
+                                Margin="0,0,0,5" />
+
+                        <!-- CONTAS -->
+
+                        <Button Content="Contas Bancárias"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static navigation:AppScreen.Accounts}"
+                                Style="{StaticResource NavButtonStyle}"
+                                Tag="{x:Static navigation:AppScreen.Accounts}"
+                                Margin="0,0,0,5" />
+
+                        <!-- MOVIMENTOS -->
+
+                        <Button Content="Movimentos"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static navigation:AppScreen.Transactions}"
+                                Style="{StaticResource NavButtonStyle}"
+                                Tag="{x:Static navigation:AppScreen.Transactions}"
+                                Margin="0,0,0,5" />
+
+                        <!-- RECORRENTES -->
+
+                        <Button Content="Despesas Fixas"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static navigation:AppScreen.RecurringTransaction}"
+                                Style="{StaticResource NavButtonStyle}"
+                                Tag="{x:Static navigation:AppScreen.RecurringTransaction}"
+                                Margin="0,0,0,5" />
+
+                        <!-- CATEGORIAS -->
+
+                        <Button Content="Categorias"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static navigation:AppScreen.Category}"
+                                Style="{StaticResource NavButtonStyle}"
+                                Tag="{x:Static navigation:AppScreen.Category}"
+                                Margin="0,0,0,5" />
+
+                        <!-- ORÇAMENTOS -->
+
+                        <Button Content="Orçamentos"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static navigation:AppScreen.Budget}"
+                                Style="{StaticResource NavButtonStyle}"
+                                Tag="{x:Static navigation:AppScreen.Budget}"
+                                Margin="0,0,0,5" />
+
+                        <!-- OBJETIVOS -->
+
+                        <Button Content="Objetivos"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static navigation:AppScreen.Goal}"
+                                Style="{StaticResource NavButtonStyle}"
+                                Tag="{x:Static navigation:AppScreen.Goal}"
+                                Margin="0,0,0,5" />
+
+                        <!-- INVESTIMENTOS -->
+
+                        <Button Content="Investimentos"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static navigation:AppScreen.Investment}"
+                                Style="{StaticResource NavButtonStyle}"
+                                Tag="{x:Static navigation:AppScreen.Investment}"
+                                Margin="0,0,0,5" />
+
+                        <!-- FAMÍLIA -->
+
+                        <Button Content="Agregado Familiar"
+                                Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static navigation:AppScreen.Family}"
+                                Style="{StaticResource NavButtonStyle}"
+                                Tag="{x:Static navigation:AppScreen.Family}"
+                                Margin="0,0,0,5" />
+
+                        <Separator Margin="0,15" />
+
+                        <!-- ADICIONAR -->
+
+                        <Button Content="+ Adicionar Novo"
+                                Command="{Binding OpenAddMenuCommand}"
+                                Style="{StaticResource PrimaryButton}"
+                                Height="42" />
+
+                    </StackPanel>
+
+                </ScrollViewer>
+
+                <!-- ================================================= -->
+                <!-- RODAPÉ                                            -->
+                <!-- ================================================= -->
+
+                <StackPanel Grid.Row="2"
+                            Margin="15,10,15,20">
+
+                    <Separator Margin="0,0,0,10" />
+
+                    <Button Content="Terminar Sessão"
+                            Command="{Binding LogoutCommand}"
+                            Style="{StaticResource HyperlinkLikeButton}"
+                            HorizontalAlignment="Stretch"
+                            Margin="0,0,0,5" />
+
+                    <Button Content="Sair da Aplicação"
+                            Command="{Binding ExitCommand}"
+                            Style="{StaticResource NavButtonStyle}"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            Foreground="#666"
+                            HorizontalAlignment="Stretch" />
+
+                </StackPanel>
+
+            </Grid>
+
+        </Border>
+
+        <!-- ===================================================== -->
+        <!-- CONTEÚDO PRINCIPAL                                    -->
+        <!-- ===================================================== -->
+
+        <ContentPresenter Grid.Column="1"
+                          Content="{Binding CurrentChildViewModel}" />
+
+    </Grid>
+
+</Window>

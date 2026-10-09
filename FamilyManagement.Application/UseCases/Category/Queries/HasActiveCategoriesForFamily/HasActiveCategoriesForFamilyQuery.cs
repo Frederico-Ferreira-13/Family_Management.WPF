@@ -1,0 +1,3 @@
+namespace FamilyManagement.Application.UseCases.Categories.Queries.HasActiveCategoriesForFamily;
+
+public sealed record HasActiveCategoriesForFamilyQuery(Guid FamilyId);

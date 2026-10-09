@@ -1,0 +1,3 @@
+namespace FamilyManagement.Application.UseCases.RecurringTransactions.Queries.GetRecurringTransactionsByUser;
+
+public sealed record GetRecurringTransactionsByUserQuery(Guid UserId);

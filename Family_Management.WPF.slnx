@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/FamilyManagement.Application/">
+    <Project Path="FamilyManagement.Application/FamilyManagement.Application.csproj" />
+  </Folder>
+
+  <Project Path="FamilyManagement.Domain/FamilyManagement.Domain.csproj" />
+  <Project Path="FamilyManagement.Infrastructure/FamilyManagement.Infrastructure.csproj" />
+  <Project Path="Family_Management.WPF/Family_Management.WPF.csproj" />
+</Solution>

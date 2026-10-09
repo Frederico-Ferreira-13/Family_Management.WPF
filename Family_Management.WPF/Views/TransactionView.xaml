@@ -1,0 +1,211 @@
+﻿<UserControl x:Class="Family_Management.WPF.Views.TransactionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Transactions"
+             mc:Ignorable="d"
+             d:DesignHeight="700"
+             d:DesignWidth="1100"
+             d:DataContext="{d:DesignInstance Type=viewmodels:TransactionViewModel,
+                                              IsDesignTimeCreatable=False}">
+
+    <Grid Margin="24">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- CABEÇALHO -->
+
+        <Grid Grid.Row="0"
+              Margin="0,0,0,20">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+
+                <TextBlock Text="Transações"
+                           Style="{StaticResource TitleStyle}" />
+
+                <TextBlock Text="Consulte e faça a gestão dos seus movimentos financeiros."
+                           Foreground="#666"
+                           Margin="0,5,0,0" />
+
+            </StackPanel>
+
+            <Button Grid.Column="1"
+                    Content="+ Nova transação"
+                    Command="{Binding CreateCommand}"
+                    Style="{StaticResource PrimaryButton}"
+                    VerticalAlignment="Center" />
+
+        </Grid>
+
+        <!-- FILTROS -->
+
+        <Border Grid.Row="1"
+                Style="{StaticResource CardBorderStyle}"
+                Margin="0,0,0,15">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0"
+                            Margin="0,0,15,0">
+
+                    <TextBlock Text="Pesquisar"
+                               Style="{StaticResource FieldLabelStyle}" />
+
+                    <TextBox Text="{Binding SearchTerm,
+                                           Mode=TwoWay,
+                                           UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource DefaultTextBoxStyle}"
+                             MinWidth="220" />
+
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            Margin="0,0,15,0">
+
+                    <TextBlock Text="Estado"
+                               Style="{StaticResource FieldLabelStyle}" />
+
+                    <ComboBox SelectedValue="{Binding ConfirmedFilter,
+                                                     Mode=TwoWay}"
+                              MinWidth="150"
+                              Style="{StaticResource DefaultComboBoxStyle}">
+
+                        <ComboBoxItem Content="Todas"
+                                      Tag="{x:Null}" />
+
+                        <ComboBoxItem Content="Confirmadas"
+                                      Tag="True" />
+
+                        <ComboBoxItem Content="Por confirmar"
+                                      Tag="False" />
+
+                    </ComboBox>
+
+                </StackPanel>
+
+                <Button Grid.Column="2"
+                        Content="Atualizar"
+                        Command="{Binding RefreshCommand}"
+                        Style="{StaticResource SecondaryButton}"
+                        VerticalAlignment="Bottom"
+                        Margin="0,0,10,0" />
+
+                <Button Grid.Column="3"
+                        Content="Limpar filtros"
+                        Command="{Binding ClearFiltersCommand}"
+                        Style="{StaticResource DefaultButton}"
+                        VerticalAlignment="Bottom" />
+
+            </Grid>
+
+        </Border>
+
+        <!-- LISTA -->
+
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Transactions}"
+                  SelectedItem="{Binding SelectedTransaction,
+                                         Mode=TwoWay}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  SelectionUnit="FullRow"
+                  Style="{StaticResource CustomDataGridStyle}">
+
+            <DataGrid.Columns>
+
+                <DataGridTextColumn Header="Data"
+                                    Binding="{Binding Date,
+                                                      StringFormat={}{0:dd/MM/yyyy}}"
+                                    Width="110" />
+
+                <DataGridTextColumn Header="Descrição"
+                                    Binding="{Binding Description}"
+                                    Width="*" />
+
+                <DataGridTextColumn Header="Tipo"
+                                    Binding="{Binding TypeDisplay}"
+                                    Width="120" />
+
+                <DataGridTextColumn Header="Conta"
+                                    Binding="{Binding AccountName}"
+                                    Width="150" />
+
+                <DataGridTextColumn Header="Categoria"
+                                    Binding="{Binding CategoryName}"
+                                    Width="150" />
+
+                <DataGridTextColumn Header="Valor"
+                                    Binding="{Binding Amount,
+                                                      StringFormat={}{0:N2}}"
+                                    Width="110" />
+
+                <DataGridTextColumn Header="Moeda"
+                                    Binding="{Binding Currency}"
+                                    Width="80" />
+
+                <DataGridCheckBoxColumn Header="Confirmada"
+                                        Binding="{Binding IsConfirmed}"
+                                        Width="95" />
+
+                <DataGridCheckBoxColumn Header="Recorrente"
+                                        Binding="{Binding IsRecurringGenerated}"
+                                        Width="90" />
+
+            </DataGrid.Columns>
+
+        </DataGrid>
+
+        <!-- AÇÕES -->
+
+        <Border Grid.Row="3"
+                Style="{StaticResource CardBorderStyle}"
+                Margin="0,15,0,0">
+
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+
+                <Button Content="Editar"
+                        Command="{Binding EditCommand}"
+                        Style="{StaticResource SecondaryButton}"
+                        Margin="0,0,10,0" />
+
+                <Button Content="Confirmar"
+                        Command="{Binding ConfirmCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        Margin="0,0,10,0" />
+
+                <Button Content="Desconfirmar"
+                        Command="{Binding UnconfirmCommand}"
+                        Style="{StaticResource DefaultButton}"
+                        Margin="0,0,10,0" />
+
+                <Button Content="Eliminar"
+                        Command="{Binding DeactivateCommand}"
+                        Style="{StaticResource DangerButton}" />
+
+            </StackPanel>
+
+        </Border>
+
+    </Grid>
+
+</UserControl>

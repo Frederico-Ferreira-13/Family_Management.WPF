@@ -1,0 +1,614 @@
+﻿<UserControl x:Class="Family_Management.WPF.Views.InvestmentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Investments"
+             mc:Ignorable="d"
+             d:DesignHeight="750"
+             d:DesignWidth="1200"
+             d:DataContext="{d:DesignInstance Type=viewmodels:InvestmentViewModel}">
+
+    <UserControl.Resources>
+
+        <ResourceDictionary>
+
+            <ResourceDictionary.MergedDictionaries>
+
+                <ResourceDictionary Source="/Family_Management.WPF;component/Styles/DesignResources.xaml" />
+
+                <ResourceDictionary Source="/Family_Management.WPF;component/Styles/Styles.ButtonsAndValidation.xaml" />
+
+                <ResourceDictionary Source="/Family_Management.WPF;component/Styles/Styles.TextAndValidation.xaml" />
+
+                <ResourceDictionary Source="/Family_Management.WPF;component/Styles/Styles.InteractiveControls.xaml" />
+
+                <ResourceDictionary Source="/Family_Management.WPF;component/Styles/converters.xaml" />
+
+            </ResourceDictionary.MergedDictionaries>
+
+        </ResourceDictionary>
+
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource GrayBackground}">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ===================================================== -->
+        <!-- CABEÇALHO                                              -->
+        <!-- ===================================================== -->
+
+        <Grid Grid.Row="0"
+              Margin="30,25,30,20">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+
+                <TextBlock Text="{Binding Title}"
+                           FontSize="28"
+                           FontWeight="Bold"
+                           Foreground="{StaticResource TextDarkBrush}" />
+
+                <TextBlock Text="Acompanhe os seus investimentos, rentabilidade e valor atual."
+                           Foreground="#7F8C8D"
+                           Margin="0,5,0,0" />
+
+            </StackPanel>
+
+            <Button Grid.Column="1"
+                    Content="Atualizar"
+                    Command="{Binding LoadDataCommand}"
+                    Style="{StaticResource SecondaryButton}"
+                    VerticalAlignment="Center"
+                    Padding="18,8" />
+
+            <Button Grid.Column="3"
+                    Content="Novo Investimento"
+                    Command="{Binding NewInvestmentCommand}"
+                    Style="{StaticResource PrimaryButton}"
+                    VerticalAlignment="Center"
+                    Padding="18,8" />
+
+        </Grid>
+
+        <!-- ===================================================== -->
+        <!-- CONTEÚDO                                              -->
+        <!-- ===================================================== -->
+
+        <Grid Grid.Row="1"
+              Margin="30,0,30,30">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.6*" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ================================================= -->
+            <!-- LISTA DE INVESTIMENTOS                            -->
+            <!-- ================================================= -->
+
+            <Border Grid.Column="0"
+                    Style="{StaticResource CardBorderStyle}"
+                    Padding="20">
+
+                <DockPanel>
+
+                    <Grid DockPanel.Dock="Top"
+                          Margin="0,0,0,15">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0"
+                                   Text="Investimentos Ativos"
+                                   Style="{StaticResource TitleStyle}" />
+
+                        <TextBlock Grid.Column="1"
+                                   VerticalAlignment="Center"
+                                   Foreground="#7F8C8D">
+
+                            <Run Text="{Binding Investments.Count}" />
+                            <Run Text=" investimento(s)" />
+
+                        </TextBlock>
+
+                    </Grid>
+
+                    <DataGrid ItemsSource="{Binding Investments}"
+                              SelectedItem="{Binding SelectedInvestment,
+                                                     Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              Style="{StaticResource CustomDataGridStyle}">
+
+                        <DataGrid.Columns>
+
+                            <!-- NOME -->
+
+                            <DataGridTextColumn Header="Nome"
+                                                Binding="{Binding Name}"
+                                                Width="*" />
+
+                            <!-- TIPO -->
+
+                            <DataGridTextColumn Header="Tipo"
+                                                Binding="{Binding TypeDisplay}"
+                                                Width="120" />
+
+                            <!-- VALOR INICIAL -->
+
+                            <DataGridTextColumn Header="Inicial"
+                                                Binding="{Binding InitialValue,
+                                                                  StringFormat={}{0:N2}}"
+                                                Width="90" />
+
+                            <!-- VALOR ATUAL -->
+
+                            <DataGridTextColumn Header="Atual"
+                                                Binding="{Binding CurrentValue,
+                                                                  StringFormat={}{0:N2}}"
+                                                Width="90" />
+
+                            <!-- MOEDA -->
+
+                            <DataGridTextColumn Header="Moeda"
+                                                Binding="{Binding Currency}"
+                                                Width="65" />
+
+                            <!-- LUCRO / PREJUÍZO -->
+
+                            <DataGridTextColumn Header="Resultado"
+                                                Binding="{Binding ProfitLoss,
+                                                                  StringFormat={}{0:N2}}"
+                                                Width="90" />
+
+                            <!-- RENTABILIDADE -->
+
+                            <DataGridTextColumn Header="%"
+                                                Binding="{Binding ProfitLossPercentage,
+                                                                  StringFormat={}{0:F2}%}"
+                                                Width="70" />
+
+                        </DataGrid.Columns>
+
+                    </DataGrid>
+
+                </DockPanel>
+
+            </Border>
+
+            <!-- ================================================= -->
+            <!-- PAINEL DIREITO                                    -->
+            <!-- ================================================= -->
+
+            <Border Grid.Column="2"
+                    Style="{StaticResource CardBorderStyle}"
+                    Padding="25">
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+
+                    <Grid>
+
+                        <!-- ===================================== -->
+                        <!-- NENHUM INVESTIMENTO SELECIONADO       -->
+                        <!-- ===================================== -->
+
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding SelectedInvestment,
+                                                         Converter={StaticResource InverseUniversalVis}}">
+
+                            <TextBlock Text="Investimentos"
+                                       FontSize="22"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{StaticResource TextDarkBrush}" />
+
+                            <TextBlock Text="Selecione um investimento na lista para consultar ou alterar os seus dados."
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       Foreground="#7F8C8D"
+                                       MaxWidth="320"
+                                       Margin="0,10,0,20" />
+
+                            <Button Content="Novo Investimento"
+                                    Command="{Binding NewInvestmentCommand}"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Padding="18,8"
+                                    HorizontalAlignment="Center" />
+
+                        </StackPanel>
+
+                        <!-- ===================================== -->
+                        <!-- INVESTIMENTO SELECIONADO              -->
+                        <!-- ===================================== -->
+
+                        <StackPanel Visibility="{Binding SelectedInvestment,
+                                                        Converter={StaticResource UniversalVis}}">
+
+                            <!-- TÍTULO -->
+
+                            <TextBlock Text="{Binding SelectedInvestment.Name}"
+                                       Style="{StaticResource TitleStyle}"
+                                       Foreground="{StaticResource PrimaryColorBrush}"
+                                       TextWrapping="Wrap" />
+
+                            <TextBlock Text="{Binding SelectedInvestment.TypeDisplay}"
+                                       Foreground="#7F8C8D"
+                                       Margin="0,4,0,20" />
+
+                            <!-- ================================= -->
+                            <!-- RESUMO                            -->
+                            <!-- ================================= -->
+
+                            <TextBlock Text="Resumo"
+                                       Style="{StaticResource TitleStyle}"
+                                       Margin="0,0,0,12" />
+
+                            <Grid>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <!-- VALOR INICIAL -->
+
+                                <Border Grid.Row="0"
+                                        Grid.Column="0"
+                                        Background="#F8F9FA"
+                                        BorderBrush="{StaticResource BorderLightBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="12"
+                                        Margin="0,0,5,10">
+
+                                    <StackPanel>
+
+                                        <TextBlock Text="Valor Inicial"
+                                                   Foreground="#7F8C8D"
+                                                   FontSize="11" />
+
+                                        <StackPanel Orientation="Horizontal"
+                                                    Margin="0,4,0,0">
+
+                                            <TextBlock Text="{Binding EditInvestmentInitialValue,
+                                                                      StringFormat={}{0:N2}}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="16" />
+
+                                            <TextBlock Text="{Binding EditInvestmentCurrency}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="16"
+                                                       Margin="5,0,0,0" />
+
+                                        </StackPanel>
+
+                                    </StackPanel>
+
+                                </Border>
+
+                                <!-- VALOR ATUAL -->
+
+                                <Border Grid.Row="0"
+                                        Grid.Column="1"
+                                        Background="#F8F9FA"
+                                        BorderBrush="{StaticResource BorderLightBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="12"
+                                        Margin="5,0,0,10">
+
+                                    <StackPanel>
+
+                                        <TextBlock Text="Valor Atual"
+                                                   Foreground="#7F8C8D"
+                                                   FontSize="11" />
+
+                                        <StackPanel Orientation="Horizontal"
+                                                    Margin="0,4,0,0">
+
+                                            <TextBlock Text="{Binding EditInvestmentCurrentValue,
+                                                                      StringFormat={}{0:N2}}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="16" />
+
+                                            <TextBlock Text="{Binding EditInvestmentCurrency}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="16"
+                                                       Margin="5,0,0,0" />
+
+                                        </StackPanel>
+
+                                    </StackPanel>
+
+                                </Border>
+
+                                <!-- RESULTADO -->
+
+                                <Border Grid.Row="1"
+                                        Grid.Column="0"
+                                        Background="#F8F9FA"
+                                        BorderBrush="{StaticResource BorderLightBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="12"
+                                        Margin="0,0,5,0">
+
+                                    <StackPanel>
+
+                                        <TextBlock Text="Resultado"
+                                                   Foreground="#7F8C8D"
+                                                   FontSize="11" />
+
+                                        <StackPanel Orientation="Horizontal"
+                                                    Margin="0,4,0,0">
+
+                                            <TextBlock Text="{Binding SelectedInvestment.ProfitLoss,
+                                                                      StringFormat={}{0:N2}}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="16" />
+
+                                            <TextBlock Text="{Binding EditInvestmentCurrency}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="16"
+                                                       Margin="5,0,0,0" />
+
+                                        </StackPanel>
+
+                                    </StackPanel>
+
+                                </Border>
+
+                                <!-- RENTABILIDADE -->
+
+                                <Border Grid.Row="1"
+                                        Grid.Column="1"
+                                        Background="#F8F9FA"
+                                        BorderBrush="{StaticResource BorderLightBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="12"
+                                        Margin="5,0,0,0">
+
+                                    <StackPanel>
+
+                                        <TextBlock Text="Rentabilidade"
+                                                   Foreground="#7F8C8D"
+                                                   FontSize="11" />
+
+                                        <TextBlock Text="{Binding SelectedInvestment.ProfitLossPercentage,
+                                                                  StringFormat={}{0:F2}%}"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="16"
+                                                   Margin="0,4,0,0" />
+
+                                    </StackPanel>
+
+                                </Border>
+
+                            </Grid>
+
+                            <!-- INFORMAÇÃO ADICIONAL -->
+
+                            <Grid Margin="0,15,0,0">
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Text="Data de compra:"
+                                           FontWeight="SemiBold"
+                                           Margin="0,3,15,3" />
+
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="1"
+                                           Text="{Binding EditInvestmentPurchaseDate,
+                                                          StringFormat={}{0:dd/MM/yyyy}}"
+                                           Margin="0,3" />
+
+                                <TextBlock Grid.Row="1"
+                                           Text="Conta:"
+                                           FontWeight="SemiBold"
+                                           Margin="0,3,15,3" />
+
+                                <TextBlock Grid.Row="1"
+                                           Grid.Column="1"
+                                           Text="{Binding SelectedInvestment.AccountName,
+                                                          TargetNullValue='Sem conta associada'}"
+                                           Margin="0,3" />
+
+                                <TextBlock Grid.Row="2"
+                                           Text="Última atualização:"
+                                           FontWeight="SemiBold"
+                                           Margin="0,3,15,3" />
+
+                                <TextBlock Grid.Row="2"
+                                           Grid.Column="1"
+                                           Text="{Binding SelectedInvestment.LastUpdateDate,
+                                                          StringFormat={}{0:dd/MM/yyyy},
+                                                          TargetNullValue='—'}"
+                                           Margin="0,3" />
+
+                            </Grid>
+
+                            <!-- ================================= -->
+                            <!-- EDITAR INVESTIMENTO                -->
+                            <!-- ================================= -->
+
+                            <Separator Margin="0,25,0,20" />
+
+                            <TextBlock Text="Editar Investimento"
+                                       Style="{StaticResource TitleStyle}"
+                                       Margin="0,0,0,15" />
+
+                            <!-- NOME -->
+
+                            <TextBlock Text="Nome"
+                                       Style="{StaticResource FieldLabelStyle}" />
+
+                            <TextBox Text="{Binding EditInvestmentName,
+                                                   Mode=TwoWay,
+                                                   UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource DefaultTextBoxStyle}"
+                                     MaxLength="100" />
+
+                            <!-- TIPO -->
+
+                            <TextBlock Text="Tipo"
+                                       Style="{StaticResource FieldLabelStyle}"
+                                       Margin="0,15,0,5" />
+
+                            <ComboBox ItemsSource="{Binding InvestmentTypes}"
+                                      SelectedItem="{Binding EditInvestmentType,
+                                                             Mode=TwoWay}"
+                                      Style="{StaticResource DefaultComboBoxStyle}" />
+
+                            <!-- CONTA -->
+
+                            <TextBlock Text="Conta Associada"
+                                       Style="{StaticResource FieldLabelStyle}"
+                                       Margin="0,15,0,5" />
+
+                            <ComboBox ItemsSource="{Binding EditAccounts}"
+                                      SelectedItem="{Binding EditSelectedAccount,
+                                                             Mode=TwoWay}"
+                                      DisplayMemberPath="Name"
+                                      Style="{StaticResource DefaultComboBoxStyle}" />
+
+                            <TextBlock Text="Opcional. Apenas são apresentadas contas ativas com a mesma moeda do investimento."
+                                       Foreground="#7F8C8D"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       Margin="2,5,0,0" />
+
+                            <Button Content="Guardar Alterações"
+                                    Command="{Binding UpdateInvestmentCommand}"
+                                    Style="{StaticResource PrimaryButton}"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,18,0,0"
+                                    Padding="15,8" />
+
+                            <!-- ================================= -->
+                            <!-- ATUALIZAR VALOR                    -->
+                            <!-- ================================= -->
+
+                            <Separator Margin="0,25,0,20" />
+
+                            <TextBlock Text="Atualizar Valor"
+                                       Style="{StaticResource TitleStyle}"
+                                       Margin="0,0,0,5" />
+
+                            <TextBlock Text="Introduza o novo valor atual total do investimento."
+                                       Foreground="#7F8C8D"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,12" />
+
+                            <TextBlock Text="Novo Valor Atual"
+                                       Style="{StaticResource FieldLabelStyle}" />
+
+                            <Grid>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox Grid.Column="0"
+                                         Text="{Binding UpdateValueAmount,
+                                                        Mode=TwoWay,
+                                                        UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource DefaultTextBoxStyle}" />
+
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding EditInvestmentCurrency}"
+                                           VerticalAlignment="Center"
+                                           FontWeight="SemiBold"
+                                           Margin="10,0,0,0" />
+
+                            </Grid>
+
+                            <Button Content="Atualizar Valor Atual"
+                                    Command="{Binding UpdateValueCommand}"
+                                    Style="{StaticResource SecondaryButton}"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,12,0,0"
+                                    Padding="15,8" />
+
+                            <!-- ================================= -->
+                            <!-- ZONA DE PERIGO                     -->
+                            <!-- ================================= -->
+
+                            <Separator Margin="0,30,0,20" />
+
+                            <Border Background="#FFF5F5"
+                                    BorderBrush="{StaticResource DangerColorBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="15">
+
+                                <StackPanel>
+
+                                    <TextBlock Text="Zona de Perigo"
+                                               FontWeight="Bold"
+                                               FontSize="15"
+                                               Foreground="{StaticResource DangerColorBrush}" />
+
+                                    <TextBlock Text="Ao desativar o investimento, este deixará de aparecer na lista de investimentos ativos."
+                                               Foreground="#7F8C8D"
+                                               TextWrapping="Wrap"
+                                               Margin="0,5,0,12" />
+
+                                    <Button Content="Desativar Investimento"
+                                            Command="{Binding DeleteInvestmentCommand}"
+                                            Style="{StaticResource DangerButton}"
+                                            HorizontalAlignment="Stretch"
+                                            Padding="15,8" />
+
+                                </StackPanel>
+
+                            </Border>
+
+                        </StackPanel>
+
+                    </Grid>
+
+                </ScrollViewer>
+
+            </Border>
+
+        </Grid>
+
+    </Grid>
+
+</UserControl>

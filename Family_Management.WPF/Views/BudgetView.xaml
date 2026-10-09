@@ -1,0 +1,357 @@
+﻿<UserControl x:Class="Family_Management.WPF.Views.BudgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Budgets"
+             xmlns:views="clr-namespace:Family_Management.WPF.Views"
+             x:Name="BudgetViewRoot"
+             d:DataContext="{d:DesignInstance Type=viewmodels:BudgetViewModel,
+                                             IsDesignTimeCreatable=False}"
+             mc:Ignorable="d"
+             d:DesignHeight="750"
+             d:DesignWidth="1200">
+
+    <Grid Margin="15">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- =====================================================
+             CABEÇALHO
+             ===================================================== -->
+
+        <Grid Grid.Row="0"
+              Margin="0,0,0,15">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0"
+                       Text="Gestão de Orçamentos"
+                       Style="{StaticResource TitleStyle}"
+                       VerticalAlignment="Center"
+                       Margin="0" />
+
+            <Button Grid.Column="1"
+                    Content="Novo Orçamento"
+                    Command="{Binding ShowAddBudgetFormCommand}"
+                    Style="{StaticResource PrimaryButton}"
+                    Margin="0,0,10,0"
+                    Padding="15,5"
+                    VerticalAlignment="Center" />
+
+            <Button Grid.Column="2"
+                    Content="Atualizar"
+                    Command="{Binding RefreshCommand}"
+                    Style="{StaticResource DefaultButton}"
+                    Padding="15,5"
+                    VerticalAlignment="Center" />
+
+        </Grid>
+
+        <!-- =====================================================
+             FILTRO E RESUMO
+             ===================================================== -->
+
+        <Border Grid.Row="1"
+                Style="{StaticResource CardBorderStyle}"
+                Padding="15"
+                Margin="0,0,0,15">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="180" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="120" />
+                    <ColumnDefinition Width="30" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Mês -->
+
+                <TextBlock Grid.Column="0"
+                           Text="Mês:"
+                           Style="{StaticResource LabelStyle}"
+                           Margin="0,0,8,0"
+                           VerticalAlignment="Center" />
+
+                <ComboBox Grid.Column="1"
+                          ItemsSource="{Binding Months}"
+                          DisplayMemberPath="Name"
+                          SelectedValuePath="Number"
+                          SelectedValue="{Binding SelectedMonth,
+                                                  Mode=TwoWay,
+                                                  UpdateSourceTrigger=PropertyChanged}"
+                          Style="{StaticResource DefaultComboBoxStyle}"
+                          VerticalAlignment="Center" />
+
+                <!-- Ano -->
+
+                <TextBlock Grid.Column="3"
+                           Text="Ano:"
+                           Style="{StaticResource LabelStyle}"
+                           Margin="0,0,8,0"
+                           VerticalAlignment="Center" />
+
+                <ComboBox Grid.Column="4"
+                          ItemsSource="{Binding Years}"
+                          SelectedItem="{Binding SelectedYear,
+                                                Mode=TwoWay,
+                                                UpdateSourceTrigger=PropertyChanged}"
+                          Style="{StaticResource DefaultComboBoxStyle}"
+                          VerticalAlignment="Center" />
+
+                <!-- Resumo -->
+
+                <StackPanel Grid.Column="6"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+
+                    <!-- Orçamentado -->
+
+                    <StackPanel Margin="0,0,25,0">
+
+                        <TextBlock Text="Orçamentado"
+                                   FontSize="11"
+                                   Foreground="Gray"
+                                   HorizontalAlignment="Center" />
+
+                        <TextBlock Text="{Binding Summary.TotalBudgeted,
+                                                 StringFormat=N2}"
+                                   FontWeight="SemiBold"
+                                   FontSize="16"
+                                   HorizontalAlignment="Center" />
+
+                    </StackPanel>
+
+                    <!-- Gasto -->
+
+                    <StackPanel Margin="0,0,25,0">
+
+                        <TextBlock Text="Gasto"
+                                   FontSize="11"
+                                   Foreground="Gray"
+                                   HorizontalAlignment="Center" />
+
+                        <TextBlock Text="{Binding Summary.TotalSpent,
+                                                 StringFormat=N2}"
+                                   FontWeight="SemiBold"
+                                   FontSize="16"
+                                   HorizontalAlignment="Center" />
+
+                    </StackPanel>
+
+                    <!-- Disponível -->
+
+                    <StackPanel>
+
+                        <TextBlock Text="Disponível"
+                                   FontSize="11"
+                                   Foreground="Gray"
+                                   HorizontalAlignment="Center" />
+
+                        <TextBlock Text="{Binding Summary.RemainingAmount,
+                                                 StringFormat=N2}"
+                                   FontWeight="SemiBold"
+                                   FontSize="16"
+                                   HorizontalAlignment="Center" />
+
+                    </StackPanel>
+
+                </StackPanel>
+
+            </Grid>
+
+        </Border>
+
+        <!-- =====================================================
+             CONTEÚDO
+             ===================================================== -->
+
+        <Grid Grid.Row="2">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="420" />
+            </Grid.ColumnDefinitions>
+
+            <!-- =================================================
+                 LISTA DE ORÇAMENTOS
+                 ================================================= -->
+
+            <Grid Grid.Column="0"
+                  Margin="0,0,15,0">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <DataGrid Grid.Row="0"
+                          ItemsSource="{Binding Budgets}"
+                          SelectedItem="{Binding SelectedBudget,
+                                                 Mode=TwoWay}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource CustomDataGridStyle}">
+
+                    <DataGrid.Columns>
+
+                        <DataGridTextColumn Header="Nome"
+                                            Binding="{Binding Name}"
+                                            Width="2*" />
+
+                        <DataGridTextColumn Header="Orçamentado"
+                                            Binding="{Binding BudgetedAmount,
+                                                              StringFormat=N2}"
+                                            Width="*" />
+
+                        <DataGridTextColumn Header="Gasto"
+                                            Binding="{Binding CurrentSpent,
+                                                              StringFormat=N2}"
+                                            Width="*" />
+
+                        <DataGridTextColumn Header="Disponível"
+                                            Binding="{Binding RemainingAmount,
+                                                              StringFormat=N2}"
+                                            Width="*" />
+
+                        <DataGridTextColumn Header="Moeda"
+                                            Binding="{Binding Currency}"
+                                            Width="Auto" />
+
+                        <!-- Estado do orçamento -->
+
+                        <DataGridTemplateColumn Header="Estado"
+                                                Width="Auto">
+
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+
+                                    <TextBlock HorizontalAlignment="Center"
+                                               FontWeight="SemiBold">
+
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+
+                                                <Setter Property="Text"
+                                                        Value="Dentro do orçamento" />
+
+                                                <Setter Property="Foreground"
+                                                        Value="{StaticResource SecondaryColorBrush}" />
+
+                                                <Style.Triggers>
+
+                                                    <DataTrigger Binding="{Binding IsOverBudget}"
+                                                                 Value="True">
+
+                                                        <Setter Property="Text"
+                                                                Value="Excedido" />
+
+                                                        <Setter Property="Foreground"
+                                                                Value="{StaticResource DangerColorBrush}" />
+
+                                                    </DataTrigger>
+
+                                                </Style.Triggers>
+
+                                            </Style>
+                                        </TextBlock.Style>
+
+                                    </TextBlock>
+
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+
+                        </DataGridTemplateColumn>
+
+                        <!-- Ativo -->
+
+                        <DataGridTemplateColumn Header="Ativo"
+                                                Width="Auto">
+
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+
+                                    <TextBlock HorizontalAlignment="Center">
+
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+
+                                                <Setter Property="Text"
+                                                        Value="Sim" />
+
+                                                <Style.Triggers>
+
+                                                    <DataTrigger Binding="{Binding IsActive}"
+                                                                 Value="False">
+
+                                                        <Setter Property="Text"
+                                                                Value="Não" />
+
+                                                    </DataTrigger>
+
+                                                </Style.Triggers>
+
+                                            </Style>
+                                        </TextBlock.Style>
+
+                                    </TextBlock>
+
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+
+                        </DataGridTemplateColumn>
+
+                    </DataGrid.Columns>
+
+                </DataGrid>
+
+                <!-- Ações -->
+
+                <StackPanel Grid.Row="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Margin="0,10,0,0">
+
+                    <Button Content="Desativar Orçamento"
+                            Command="{Binding DeactivateBudgetCommand}"
+                            Style="{StaticResource DangerButton}"
+                            Padding="15,5" />
+
+                </StackPanel>
+
+            </Grid>
+
+            <!-- =================================================
+                 FORMULÁRIO
+                 ================================================= -->
+
+            <Border Grid.Column="1"
+                    Style="{StaticResource CardBorderStyle}"
+                    Padding="0"
+                    VerticalAlignment="Top">
+
+                <views:BudgetFormView DataContext="{Binding BudgetForm}" />
+
+            </Border>
+
+        </Grid>
+
+    </Grid>
+
+</UserControl>

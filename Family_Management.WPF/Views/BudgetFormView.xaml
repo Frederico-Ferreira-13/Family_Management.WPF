@@ -1,0 +1,215 @@
+﻿<UserControl x:Class="Family_Management.WPF.Views.BudgetFormView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Budgets"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             d:DataContext="{d:DesignInstance Type=viewmodels:BudgetFormViewModel,
+                                             IsDesignTimeCreatable=False}"
+             mc:Ignorable="d"
+             d:DesignHeight="600"
+             d:DesignWidth="800">
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- =====================================================
+             TÍTULO
+             ===================================================== -->
+
+        <TextBlock Grid.Row="0"
+                   Margin="0,0,0,20">
+
+            <TextBlock.Style>
+                <Style TargetType="TextBlock"
+                       BasedOn="{StaticResource HeaderStyle}">
+
+                    <Setter Property="Text"
+                            Value="Criar Orçamento" />
+
+                    <Style.Triggers>
+
+                        <DataTrigger Binding="{Binding IsEditMode}"
+                                     Value="True">
+
+                            <Setter Property="Text"
+                                    Value="Editar Orçamento" />
+
+                        </DataTrigger>
+
+                    </Style.Triggers>
+
+                </Style>
+            </TextBlock.Style>
+
+        </TextBlock>
+
+        <!-- =====================================================
+             FORMULÁRIO
+             ===================================================== -->
+
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto">
+
+            <StackPanel>
+
+                <!-- Nome -->
+
+                <TextBox materialDesign:HintAssist.Hint="Nome do orçamento"
+                         Text="{Binding Form.Name,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,15" />
+
+                <!-- Categoria -->
+
+                <ComboBox materialDesign:HintAssist.Hint="Categoria"
+                          ItemsSource="{Binding AvailableCategories}"
+                          SelectedItem="{Binding SelectedCategory,
+                                                Mode=TwoWay}"
+                          DisplayMemberPath="Name"
+                          Margin="0,0,0,15">
+
+                    <ComboBox.Style>
+                        <Style TargetType="ComboBox"
+                               BasedOn="{StaticResource MaterialDesignFloatingHintComboBox}">
+
+                            <Style.Triggers>
+
+                                <DataTrigger Binding="{Binding IsEditMode}"
+                                             Value="True">
+
+                                    <Setter Property="IsEnabled"
+                                            Value="False" />
+
+                                </DataTrigger>
+
+                            </Style.Triggers>
+
+                        </Style>
+                    </ComboBox.Style>
+
+                </ComboBox>
+
+                <!-- Valor -->
+
+                <TextBox materialDesign:HintAssist.Hint="Valor orçamentado"
+                         Text="{Binding Form.Amount,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                         Margin="0,0,0,15" />
+
+                <!-- Moeda -->
+
+                <ComboBox materialDesign:HintAssist.Hint="Moeda"
+                          ItemsSource="{Binding AvailableCurrencies}"
+                          DisplayMemberPath="Code"
+                          SelectedValuePath="Code"
+                          SelectedValue="{Binding Form.Currency,
+                                                  Mode=TwoWay,
+                                                  UpdateSourceTrigger=PropertyChanged}"
+                          Margin="0,0,0,15">
+
+                    <ComboBox.Style>
+                        <Style TargetType="ComboBox"
+                               BasedOn="{StaticResource MaterialDesignFloatingHintComboBox}">
+
+                            <Style.Triggers>
+
+                                <DataTrigger Binding="{Binding IsEditMode}"
+                                             Value="True">
+
+                                    <Setter Property="IsEnabled"
+                                            Value="False" />
+
+                                </DataTrigger>
+
+                            </Style.Triggers>
+
+                        </Style>
+                    </ComboBox.Style>
+
+                </ComboBox>
+
+                <!-- Período -->
+
+                <Grid Margin="0,0,0,10">
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Column="0"
+                             materialDesign:HintAssist.Hint="Mês"
+                             Text="{Binding Form.Month}"
+                             IsReadOnly="True"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}" />
+
+                    <TextBox Grid.Column="2"
+                             materialDesign:HintAssist.Hint="Ano"
+                             Text="{Binding Form.Year}"
+                             IsReadOnly="True"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}" />
+
+                </Grid>
+
+            </StackPanel>
+
+        </ScrollViewer>
+
+        <!-- =====================================================
+             AÇÕES
+             ===================================================== -->
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,20,0,0">
+
+            <Button Command="{Binding SaveCommand}"
+                    Width="180">
+
+                <Button.Style>
+                    <Style TargetType="Button"
+                           BasedOn="{StaticResource PrimaryButton}">
+
+                        <Setter Property="Content"
+                                Value="Criar Orçamento" />
+
+                        <Style.Triggers>
+
+                            <DataTrigger Binding="{Binding IsEditMode}"
+                                         Value="True">
+
+                                <Setter Property="Content"
+                                        Value="Guardar Alterações" />
+
+                            </DataTrigger>
+
+                        </Style.Triggers>
+
+                    </Style>
+                </Button.Style>
+
+            </Button>
+
+            <Button Content="Cancelar"
+                    Command="{Binding CancelCommand}"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Margin="10,0,0,0" />
+
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>

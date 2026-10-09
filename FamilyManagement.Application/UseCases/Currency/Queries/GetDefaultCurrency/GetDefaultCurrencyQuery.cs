@@ -1,0 +1,3 @@
+namespace FamilyManagement.Application.UseCases.Currencies.Queries.GetDefaultCurrency;
+
+public sealed record GetDefaultCurrencyQuery;

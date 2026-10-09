@@ -1,0 +1,323 @@
+﻿<UserControl x:Class="Family_Management.WPF.Views.CategoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Categories"
+             d:DataContext="{d:DesignInstance Type=viewmodels:CategoryViewModel}"
+             mc:Ignorable="d"
+             d:DesignHeight="700"
+             d:DesignWidth="1100">
+
+    <Grid Margin="15">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- =====================================================
+             FORMULÁRIO
+             ===================================================== -->
+        <Border Grid.Row="0"
+                Style="{StaticResource CardBorderStyle}"
+                Margin="0,0,0,20"
+                Padding="25">
+
+            <StackPanel>
+
+                <!-- Cabeçalho -->
+                <Grid Margin="0,0,0,15">
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0">
+
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock"
+                                   BasedOn="{StaticResource TitleStyle}">
+
+                                <Setter Property="Text"
+                                        Value="Nova Categoria" />
+
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEditMode}"
+                                                 Value="True">
+                                        <Setter Property="Text"
+                                                Value="Editar Categoria" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+
+                            </Style>
+                        </TextBlock.Style>
+
+                    </TextBlock>
+
+                    <Button Grid.Column="1"
+                            Content="Atualizar"
+                            Command="{Binding RefreshCommand}"
+                            Style="{StaticResource DefaultButton}"
+                            Padding="15,5" />
+
+                </Grid>
+
+                <!-- Campos -->
+                <Grid>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="20" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Coluna esquerda -->
+                    <StackPanel Grid.Column="0">
+
+                        <TextBlock Text="Nome:"
+                                   Style="{StaticResource LabelStyle}" />
+
+                        <TextBox Text="{Binding Form.Name,
+                                               Mode=TwoWay,
+                                               UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource ErrorTextBoxStyle}" />
+
+                        <TextBlock Text="Tipo:"
+                                   Style="{StaticResource LabelStyle}" />
+
+                        <ComboBox ItemsSource="{Binding AvailableCategoryTypes}"
+                                  SelectedItem="{Binding SelectedType,
+                                                        Mode=TwoWay,
+                                                        UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource ErrorComboBoxStyle}" />
+
+                        <TextBlock Text="Âmbito:"
+                                   Style="{StaticResource LabelStyle}" />
+
+                        <ComboBox ItemsSource="{Binding AvailableScopes}"
+                                  SelectedItem="{Binding SelectedScope,
+                                                        Mode=TwoWay,
+                                                        UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource ErrorComboBoxStyle}">
+
+                            <ComboBox.ItemContainerStyle>
+                                <Style TargetType="ComboBoxItem">
+
+                                    <Style.Triggers>
+
+                                        <DataTrigger Binding="{Binding}"
+                                                     Value="Family">
+
+                                            <Setter Property="IsEnabled"
+                                                    Value="{Binding DataContext.CanSelectFamilyScope,
+                                                                    RelativeSource={RelativeSource AncestorType=UserControl}}" />
+
+                                        </DataTrigger>
+
+                                    </Style.Triggers>
+
+                                </Style>
+                            </ComboBox.ItemContainerStyle>
+
+                        </ComboBox>
+
+                    </StackPanel>
+
+                    <!-- Coluna direita -->
+                    <StackPanel Grid.Column="2">
+
+                        <TextBlock Text="Descrição:"
+                                   Style="{StaticResource LabelStyle}" />
+
+                        <TextBox Text="{Binding Form.Description,
+                                               Mode=TwoWay,
+                                               UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource DefaultTextBoxStyle}"
+                                 Height="80"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto" />
+
+                        <TextBlock Text="Categoria Pai:"
+                                   Style="{StaticResource LabelStyle}" />
+
+                        <ComboBox ItemsSource="{Binding ParentCategories}"
+                                  SelectedItem="{Binding SelectedParentCategory,
+                                                        Mode=TwoWay,
+                                                        UpdateSourceTrigger=PropertyChanged}"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource ErrorComboBoxStyle}" />
+
+                    </StackPanel>
+
+                </Grid>
+
+                <!-- Ações -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Margin="0,25,0,0">
+
+                    <Button Command="{Binding SaveCategoryCommand}"
+                            Margin="5,0">
+
+                        <Button.Style>
+                            <Style TargetType="Button"
+                                   BasedOn="{StaticResource PrimaryButton}">
+
+                                <Setter Property="Content"
+                                        Value="Adicionar" />
+
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEditMode}"
+                                                 Value="True">
+                                        <Setter Property="Content"
+                                                Value="Guardar Alterações" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+
+                            </Style>
+                        </Button.Style>
+
+                    </Button>
+
+                    <Button Content="Limpar / Cancelar"
+                            Command="{Binding ClearFormCommand}"
+                            Style="{StaticResource DefaultButton}"
+                            Margin="5,0" />
+
+                    <Button Content="Desativar"
+                            Command="{Binding DeactivateCategoryCommand}"
+                            Margin="5,0">
+
+                        <Button.Style>
+                            <Style TargetType="Button"
+                                   BasedOn="{StaticResource DangerButton}">
+
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEditMode}"
+                                                 Value="True">
+                                        <Setter Property="Visibility"
+                                                Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+
+                            </Style>
+                        </Button.Style>
+
+                    </Button>
+
+                </StackPanel>
+
+            </StackPanel>
+
+        </Border>
+
+        <!-- =====================================================
+             LISTA
+             ===================================================== -->
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding Categories}"
+                  SelectedItem="{Binding SelectedCategory,
+                                        Mode=TwoWay}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  SelectionUnit="FullRow"
+                  HeadersVisibility="Column"
+                  Style="{StaticResource CustomDataGridStyle}">
+
+            <DataGrid.Columns>
+
+                <DataGridTextColumn Header="Nome"
+                                    Binding="{Binding Name}"
+                                    Width="*" />
+
+                <DataGridTextColumn Header="Descrição"
+                                    Binding="{Binding Description}"
+                                    Width="2*" />
+
+                <DataGridTextColumn Header="Tipo"
+                                    Binding="{Binding TypeDisplay}"
+                                    Width="*" />
+
+                <DataGridTextColumn Header="Categoria Pai"
+                                    Binding="{Binding ParentCategoryName}"
+                                    Width="*" />
+
+                <DataGridTemplateColumn Header="Âmbito"
+                                        Width="Auto">
+
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+
+                            <TextBlock>
+
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+
+                                        <Setter Property="Text"
+                                                Value="Pessoal" />
+
+                                        <Style.Triggers>
+
+                                            <DataTrigger Binding="{Binding IsGlobal}"
+                                                         Value="True">
+                                                <Setter Property="Text"
+                                                        Value="Global" />
+                                            </DataTrigger>
+
+                                            <DataTrigger Binding="{Binding FamilyId,
+                                                                          Converter={StaticResource HasIdConverter}}"
+                                                         Value="True">
+                                                <Setter Property="Text"
+                                                        Value="Família" />
+                                            </DataTrigger>
+
+                                        </Style.Triggers>
+
+                                    </Style>
+                                </TextBlock.Style>
+
+                            </TextBlock>
+
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Estado"
+                                        Width="Auto">
+
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+
+                            <TextBlock>
+
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+
+                                        <Setter Property="Text"
+                                                Value="Ativa" />
+
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsActive}"
+                                                         Value="False">
+                                                <Setter Property="Text"
+                                                        Value="Inativa" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>     
+                                    </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

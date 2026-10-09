@@ -1,0 +1,84 @@
+# ==========================================
+# FamilyManagement - .NET / WPF / Visual Studio
+# ==========================================
+
+# Compilação
+[Bb]in/
+[Oo]bj/
+artifacts/
+Debug/
+Release/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider / ReSharper
+.idea/
+_ReSharper*/
+*.DotSettings.user
+
+# Testes e cobertura
+TestResults/
+coverage/
+coverage-report/
+*.coverage
+*.coveragexml
+
+# Pacotes locais
+packages/
+*.nupkg
+*.snupkg
+
+# ==========================================
+# SQLite - Dados locais
+# ==========================================
+
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite3-shm
+*.sqlite3-wal
+
+# ==========================================
+# Segredos e configurações privadas
+# ==========================================
+
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/appsettings.Production.json
+**/secrets.json
+.env
+.env.*
+!.env.example
+
+# Certificados e chaves privadas
+*.pfx
+*.p12
+*.pem
+*.key
+
+# ==========================================
+# Logs e ficheiros temporários
+# ==========================================
+
+*.log
+logs/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Sistema operativo
+Thumbs.db
+Desktop.ini
+.DS_Store

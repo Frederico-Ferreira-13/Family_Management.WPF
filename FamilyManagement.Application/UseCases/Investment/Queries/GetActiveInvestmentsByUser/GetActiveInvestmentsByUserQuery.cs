@@ -1,0 +1,3 @@
+namespace FamilyManagement.Application.UseCases.Investments.Queries.GetActiveInvestmentsByUser;
+
+public sealed record GetActiveInvestmentsByUserQuery(Guid UserId);
