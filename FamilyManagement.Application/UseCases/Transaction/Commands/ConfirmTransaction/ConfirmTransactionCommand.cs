@@ -1,3 +1,5 @@
 namespace FamilyManagement.Application.UseCases.Transactions.Commands.ConfirmTransaction;
 
-public sealed record ConfirmTransactionCommand(Guid TransactionId);
+public sealed record ConfirmTransactionCommand(
+    Guid TransactionId,
+    Guid UserId);

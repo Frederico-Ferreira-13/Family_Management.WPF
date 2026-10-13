@@ -117,10 +117,12 @@
                                    Style="{StaticResource TitleStyle}" />
 
                         <TextBlock Grid.Column="1"
-                                   VerticalAlignment="Center"
-                                   Foreground="#7F8C8D">
+                                    VerticalAlignment="Center"
+                                    Foreground="#7F8C8D">
 
-                            <Run Text="{Binding Investments.Count}" />
+                            <Run Text="{Binding Investments.Count,
+                                                    Mode=OneWay}" />
+
                             <Run Text=" investimento(s)" />
 
                         </TextBlock>
@@ -474,7 +476,7 @@
                             <!-- NOME -->
 
                             <TextBlock Text="Nome"
-                                       Style="{StaticResource FieldLabelStyle}" />
+                                       Style="{StaticResource FieldTextBlockStyle}" />
 
                             <TextBox Text="{Binding EditInvestmentName,
                                                    Mode=TwoWay,
@@ -485,7 +487,7 @@
                             <!-- TIPO -->
 
                             <TextBlock Text="Tipo"
-                                       Style="{StaticResource FieldLabelStyle}"
+                                       Style="{StaticResource FieldTextBlockStyle}"
                                        Margin="0,15,0,5" />
 
                             <ComboBox ItemsSource="{Binding InvestmentTypes}"
@@ -496,7 +498,7 @@
                             <!-- CONTA -->
 
                             <TextBlock Text="Conta Associada"
-                                       Style="{StaticResource FieldLabelStyle}"
+                                       Style="{StaticResource FieldTextBlockStyle}"
                                        Margin="0,15,0,5" />
 
                             <ComboBox ItemsSource="{Binding EditAccounts}"
@@ -535,7 +537,7 @@
                                        Margin="0,0,0,12" />
 
                             <TextBlock Text="Novo Valor Atual"
-                                       Style="{StaticResource FieldLabelStyle}" />
+                                       Style="{StaticResource FieldTextBlockStyle}" />
 
                             <Grid>
 

@@ -17,6 +17,8 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
 
     IGoalRepository Goals { get; }
 
+    IGoalContributionImpactRepository GoalContributionImpacts { get; }
+
     IInvestmentRepository Investments { get; }
 
     IRecurringTransactionRepository RecurringTransactions { get; }
@@ -32,4 +34,7 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     Task<IDbTransaction> BeginTransactionAsync();
 
     Task<int> CompleteAsync();
+
+    // Desassocia entidades após uma operação revertida.
+    void ClearTrackedChanges();
 }

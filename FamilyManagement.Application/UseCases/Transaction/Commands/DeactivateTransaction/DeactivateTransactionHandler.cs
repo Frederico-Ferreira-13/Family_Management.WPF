@@ -14,21 +14,69 @@ public sealed class DeactivateTransactionHandler
         IUnitOfWork unitOfWork,
         ITransactionImpactService impactService)
     {
-        _unitOfWork = unitOfWork;
-        _impactService = impactService;
+        _unitOfWork = unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
+
+        _impactService = impactService
+            ?? throw new ArgumentNullException(nameof(impactService));
     }
 
     public async Task<Result> HandleAsync(
         DeactivateTransactionCommand command)
     {
+        if (command.TransactionId == Guid.Empty)
+            return Error.Validation("A transação é obrigatória.");
+
+        if (command.UserId == Guid.Empty)
+            return Error.Validation("O utilizador é obrigatório.");
+
+        var user = await _unitOfWork.Users
+            .GetByIdAsync(command.UserId);
+
+        if (user is null || !user.IsActive)
+        {
+            return Error.NotFound(
+                "User.NotFound",
+                "Utilizador não encontrado ou inativo.");
+        }
+
         var transaction = await _unitOfWork.Transactions
             .GetByIdAsync(command.TransactionId);
 
         if (transaction is null)
+        {
             return Error.NotFound(
                 "Transaction.NotFound",
                 "Transação não encontrada.");
+        }
 
+        if (transaction.FamilyId.HasValue)
+        {
+            if (user.FamilyId != transaction.FamilyId)
+            {
+                return Error.BusinessRule(
+                    "Transaction.AccessDenied",
+                    "Não tem autorização para desativar esta transação.");
+            }
+
+            var family = await _unitOfWork.Families
+                .GetByIdAsync(transaction.FamilyId.Value);
+
+            if (family is null || !family.IsActive)
+            {
+                return Error.BusinessRule(
+                    "Transaction.FamilyUnavailable",
+                    "A família não existe ou está inativa.");
+            }
+        }
+        else if (transaction.UserId != command.UserId)
+        {
+            return Error.BusinessRule(
+                "Transaction.AccessDenied",
+                "Não tem autorização para desativar esta transação.");
+        }
+
+        // Evita reverter duas vezes os mesmos impactos.
         if (!transaction.IsActive)
             return Result.Success();
 
@@ -39,12 +87,13 @@ public sealed class DeactivateTransactionHandler
         {
             if (transaction.IsConfirmed)
             {
-                var revert = await _impactService.RevertAsync(transaction);
+                var revertResult =
+                    await _impactService.RevertAsync(transaction);
 
-                if (revert.IsFailure)
+                if (revertResult.IsFailure)
                 {
-                    await dbTransaction.RollbackAsync();
-                    return revert.Error;
+                    await RollbackAndClearAsync(dbTransaction);
+                    return revertResult.Error;
                 }
             }
 
@@ -59,8 +108,23 @@ public sealed class DeactivateTransactionHandler
         }
         catch
         {
-            await dbTransaction.RollbackAsync();
+            await RollbackAndClearAsync(dbTransaction);
             throw;
+        }
+    }
+
+    private async Task RollbackAndClearAsync(
+        IDbTransaction dbTransaction)
+    {
+        try
+        {
+            await dbTransaction.RollbackAsync();
+        }
+        finally
+        {
+            // Um rollback de BD não restaura as entidades rastreadas.
+            // Este UnitOfWork não deve voltar a usar referências antigas.
+            _unitOfWork.ClearTrackedChanges();
         }
     }
 }

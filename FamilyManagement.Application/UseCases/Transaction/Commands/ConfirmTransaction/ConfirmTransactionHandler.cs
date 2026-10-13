@@ -16,43 +16,96 @@ public sealed class ConfirmTransactionHandler
         IUnitOfWork unitOfWork,
         ITransactionImpactService impactService)
     {
-        _unitOfWork = unitOfWork;
-        _impactService = impactService;
+        _unitOfWork = unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
+
+        _impactService = impactService
+            ?? throw new ArgumentNullException(nameof(impactService));
     }
 
     public async Task<Result<TransactionDTO>> HandleAsync(
         ConfirmTransactionCommand command)
     {
+        if (command.TransactionId == Guid.Empty)
+            return Error.Validation("A transação é obrigatória.");
+
+        if (command.UserId == Guid.Empty)
+            return Error.Validation("O utilizador é obrigatório.");
+
+        var user = await _unitOfWork.Users
+            .GetByIdAsync(command.UserId);
+
+        if (user is null || !user.IsActive)
+        {
+            return Error.NotFound(
+                "User.NotFound",
+                "Utilizador não encontrado ou inativo.");
+        }
+
         var transaction = await _unitOfWork.Transactions
             .GetByIdAsync(command.TransactionId);
 
-        if (transaction is null)
+        if (transaction is null || !transaction.IsActive)
+        {
             return Error.NotFound(
                 "Transaction.NotFound",
-                "Transação não encontrada.");
+                "Transação não encontrada ou inativa.");
+        }
 
+        if (transaction.FamilyId.HasValue)
+        {
+            if (user.FamilyId != transaction.FamilyId)
+            {
+                return Error.BusinessRule(
+                    "Transaction.AccessDenied",
+                    "Não tem autorização para confirmar esta transação.");
+            }
+
+            var family = await _unitOfWork.Families
+                .GetByIdAsync(transaction.FamilyId.Value);
+
+            if (family is null || !family.IsActive)
+            {
+                return Error.BusinessRule(
+                    "Transaction.FamilyUnavailable",
+                    "A família não existe ou está inativa.");
+            }
+        }
+        else if (transaction.UserId != command.UserId)
+        {
+            return Error.BusinessRule(
+                "Transaction.AccessDenied",
+                "Não tem autorização para confirmar esta transação.");
+        }
+
+        // Uma transação já confirmada não deve
+        // voltar a produzir impactos financeiros.
         if (transaction.IsConfirmed)
-            return TransactionMapper.ToDTO(transaction);
+        {
+            return Result<TransactionDTO>.Success(
+                TransactionMapper.ToDTO(transaction));
+        }
 
         using var dbTransaction =
             await _unitOfWork.BeginTransactionAsync();
 
         try
         {
-            var confirm = transaction.Confirm();
+            var confirmResult = transaction.Confirm();
 
-            if (confirm.IsFailure)
+            if (confirmResult.IsFailure)
             {
-                await dbTransaction.RollbackAsync();
-                return confirm.Error;
+                await RollbackAndClearAsync(dbTransaction);
+                return confirmResult.Error;
             }
 
-            var impact = await _impactService.ApplyAsync(transaction);
+            var impactResult =
+                await _impactService.ApplyAsync(transaction);
 
-            if (impact.IsFailure)
+            if (impactResult.IsFailure)
             {
-                await dbTransaction.RollbackAsync();
-                return impact.Error;
+                await RollbackAndClearAsync(dbTransaction);
+                return impactResult.Error;
             }
 
             _unitOfWork.Transactions.Update(transaction);
@@ -60,12 +113,28 @@ public sealed class ConfirmTransactionHandler
             await _unitOfWork.CompleteAsync();
             await dbTransaction.CommitAsync();
 
-            return TransactionMapper.ToDTO(transaction);
+            return Result<TransactionDTO>.Success(
+                TransactionMapper.ToDTO(transaction));
         }
         catch
         {
-            await dbTransaction.RollbackAsync();
+            await RollbackAndClearAsync(dbTransaction);
             throw;
+        }
+    }
+
+    private async Task RollbackAndClearAsync(
+        IDbTransaction dbTransaction)
+    {
+        try
+        {
+            await dbTransaction.RollbackAsync();
+        }
+        finally
+        {
+            // Um rollback de BD não restaura as entidades rastreadas.
+            // Este UnitOfWork não deve voltar a usar referências antigas.
+            _unitOfWork.ClearTrackedChanges();
         }
     }
 }

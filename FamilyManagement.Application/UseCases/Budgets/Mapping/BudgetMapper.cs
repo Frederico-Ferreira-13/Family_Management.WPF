@@ -1,3 +1,4 @@
+
 using FamilyManagement.Application.UseCases.Budgets.DTOs;
 using FamilyManagement.Domain.Model;
 
@@ -23,6 +24,7 @@ public static class BudgetMapper
             IsOverBudget: budget.IsOverBudget,
             IsActive: budget.IsActive,
             CreatedAt: budget.CreatedAt,
-            UpdatedAt: budget.UpdatedAt);
+            UpdatedAt: budget.UpdatedAt,
+            FamilyId: budget.FamilyId);
     }
 }

@@ -1,4 +1,5 @@
-﻿using FamilyManagement.Domain.Model;
+﻿
+using FamilyManagement.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -52,6 +53,12 @@ public sealed class TransactionConfiguration
         builder.Property(t => t.UserId)
             .IsRequired();
 
+        // Âmbito familiar opcional.
+        // null = movimento pessoal
+        // valor = movimento familiar
+        builder.Property(t => t.FamilyId)
+            .IsRequired(false);
+
         builder.Property(t => t.AccountId)
             .IsRequired();
 
@@ -74,6 +81,15 @@ public sealed class TransactionConfiguration
         builder.HasOne(t => t.User)
             .WithMany(u => u.Transactions)
             .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Family -> Transactions
+        // Preserva a associação histórica do movimento
+        // à família, impedindo a eliminação física
+        // da família enquanto existirem transações associadas.
+        builder.HasOne(t => t.Family)
+            .WithMany()
+            .HasForeignKey(t => t.FamilyId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Account -> Transactions
@@ -112,12 +128,17 @@ public sealed class TransactionConfiguration
             .HasForeignKey(t => t.TargetAccountId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Índices
+        // Índices existentes
         builder.HasIndex(t => t.Date);
+
         builder.HasIndex(t => t.UserId);
+
         builder.HasIndex(t => t.CategoryId);
+
         builder.HasIndex(t => t.BudgetId);
+
         builder.HasIndex(t => t.GoalId);
+
         builder.HasIndex(t => t.RecurringTransactionId);
 
         // Extrato de uma conta.
@@ -127,9 +148,17 @@ public sealed class TransactionConfiguration
             t.Date
         });
 
+        // Histórico pessoal por utilizador e data.
         builder.HasIndex(t => new
         {
             t.UserId,
+            t.Date
+        });
+
+        // Histórico familiar por família e data.
+        builder.HasIndex(t => new
+        {
+            t.FamilyId,
             t.Date
         });
 

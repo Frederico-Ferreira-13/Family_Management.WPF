@@ -96,7 +96,7 @@
                         <!-- DESCRIÇÃO -->
 
                         <TextBlock Text="Descrição"
-                                   Style="{StaticResource FieldLabelStyle}" />
+                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                         <TextBox Text="{Binding NewDescription,
                                               Mode=TwoWay,
@@ -108,7 +108,7 @@
                         <!-- VALOR -->
 
                         <TextBlock Text="Valor"
-                                   Style="{StaticResource FieldLabelStyle}"
+                                   Style="{StaticResource FieldTextBlockStyle}"
                                    Margin="0,12,0,5" />
 
                         <TextBox Text="{Binding NewAmount,
@@ -121,7 +121,7 @@
                         <!-- TIPO -->
 
                         <TextBlock Text="Tipo"
-                                   Style="{StaticResource FieldLabelStyle}"
+                                   Style="{StaticResource FieldTextBlockStyle}"
                                    Margin="0,12,0,5" />
 
                         <ComboBox ItemsSource="{Binding TransactionTypes}"
@@ -132,7 +132,7 @@
                         <!-- FREQUÊNCIA -->
 
                         <TextBlock Text="Frequência"
-                                   Style="{StaticResource FieldLabelStyle}"
+                                   Style="{StaticResource FieldTextBlockStyle}"
                                    Margin="0,12,0,5" />
 
                         <ComboBox ItemsSource="{Binding Frequencies}"
@@ -143,7 +143,7 @@
                         <!-- CONTA -->
 
                         <TextBlock Text="Conta"
-                                   Style="{StaticResource FieldLabelStyle}"
+                                   Style="{StaticResource FieldTextBlockStyle}"
                                    Margin="0,12,0,5" />
 
                         <ComboBox ItemsSource="{Binding Accounts}"
@@ -157,7 +157,7 @@
                         <!-- CATEGORIA -->
 
                         <TextBlock Text="Categoria"
-                                   Style="{StaticResource FieldLabelStyle}"
+                                   Style="{StaticResource FieldTextBlockStyle}"
                                    Margin="0,12,0,5" />
 
                         <ComboBox ItemsSource="{Binding Categories}"
@@ -171,7 +171,7 @@
                         <!-- DATA INÍCIO -->
 
                         <TextBlock Text="Data de início"
-                                   Style="{StaticResource FieldLabelStyle}"
+                                   Style="{StaticResource FieldTextBlockStyle}"
                                    Margin="0,12,0,5" />
 
                         <DatePicker SelectedDate="{Binding NewStartDate,
@@ -181,7 +181,7 @@
                         <!-- DATA FIM -->
 
                         <TextBlock Text="Data de fim (opcional)"
-                                   Style="{StaticResource FieldLabelStyle}"
+                                    Style="{StaticResource FieldTextBlockStyle}"
                                    Margin="0,12,0,5" />
 
                         <DatePicker SelectedDate="{Binding NewEndDate,
@@ -412,7 +412,7 @@
                                     <StackPanel Grid.Column="0">
 
                                         <TextBlock Text="Descrição"
-                                                   Style="{StaticResource FieldLabelStyle}" />
+                                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                                         <TextBox Text="{Binding EditDescription,
                                                               Mode=TwoWay,
@@ -422,7 +422,7 @@
                                                  Style="{StaticResource ErrorTextBoxStyle}" />
 
                                         <TextBlock Text="Valor"
-                                                   Style="{StaticResource FieldLabelStyle}"
+                                                   Style="{StaticResource FieldTextBlockStyle}"
                                                    Margin="0,10,0,5" />
 
                                         <TextBox Text="{Binding EditAmount,
@@ -433,7 +433,7 @@
                                                  Style="{StaticResource ErrorTextBoxStyle}" />
 
                                         <TextBlock Text="Tipo"
-                                                   Style="{StaticResource FieldLabelStyle}"
+                                                   Style="{StaticResource FieldTextBlockStyle}"
                                                    Margin="0,10,0,5" />
 
                                         <ComboBox ItemsSource="{Binding TransactionTypes}"
@@ -442,7 +442,7 @@
                                                   Style="{StaticResource DefaultComboBoxStyle}" />
 
                                         <TextBlock Text="Frequência"
-                                                   Style="{StaticResource FieldLabelStyle}"
+                                                   Style="{StaticResource FieldTextBlockStyle}"
                                                    Margin="0,10,0,5" />
 
                                         <ComboBox ItemsSource="{Binding Frequencies}"
@@ -457,7 +457,7 @@
                                     <StackPanel Grid.Column="2">
 
                                         <TextBlock Text="Conta"
-                                                   Style="{StaticResource FieldLabelStyle}" />
+                                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                                         <ComboBox ItemsSource="{Binding Accounts}"
                                                   SelectedItem="{Binding EditSelectedAccount,
@@ -468,7 +468,7 @@
                                                   Style="{StaticResource ErrorComboBoxStyle}" />
 
                                         <TextBlock Text="Categoria"
-                                                   Style="{StaticResource FieldLabelStyle}"
+                                                   Style="{StaticResource FieldTextBlockStyle}"
                                                    Margin="0,10,0,5" />
 
                                         <ComboBox ItemsSource="{Binding Categories}"
@@ -480,16 +480,17 @@
                                                   Style="{StaticResource ErrorComboBoxStyle}" />
 
                                         <TextBlock Text="Data de início"
-                                                   Style="{StaticResource FieldLabelStyle}"
-                                                   Margin="0,10,0,5" />
+                                                    Style="{StaticResource FieldTextBlockStyle}"
+                                                    Margin="0,10,0,5" />
 
-                                        <TextBox Text="{Binding EditStartDate,
-                                                              StringFormat=dd/MM/yyyy}"
-                                                 IsReadOnly="True"
-                                                 Style="{StaticResource DefaultTextBoxStyle}" />
+                                            <TextBox Text="{Binding EditStartDate,
+                                                                    Mode=OneWay,
+                                                                    StringFormat={}{0:dd/MM/yyyy}}"
+                                                    IsReadOnly="True"
+                                                    Style="{StaticResource DefaultTextBoxStyle}" />
 
                                         <TextBlock Text="Data de fim (opcional)"
-                                                   Style="{StaticResource FieldLabelStyle}"
+                                                   Style="{StaticResource FieldTextBlockStyle}"
                                                    Margin="0,10,0,5" />
 
                                         <DatePicker SelectedDate="{Binding EditEndDate,

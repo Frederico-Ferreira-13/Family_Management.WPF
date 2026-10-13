@@ -68,7 +68,7 @@
                 <!-- NOME -->
 
                 <TextBlock Text="Nome do Investimento"
-                           Style="{StaticResource FieldLabelStyle}" />
+                            Style="{StaticResource FieldTextBlockStyle}" />
 
                 <TextBox Text="{Binding Name,
                                        Mode=TwoWay,
@@ -85,8 +85,8 @@
                 <!-- TIPO -->
 
                 <TextBlock Text="Tipo de Investimento"
-                           Style="{StaticResource FieldLabelStyle}"
-                           Margin="0,18,0,5" />
+                            Style="{StaticResource FieldTextBlockStyle}"
+                            Margin="0,18,0,5" />
 
                 <ComboBox ItemsSource="{Binding InvestmentTypes}"
                           SelectedItem="{Binding Type,
@@ -96,8 +96,8 @@
                 <!-- VALOR INICIAL -->
 
                 <TextBlock Text="Valor Inicial"
-                           Style="{StaticResource FieldLabelStyle}"
-                           Margin="0,18,0,5" />
+                            Style="{StaticResource FieldTextBlockStyle}"
+                            Margin="0,18,0,5" />
 
                 <TextBox Text="{Binding InitialAmount,
                                        Mode=TwoWay,
@@ -107,7 +107,7 @@
                 <!-- MOEDA -->
 
                 <TextBlock Text="Moeda"
-                           Style="{StaticResource FieldLabelStyle}"
+                           Style="{StaticResource FieldTextBlockStyle}"
                            Margin="0,18,0,5" />
 
                 <ComboBox ItemsSource="{Binding Currencies}"
@@ -119,7 +119,7 @@
                 <!-- CONTA -->
 
                 <TextBlock Text="Conta Associada"
-                           Style="{StaticResource FieldLabelStyle}"
+                           Style="{StaticResource FieldTextBlockStyle}"
                            Margin="0,18,0,5" />
 
                 <ComboBox ItemsSource="{Binding Accounts}"
@@ -138,7 +138,7 @@
                 <!-- DATA -->
 
                 <TextBlock Text="Data de Compra"
-                           Style="{StaticResource FieldLabelStyle}"
+                           Style="{StaticResource FieldTextBlockStyle}"
                            Margin="0,18,0,5" />
 
                 <DatePicker SelectedDate="{Binding PurchaseDate,

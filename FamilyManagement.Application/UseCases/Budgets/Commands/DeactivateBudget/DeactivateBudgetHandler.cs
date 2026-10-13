@@ -10,13 +10,36 @@ public sealed class DeactivateBudgetHandler
 
     public DeactivateBudgetHandler(IUnitOfWork unitOfWork)
     {
-        _unitOfWork = unitOfWork;
+        _unitOfWork = unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
     public async Task<Result> HandleAsync(
         DeactivateBudgetCommand command,
         CancellationToken cancellationToken = default)
     {
+        if (command.BudgetId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador do orçamento é obrigatório.");
+        }
+
+        if (command.UserId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O utilizador é obrigatório.");
+        }
+
+        var user = await _unitOfWork.Users
+            .GetByIdAsync(command.UserId);
+
+        if (user is null || !user.IsActive)
+        {
+            return Error.NotFound(
+                "User.NotFound",
+                "Utilizador não encontrado ou inativo.");
+        }
+
         var budget = await _unitOfWork.Budgets
             .GetByIdAsync(command.BudgetId);
 
@@ -27,6 +50,35 @@ public sealed class DeactivateBudgetHandler
                 "Orçamento não encontrado.");
         }
 
+        if (budget.FamilyId.HasValue)
+        {
+            if (user.FamilyId != budget.FamilyId)
+            {
+                return Error.BusinessRule(
+                    "Budget.AccessDenied",
+                    "Não tem autorização para desativar este orçamento.");
+            }
+
+            var family = await _unitOfWork.Families
+                .GetByIdAsync(budget.FamilyId.Value);
+
+            if (family is null || !family.IsActive)
+            {
+                return Error.BusinessRule(
+                    "Budget.FamilyUnavailable",
+                    "A família não existe ou está inativa.");
+            }
+        }
+        else
+        {
+            if (budget.UserId != command.UserId)
+            {
+                return Error.BusinessRule(
+                    "Budget.AccessDenied",
+                    "Não tem autorização para desativar este orçamento.");
+            }
+        }
+        
         if (!budget.IsActive)
         {
             return Result.Success();

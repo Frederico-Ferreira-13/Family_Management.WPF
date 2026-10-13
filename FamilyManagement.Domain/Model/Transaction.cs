@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using FamilyManagement.Domain.Common;
 using FamilyManagement.Domain.Enums;
 using FamilyManagement.Domain.Errors;
@@ -13,25 +14,41 @@ public class Transaction : BaseEntity
     public Money Amount { get; private set; } = null!;
 
     public string Description { get; private set; } = string.Empty;
+
     public string? Notes { get; private set; }
 
     public TransactionType Type { get; private set; }
 
     public bool IsConfirmed { get; private set; }
+
     public bool IsRecurringGenerated { get; private set; }
 
     public Guid UserId { get; private set; }
+
+    public Guid? FamilyId { get; private set; }
+
+    public bool IsFamilyTransaction => FamilyId.HasValue;
+
     public Guid AccountId { get; private set; }
 
     public Guid? CategoryId { get; private set; }
+
     public Guid? TargetAccountId { get; private set; }
+
     public Guid? RecurringTransactionId { get; private set; }
+
     public Guid? BudgetId { get; private set; }
+
     public Guid? GoalId { get; private set; }
 
     public virtual User? User { get; private set; }
+
+    public virtual Family? Family { get; private set; }
+
     public virtual Account? Account { get; private set; }
+
     public virtual Category? Category { get; private set; }
+
     public virtual Account? TargetAccount { get; private set; }
 
     public virtual RecurringTransaction? RecurringTransaction
@@ -41,6 +58,7 @@ public class Transaction : BaseEntity
     }
 
     public virtual Budget? Budget { get; private set; }
+
     public virtual Goal? Goal { get; private set; }
 
     private Transaction()
@@ -53,6 +71,7 @@ public class Transaction : BaseEntity
         string description,
         TransactionType type,
         Guid userId,
+        Guid? familyId,
         Guid accountId,
         Guid? categoryId,
         Guid? targetAccountId,
@@ -71,7 +90,9 @@ public class Transaction : BaseEntity
         Type = type;
 
         UserId = userId;
+        FamilyId = familyId;
         AccountId = accountId;
+
         CategoryId = categoryId;
         TargetAccountId = targetAccountId;
         BudgetId = budgetId;
@@ -95,7 +116,8 @@ public class Transaction : BaseEntity
         Guid? goalId = null,
         bool isConfirmed = true,
         bool isRecurringGenerated = false,
-        DateTime? referenceDate = null)
+        DateTime? referenceDate = null,
+        Guid? familyId = null)
     {
         var validation = ValidateBase(
             date,
@@ -117,7 +139,10 @@ public class Transaction : BaseEntity
         }
 
         if (categoryId == Guid.Empty)
-            return Error.Validation("A categoria é obrigatória.");
+        {
+            return Error.Validation(
+                "A categoria é obrigatória.");
+        }
 
         if (budgetId.HasValue &&
             budgetId.Value == Guid.Empty)
@@ -139,12 +164,19 @@ public class Transaction : BaseEntity
                 "Utilize CreateFromRecurring para criar um movimento de uma recorrência.");
         }
 
+        if (familyId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da família é inválido.");
+        }
+
         return new Transaction(
             date,
             amount,
             description,
             type,
             userId,
+            familyId,
             accountId,
             categoryId: categoryId,
             targetAccountId: null,
@@ -164,7 +196,8 @@ public class Transaction : BaseEntity
         Guid targetAccountId,
         string? notes = null,
         bool isConfirmed = true,
-        DateTime? referenceDate = null)
+        DateTime? referenceDate = null,
+        Guid? familyId = null)
     {
         var validation = ValidateBase(
             date,
@@ -190,12 +223,19 @@ public class Transaction : BaseEntity
                 "As contas de origem e destino devem ser diferentes.");
         }
 
+        if (familyId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da família é inválido.");
+        }
+
         return new Transaction(
             date,
             amount,
             description,
             TransactionType.Transfer,
             userId,
+            familyId,
             sourceAccountId,
             categoryId: null,
             targetAccountId: targetAccountId,
@@ -216,7 +256,8 @@ public class Transaction : BaseEntity
         Guid categoryId,
         Guid recurringTransactionId,
         bool isConfirmed = false,
-        DateTime? referenceDate = null)
+        DateTime? referenceDate = null,
+        Guid? familyId = null)
     {
         var validation = ValidateBase(
             date,
@@ -238,12 +279,21 @@ public class Transaction : BaseEntity
         }
 
         if (categoryId == Guid.Empty)
-            return Error.Validation("A categoria é obrigatória.");
+        {
+            return Error.Validation(
+                "A categoria é obrigatória.");
+        }
 
         if (recurringTransactionId == Guid.Empty)
         {
             return Error.Validation(
                 "A identificação da recorrência é obrigatória.");
+        }
+
+        if (familyId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da família é inválido.");
         }
 
         return new Transaction(
@@ -252,6 +302,7 @@ public class Transaction : BaseEntity
             description,
             type,
             userId,
+            familyId,
             accountId,
             categoryId: categoryId,
             targetAccountId: null,

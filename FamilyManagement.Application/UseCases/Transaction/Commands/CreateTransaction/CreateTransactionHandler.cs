@@ -1,3 +1,4 @@
+
 using FamilyManagement.Application.UseCases.Transactions.DTOs;
 using FamilyManagement.Application.UseCases.Transactions.Mapping;
 using FamilyManagement.Application.UseCases.Transactions.Services;
@@ -29,13 +30,28 @@ public sealed class CreateTransactionHandler
         CreateTransactionCommand command)
     {
         if (command.UserId == Guid.Empty)
-            return Error.Validation("O utilizador é obrigatório.");
+        {
+            return Error.Validation(
+                "O utilizador é obrigatório.");
+        }
 
         if (command.AccountId == Guid.Empty)
-            return Error.Validation("A conta é obrigatória.");
+        {
+            return Error.Validation(
+                "A conta é obrigatória.");
+        }
 
         if (command.CategoryId == Guid.Empty)
-            return Error.Validation("A categoria é obrigatória.");
+        {
+            return Error.Validation(
+                "A categoria é obrigatória.");
+        }
+
+        if (command.FamilyId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da família é inválido.");
+        }
 
         var user = await _unitOfWork.Users
             .GetByIdAsync(command.UserId);
@@ -45,6 +61,28 @@ public sealed class CreateTransactionHandler
             return Error.NotFound(
                 "User.NotFound",
                 "Utilizador não encontrado.");
+        }
+
+        // Validar a pertença à família antes de
+        // permitir operações no âmbito familiar.
+        if (command.FamilyId.HasValue)
+        {
+            if (user.FamilyId != command.FamilyId)
+            {
+                return Error.BusinessRule(
+                    "Transaction.FamilyAccessDenied",
+                    "O utilizador não pertence à família indicada.");
+            }
+
+            var family = await _unitOfWork.Families
+                .GetByIdAsync(command.FamilyId.Value);
+
+            if (family is null || !family.IsActive)
+            {
+                return Error.NotFound(
+                    "Family.NotFound",
+                    "Família não encontrada ou inativa.");
+            }
         }
 
         var account = await _unitOfWork.Accounts
@@ -57,11 +95,28 @@ public sealed class CreateTransactionHandler
                 "Conta não encontrada.");
         }
 
-        if (account.UserId != command.UserId)
+        if (command.FamilyId.HasValue)
         {
-            return Error.BusinessRule(
-                "Transaction.AccountOwnerMismatch",
-                "A conta não pertence ao utilizador.");
+            // A conta pode pertencer a outro membro,
+            // mas tem de estar associada à mesma família.
+            if (account.FamilyId != command.FamilyId)
+            {
+                return Error.BusinessRule(
+                    "Transaction.AccountFamilyMismatch",
+                    "A conta não pertence à família indicada.");
+            }
+        }
+        else
+        {
+            // Um movimento pessoal só pode utilizar
+            // contas pessoais do próprio utilizador.
+            if (account.UserId != command.UserId ||
+                account.FamilyId.HasValue)
+            {
+                return Error.BusinessRule(
+                    "Transaction.AccountOwnerMismatch",
+                    "A conta não é uma conta pessoal do utilizador.");
+            }
         }
 
         var category = await _unitOfWork.Categories
@@ -72,6 +127,31 @@ public sealed class CreateTransactionHandler
             return Error.NotFound(
                 "Category.NotFound",
                 "Categoria não encontrada.");
+        }
+
+        // Categorias globais podem ser usadas
+        // nos dois âmbitos.
+        if (!category.IsGlobal)
+        {
+            if (command.FamilyId.HasValue)
+            {
+                if (category.FamilyId != command.FamilyId)
+                {
+                    return Error.BusinessRule(
+                        "Transaction.CategoryScopeMismatch",
+                        "A categoria não pertence à família indicada.");
+                }
+            }
+            else
+            {
+                if (category.FamilyId.HasValue ||
+                    category.UserId != command.UserId)
+                {
+                    return Error.BusinessRule(
+                        "Transaction.CategoryScopeMismatch",
+                        "A categoria não pertence ao utilizador.");
+                }
+            }
         }
 
         var moneyResult = Money.TryCreate(
@@ -103,7 +183,8 @@ public sealed class CreateTransactionHandler
                 command.Notes,
                 command.BudgetId,
                 command.GoalId,
-                command.IsConfirmed);
+                command.IsConfirmed,
+                familyId: command.FamilyId);
 
         if (transactionResult.IsFailure)
             return transactionResult.Error;

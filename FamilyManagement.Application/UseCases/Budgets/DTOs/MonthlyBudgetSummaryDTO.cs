@@ -1,3 +1,4 @@
+
 namespace FamilyManagement.Application.UseCases.Budgets.DTOs;
 
 public sealed record MonthlyBudgetSummaryDTO(
@@ -7,4 +8,6 @@ public sealed record MonthlyBudgetSummaryDTO(
     decimal TotalBudgeted,
     decimal TotalSpent,
     decimal RemainingAmount,
-    bool IsOverBudget);
+    bool IsOverBudget,
+    Guid? FamilyId = null,
+    string? Currency = null);

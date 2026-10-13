@@ -841,11 +841,24 @@ public sealed class TransactionFormViewModel :
         await CompleteSaveAsync();
     }
 
+    
     private async Task UpdateTransactionAsync()
     {
         if (!_transactionId.HasValue ||
             SelectedAccount is null)
         {
+            return;
+        }
+
+        // Obter o utilizador atualmente autenticado.
+        var userId = GetCurrentUserId();
+
+        if (!userId.HasValue)
+        {
+            await NotificationService.ShowErrorAsync(
+                "Não existe um utilizador autenticado.",
+                "Transação");
+
             return;
         }
 
@@ -864,7 +877,9 @@ public sealed class TransactionFormViewModel :
                 Amount:
                     Amount,
                 AccountId:
-                    SelectedAccount.Id);
+                    SelectedAccount.Id,
+                UserId:
+                    userId.Value);
 
         var result =
             await _updateTransactionHandler.HandleAsync(
@@ -881,6 +896,7 @@ public sealed class TransactionFormViewModel :
 
         await CompleteSaveAsync();
     }
+
 
     private async Task CompleteSaveAsync()
     {

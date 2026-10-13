@@ -121,7 +121,7 @@ public sealed class AccountViewModel : BaseViewModel
     {
         get => _selectedAccount;
 
-        private set
+        set
         {
             if (!SetProperty(ref _selectedAccount, value))
             {

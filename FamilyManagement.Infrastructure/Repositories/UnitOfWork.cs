@@ -17,6 +17,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public ICurrencyRepository Currencies { get; }
     public IFamilyRepository Families { get; }
     public IGoalRepository Goals { get; }
+    public IGoalContributionImpactRepository GoalContributionImpacts { get; }
     public IInvestmentRepository Investments { get; }
     public IRecurringTransactionRepository RecurringTransactions { get; }
     public ITransactionRepository Transactions { get; }
@@ -33,14 +34,18 @@ public sealed class UnitOfWork : IUnitOfWork
         ICurrencyRepository currencies,
         IFamilyRepository families,
         IGoalRepository goals,
+        IGoalContributionImpactRepository goalContributionImpacts,
         IInvestmentRepository investments,
         IRecurringTransactionRepository recurringTransactions,
         ITransactionRepository transactions,
         IUserSettingRepository userSettings,
         IUserRoleRepository userRoles)
     {
-        _context = context;
-        _logger = logger;
+        _context = context
+            ?? throw new ArgumentNullException(nameof(context));
+
+        _logger = logger
+            ?? throw new ArgumentNullException(nameof(logger));
 
         Accounts = accounts;
         Users = users;
@@ -49,6 +54,7 @@ public sealed class UnitOfWork : IUnitOfWork
         Currencies = currencies;
         Families = families;
         Goals = goals;
+        GoalContributionImpacts = goalContributionImpacts;
         Investments = investments;
         RecurringTransactions = recurringTransactions;
         Transactions = transactions;
@@ -86,6 +92,11 @@ public sealed class UnitOfWork : IUnitOfWork
 
             throw;
         }
+    }
+
+    public void ClearTrackedChanges()
+    {
+        _context.ChangeTracker.Clear();
     }
 
     public void Dispose()

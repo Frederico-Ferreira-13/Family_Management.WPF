@@ -300,7 +300,10 @@ public sealed class TransactionViewModel : BaseViewModel
                     await _confirmTransactionHandler
                         .HandleAsync(
                             new ConfirmTransactionCommand(
-                                transaction.Id));
+                                    transaction.Id,
+                                    _currentUserService.UserId
+                                        ?? Guid.Empty)
+                                    );
 
                 if (result.IsFailure)
                 {
@@ -398,7 +401,10 @@ public sealed class TransactionViewModel : BaseViewModel
                     await _deactivateTransactionHandler
                         .HandleAsync(
                             new DeactivateTransactionCommand(
-                                transaction.Id));
+                                transaction.Id,
+                                _currentUserService.UserId
+                                    ?? Guid.Empty)
+                                );
 
                 if (result.IsFailure)
                 {

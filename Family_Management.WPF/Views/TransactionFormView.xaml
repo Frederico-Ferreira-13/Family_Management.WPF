@@ -65,7 +65,7 @@
                                 Grid.Column="0">
 
                         <TextBlock Text="Data"
-                                   Style="{StaticResource FieldLabelStyle}" />
+                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                         <DatePicker SelectedDate="{Binding Date,
                                                           Mode=TwoWay,
@@ -82,7 +82,7 @@
                                 Grid.Column="2">
 
                         <TextBlock Text="Tipo"
-                                   Style="{StaticResource FieldLabelStyle}" />
+                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                         <ComboBox ItemsSource="{Binding TransactionTypes}"
                                   SelectedItem="{Binding Type,
@@ -100,7 +100,7 @@
                                 Margin="0,15,0,0">
 
                         <TextBlock Text="Descrição"
-                                   Style="{StaticResource FieldLabelStyle}" />
+                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                         <TextBox Text="{Binding Description,
                                                Mode=TwoWay,
@@ -118,7 +118,7 @@
                                 Margin="0,15,0,0">
 
                         <TextBlock Text="Valor"
-                                   Style="{StaticResource FieldLabelStyle}" />
+                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                         <TextBox Text="{Binding Amount,
                                                Mode=TwoWay,
@@ -136,7 +136,7 @@
                                 Margin="0,15,0,0">
 
                         <TextBlock Text="Conta"
-                                   Style="{StaticResource FieldLabelStyle}" />
+                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                         <ComboBox ItemsSource="{Binding Accounts}"
                                   SelectedItem="{Binding SelectedAccount,
@@ -157,7 +157,7 @@
                                                      Converter={StaticResource BoolToVis}}">
 
                         <TextBlock Text="Conta de destino"
-                                   Style="{StaticResource FieldLabelStyle}" />
+                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                         <ComboBox ItemsSource="{Binding Accounts}"
                                   SelectedItem="{Binding SelectedTargetAccount,
@@ -179,7 +179,7 @@
                                                      Converter={StaticResource BoolToVis}}">
 
                         <TextBlock Text="Categoria"
-                                   Style="{StaticResource FieldLabelStyle}" />
+                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                         <ComboBox ItemsSource="{Binding Categories}"
                                   SelectedItem="{Binding SelectedCategory,
@@ -198,7 +198,7 @@
                                 IsEnabled="{Binding CanSelectBudget}">
 
                         <TextBlock Text="Orçamento"
-                                   Style="{StaticResource FieldLabelStyle}" />
+                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                         <ComboBox ItemsSource="{Binding Budgets}"
                                   SelectedItem="{Binding SelectedBudget,
@@ -216,7 +216,7 @@
                                 IsEnabled="{Binding CanSelectGoal}">
 
                         <TextBlock Text="Objetivo"
-                                   Style="{StaticResource FieldLabelStyle}" />
+                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                         <ComboBox ItemsSource="{Binding Goals}"
                                   SelectedItem="{Binding SelectedGoal,
@@ -234,7 +234,7 @@
                                 Margin="0,15,0,0">
 
                         <TextBlock Text="Notas"
-                                   Style="{StaticResource FieldLabelStyle}" />
+                                   Style="{StaticResource FieldTextBlockStyle}" />
 
                         <TextBox Text="{Binding Notes,
                                                Mode=TwoWay,

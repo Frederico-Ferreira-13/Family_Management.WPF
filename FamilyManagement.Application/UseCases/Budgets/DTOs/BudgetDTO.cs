@@ -1,3 +1,4 @@
+
 namespace FamilyManagement.Application.UseCases.Budgets.DTOs;
 
 public sealed record BudgetDTO(
@@ -14,4 +15,5 @@ public sealed record BudgetDTO(
     bool IsOverBudget,
     bool IsActive,
     DateTime CreatedAt,
-    DateTime? UpdatedAt);
+    DateTime? UpdatedAt,
+    Guid? FamilyId = null);

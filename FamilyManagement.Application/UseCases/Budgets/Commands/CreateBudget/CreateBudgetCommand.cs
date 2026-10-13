@@ -7,4 +7,5 @@ public sealed record CreateBudgetCommand(
     int Month,
     int Year,
     Guid CategoryId,
-    Guid UserId);
+    Guid UserId,
+    Guid? FamilyId = null);

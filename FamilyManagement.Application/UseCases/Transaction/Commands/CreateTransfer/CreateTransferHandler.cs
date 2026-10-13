@@ -1,3 +1,4 @@
+
 using FamilyManagement.Application.UseCases.Transactions.DTOs;
 using FamilyManagement.Application.UseCases.Transactions.Mapping;
 using FamilyManagement.Application.UseCases.Transactions.Services;
@@ -53,6 +54,12 @@ public sealed class CreateTransferHandler
                 "As contas de origem e destino devem ser diferentes.");
         }
 
+        if (command.FamilyId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da família é inválido.");
+        }
+
         var user = await _unitOfWork.Users
             .GetByIdAsync(command.UserId);
 
@@ -61,6 +68,26 @@ public sealed class CreateTransferHandler
             return Error.NotFound(
                 "User.NotFound",
                 "Utilizador não encontrado.");
+        }
+
+        if (command.FamilyId.HasValue)
+        {
+            if (user.FamilyId != command.FamilyId)
+            {
+                return Error.BusinessRule(
+                    "Transaction.FamilyAccessDenied",
+                    "O utilizador não pertence à família indicada.");
+            }
+
+            var family = await _unitOfWork.Families
+                .GetByIdAsync(command.FamilyId.Value);
+
+            if (family is null || !family.IsActive)
+            {
+                return Error.NotFound(
+                    "Family.NotFound",
+                    "Família não encontrada ou inativa.");
+            }
         }
 
         var source = await _unitOfWork.Accounts
@@ -83,12 +110,31 @@ public sealed class CreateTransferHandler
                 "Conta de destino não encontrada.");
         }
 
-        if (source.UserId != command.UserId ||
-            target.UserId != command.UserId)
+        if (command.FamilyId.HasValue)
         {
-            return Error.BusinessRule(
-                "Transaction.AccountOwnerMismatch",
-                "As contas devem pertencer ao utilizador.");
+            // Ambas as contas devem pertencer
+            // à família autorizada.
+            if (source.FamilyId != command.FamilyId ||
+                target.FamilyId != command.FamilyId)
+            {
+                return Error.BusinessRule(
+                    "Transaction.AccountFamilyMismatch",
+                    "As contas devem pertencer à família indicada.");
+            }
+        }
+        else
+        {
+            // Ambas as contas devem ser pessoais
+            // e pertencer ao utilizador.
+            if (source.UserId != command.UserId ||
+                target.UserId != command.UserId ||
+                source.FamilyId.HasValue ||
+                target.FamilyId.HasValue)
+            {
+                return Error.BusinessRule(
+                    "Transaction.AccountOwnerMismatch",
+                    "As contas devem ser contas pessoais do utilizador.");
+            }
         }
 
         var moneyResult = Money.TryCreate(
@@ -122,7 +168,8 @@ public sealed class CreateTransferHandler
             command.SourceAccountId,
             command.TargetAccountId,
             command.Notes,
-            command.IsConfirmed);
+            command.IsConfirmed,
+            familyId: command.FamilyId);
 
         if (result.IsFailure)
         {
@@ -145,20 +192,17 @@ public sealed class CreateTransferHandler
                 if (impact.IsFailure)
                 {
                     await dbTransaction.RollbackAsync();
-
                     return impact.Error;
                 }
             }
 
-            await _unitOfWork.Transactions
-                .AddAsync(transaction);
+            await _unitOfWork.Transactions.AddAsync(transaction);
 
             await _unitOfWork.CompleteAsync();
 
             await dbTransaction.CommitAsync();
 
-            return TransactionMapper.ToDTO(
-                transaction);
+            return TransactionMapper.ToDTO(transaction);
         }
         catch
         {

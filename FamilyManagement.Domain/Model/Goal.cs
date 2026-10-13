@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using FamilyManagement.Domain.Common;
@@ -12,15 +13,28 @@ public class Goal : BaseEntity
     public string Name { get; private set; } = string.Empty;
 
     public Money TargetAmount { get; private set; } = null!;
+
     public Money CurrentAmount { get; private set; } = null!;
 
     public DateTime StartDate { get; private set; }
+
     public DateTime? TargetDate { get; private set; }
 
     public bool IsAchieved { get; private set; }
 
+    // Utilizador que criou a meta.
     public Guid UserId { get; private set; }
+
     public virtual User? User { get; private set; }
+
+    // Âmbito financeiro:
+    // null = meta pessoal
+    // valor = meta familiar
+    public Guid? FamilyId { get; private set; }
+
+    public virtual Family? Family { get; private set; }
+
+    public bool IsFamilyGoal => FamilyId.HasValue;
 
     private readonly List<Transaction> _contributions = new();
 
@@ -57,16 +71,23 @@ public class Goal : BaseEntity
         string name,
         Money targetAmount,
         Guid userId,
-        DateTime? targetDate)
+        DateTime? targetDate,
+        Guid? familyId)
     {
-        Name = name;
+        Name = name.Trim();
+
         TargetAmount = targetAmount;
-        CurrentAmount = Money.Create(0, targetAmount.Currency);
+
+        CurrentAmount = Money.Create(
+            0,
+            targetAmount.Currency);
 
         StartDate = DateTime.UtcNow;
         TargetDate = targetDate;
 
         UserId = userId;
+        FamilyId = familyId;
+
         IsAchieved = false;
     }
 
@@ -74,7 +95,8 @@ public class Goal : BaseEntity
         string name,
         Money targetAmount,
         Guid userId,
-        DateTime? targetDate = null)
+        DateTime? targetDate = null,
+        Guid? familyId = null)
     {
         var validation = ValidateDetails(
             name,
@@ -85,13 +107,23 @@ public class Goal : BaseEntity
             return validation.Error;
 
         if (userId == Guid.Empty)
-            return Error.Validation("O utilizador é obrigatório.");
+        {
+            return Error.Validation(
+                "O utilizador é obrigatório.");
+        }
+
+        if (familyId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da família é inválido.");
+        }
 
         return new Goal(
             name.Trim(),
             targetAmount,
             userId,
-            targetDate);
+            targetDate,
+            familyId);
     }
 
     public Result UpdateDetails(
@@ -100,7 +132,11 @@ public class Goal : BaseEntity
         DateTime? targetDate)
     {
         if (!IsActive)
-            return Error.Conflict("goal.inactive", "A meta está inativa.");
+        {
+            return Error.Conflict(
+                "goal.inactive",
+                "A meta está inativa.");
+        }
 
         var validation = ValidateDetails(
             name,
@@ -111,7 +147,9 @@ public class Goal : BaseEntity
             return validation;
 
         if (targetAmount.Currency != TargetAmount.Currency)
+        {
             return DomainErrors.Money.CurrencyMismatch;
+        }
 
         Name = name.Trim();
         TargetAmount = targetAmount;
@@ -126,10 +164,17 @@ public class Goal : BaseEntity
     public Result AddContribution(Transaction transaction)
     {
         if (!IsActive)
-            return Error.Conflict("goal.inactive", "A meta está inativa.");
+        {
+            return Error.Conflict(
+                "goal.inactive",
+                "A meta está inativa.");
+        }
 
         if (transaction is null)
-            return Error.Validation("A transação é obrigatória.");
+        {
+            return Error.Validation(
+                "A transação é obrigatória.");
+        }
 
         if (!transaction.IsActive || !transaction.IsConfirmed)
         {
@@ -143,15 +188,35 @@ public class Goal : BaseEntity
                 "A transação não está associada a esta meta.");
         }
 
-        if (transaction.UserId != UserId)
+        // Validar o âmbito financeiro da contribuição.
+        if (FamilyId.HasValue)
         {
-            return Error.Validation(
-                "A transação pertence a outro utilizador.");
+            // Meta familiar:
+            // aceita movimentos de diferentes membros,
+            // desde que pertençam à mesma família.
+            if (transaction.FamilyId != FamilyId)
+            {
+                return Error.Validation(
+                    "A transação não pertence à família desta meta.");
+            }
+        }
+        else
+        {
+            // Meta pessoal:
+            // apenas movimentos pessoais do proprietário.
+            if (transaction.FamilyId.HasValue ||
+                transaction.UserId != UserId)
+            {
+                return Error.Validation(
+                    "A transação não pertence ao utilizador desta meta.");
+            }
         }
 
-        // A mesma transação não deve ser contabilizada duas vezes.
+        // Evitar contabilizar a mesma transação duas vezes.
         if (_contributions.Any(item => item.Id == transaction.Id))
+        {
             return Result.Success();
+        }
 
         var depositResult = Deposit(transaction.Amount);
 
@@ -213,7 +278,11 @@ public class Goal : BaseEntity
     private Result ValidateMovement(Money? amount)
     {
         if (!IsActive)
-            return Error.Conflict("goal.inactive", "A meta está inativa.");
+        {
+            return Error.Conflict(
+                "goal.inactive",
+                "A meta está inativa.");
+        }
 
         if (amount is null || amount.Amount <= 0)
         {
@@ -222,7 +291,9 @@ public class Goal : BaseEntity
         }
 
         if (amount.Currency != TargetAmount.Currency)
+        {
             return DomainErrors.Money.CurrencyMismatch;
+        }
 
         return Result.Success();
     }
@@ -233,7 +304,10 @@ public class Goal : BaseEntity
         DateTime? targetDate)
     {
         if (string.IsNullOrWhiteSpace(name))
-            return Error.Validation("O nome da meta é obrigatório.");
+        {
+            return Error.Validation(
+                "O nome da meta é obrigatório.");
+        }
 
         if (targetAmount is null || targetAmount.Amount <= 0)
         {
@@ -251,8 +325,56 @@ public class Goal : BaseEntity
         return Result.Success();
     }
 
+    
+    public Result ValidateContribution(Transaction transaction)
+    {
+        if (transaction is null)
+        {
+            return Error.Validation(
+                "A transação é obrigatória.");
+        }
+
+        if (transaction.GoalId != Id)
+        {
+            return Error.Validation(
+                "A transação não está associada a esta meta.");
+        }
+
+        if (FamilyId.HasValue)
+        {
+            if (transaction.FamilyId != FamilyId)
+            {
+                return Error.BusinessRule(
+                    "Goal.FamilyScopeMismatch",
+                    "A transação não pertence à família desta meta.");
+            }
+        }
+        else
+        {
+            if (transaction.FamilyId.HasValue ||
+                transaction.UserId != UserId)
+            {
+                return Error.BusinessRule(
+                    "Goal.PersonalScopeMismatch",
+                    "A transação não pertence ao proprietário desta meta.");
+            }
+        }
+
+        if (!string.Equals(
+            transaction.Amount.Currency,
+            TargetAmount.Currency,
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return DomainErrors.Money.CurrencyMismatch;
+        }
+
+        return Result.Success();
+    }
+
+
     private void UpdateStatus()
     {
-        IsAchieved = CurrentAmount.Amount >= TargetAmount.Amount;
+        IsAchieved =
+            CurrentAmount.Amount >= TargetAmount.Amount;
     }
 }

@@ -192,7 +192,7 @@
                         <!-- NOME -->
 
                         <TextBlock Text="Nome da Meta"
-                                   Style="{StaticResource FieldLabelStyle}" />
+                                    Style="{StaticResource FieldTextBlockStyle}" />
 
                         <TextBox Text="{Binding GoalForm.GoalName,
                                                Mode=TwoWay,
@@ -203,8 +203,8 @@
                         <!-- VALOR -->
 
                         <TextBlock Text="Valor Alvo"
-                                   Style="{StaticResource FieldLabelStyle}"
-                                   Margin="0,15,0,5" />
+                                    Style="{StaticResource FieldTextBlockStyle}"
+                                    Margin="0,15,0,5" />
 
                         <TextBox Text="{Binding GoalForm.GoalTargetAmount,
                                                Mode=TwoWay,
@@ -214,8 +214,8 @@
                         <!-- DATA -->
 
                         <TextBlock Text="Data Alvo"
-                                   Style="{StaticResource FieldLabelStyle}"
-                                   Margin="0,15,0,5" />
+                                    Style="{StaticResource FieldTextBlockStyle}"
+                                    Margin="0,15,0,5" />
 
                         <DatePicker SelectedDate="{Binding GoalForm.GoalTargetDate,
                                                           Mode=TwoWay,
@@ -230,8 +230,8 @@
                         <!-- MOEDA -->
 
                         <TextBlock Text="Moeda"
-                                   Style="{StaticResource FieldLabelStyle}"
-                                   Margin="0,15,0,5" />
+                                    Style="{StaticResource FieldTextBlockStyle}"
+                                    Margin="0,15,0,5" />
 
                         <ComboBox ItemsSource="{Binding GoalForm.Currencies}"
                                   SelectedItem="{Binding GoalForm.GoalSelectedCurrency,
@@ -349,7 +349,7 @@
                                        Margin="0,0,0,10" />
 
                             <TextBlock Text="Valor"
-                                       Style="{StaticResource FieldLabelStyle}" />
+                                        Style="{StaticResource FieldTextBlockStyle}" />
 
                             <TextBox Text="{Binding ProgressAmount,
                                                    Mode=TwoWay,

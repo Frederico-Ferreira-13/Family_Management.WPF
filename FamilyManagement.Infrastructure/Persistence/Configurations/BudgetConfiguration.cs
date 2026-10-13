@@ -1,10 +1,12 @@
-﻿using FamilyManagement.Domain.Model;
+﻿
+using FamilyManagement.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FamilyManagement.Infrastructure.Persistence.Configurations;
 
-public sealed class BudgetConfiguration : IEntityTypeConfiguration<Budget>
+public sealed class BudgetConfiguration
+    : IEntityTypeConfiguration<Budget>
 {
     public void Configure(EntityTypeBuilder<Budget> builder)
     {
@@ -25,8 +27,13 @@ public sealed class BudgetConfiguration : IEntityTypeConfiguration<Budget>
         builder.Property(b => b.CategoryId)
             .IsRequired();
 
+        // Utilizador que criou o orçamento.
         builder.Property(b => b.UserId)
             .IsRequired();
+
+        // Âmbito familiar opcional.
+        builder.Property(b => b.FamilyId)
+            .IsRequired(false);
 
         // Value Object: BudgetedAmount
         builder.OwnsOne(b => b.BudgetedAmount, money =>
@@ -58,25 +65,31 @@ public sealed class BudgetConfiguration : IEntityTypeConfiguration<Budget>
 
         // Budget -> User
         //
-        // Budget não expõe uma navigation User, mas User expõe
-        // a coleção Budgets. É importante indicar essa coleção
-        // explicitamente para evitar que o EF Core crie uma
-        // segunda relação e uma shadow FK como UserId1.
+        // UserId identifica o criador do orçamento.
+        // A coleção User.Budgets corresponde a esta relação.
         builder.HasOne<User>()
             .WithMany(u => u.Budgets)
             .HasForeignKey(b => b.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Budget -> Category
+        // Budget -> Family
         //
-        // Budget não expõe navigation Category.
+        // Uma família pode possuir vários orçamentos.
+        // Impedimos a eliminação física da família enquanto
+        // existirem orçamentos associados.
+        builder.HasOne(b => b.Family)
+            .WithMany()
+            .HasForeignKey(b => b.FamilyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Budget -> Category
         builder.HasOne<Category>()
             .WithMany()
             .HasForeignKey(b => b.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Um utilizador só pode ter um orçamento para a mesma
-        // categoria no mesmo mês/ano.
+        // Orçamentos pessoais:
+        // um orçamento por utilizador, categoria e período.
         builder.HasIndex(b => new
         {
             b.UserId,
@@ -84,8 +97,25 @@ public sealed class BudgetConfiguration : IEntityTypeConfiguration<Budget>
             b.Month,
             b.Year
         })
-        .IsUnique();
+        .IsUnique()
+        .HasDatabaseName("UX_Budgets_Personal_Period")
+        .HasFilter("\"FamilyId\" IS NULL");
 
+        // Orçamentos familiares:
+        // um orçamento por família, categoria e período,
+        // independentemente do membro que o criou.
+        builder.HasIndex(b => new
+        {
+            b.FamilyId,
+            b.CategoryId,
+            b.Month,
+            b.Year
+        })
+        .IsUnique()
+        .HasDatabaseName("UX_Budgets_Family_Period")
+        .HasFilter("\"FamilyId\" IS NOT NULL");
+
+        // Consultas pessoais por período.
         builder.HasIndex(b => new
         {
             b.UserId,
@@ -93,9 +123,18 @@ public sealed class BudgetConfiguration : IEntityTypeConfiguration<Budget>
             b.Month
         });
 
+        // Consultas familiares por período.
+        builder.HasIndex(b => new
+        {
+            b.FamilyId,
+            b.Year,
+            b.Month
+        });
+
         // Propriedades calculadas exclusivamente no domínio.
         builder.Ignore(b => b.RemainingAmount);
         builder.Ignore(b => b.IsOverBudget);
+        builder.Ignore(b => b.IsFamilyBudget);
 
         // BaseEntity
         builder.Property(b => b.CreatedAt)

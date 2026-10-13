@@ -1,3 +1,4 @@
+
 using FamilyManagement.Application.Common.Extensions;
 using FamilyManagement.Application.UseCases.Transactions.DTOs;
 using FamilyManagement.Domain.Model;
@@ -34,7 +35,8 @@ public static class TransactionMapper
             transaction.BudgetId,
             transaction.GoalId,
             transaction.CreatedAt,
-            transaction.UpdatedAt);
+            transaction.UpdatedAt,
+            transaction.FamilyId);
     }
 
     public static IEnumerable<TransactionDTO> ToDTOs(

@@ -158,8 +158,8 @@
                         <StackPanel Visibility="{Binding HasSelectedFamily,
                                                         Converter={StaticResource InverseBoolToVis}}">
 
-                            <TextBlock Text="Nome da Família"
-                                       Style="{StaticResource FieldLabelStyle}" />
+                           <TextBlock Text="Nome da Família"
+                                        Style="{StaticResource FieldTextBlockStyle}" />
 
                             <TextBox Text="{Binding NewFamilyName,
                                                    Mode=TwoWay,
@@ -185,8 +185,8 @@
                         <StackPanel Visibility="{Binding HasSelectedFamily,
                                                         Converter={StaticResource BoolToVis}}">
 
-                            <TextBlock Text="Nome da Família"
-                                       Style="{StaticResource FieldLabelStyle}" />
+                            <TextBlock Text="Adicionar Utilizador"
+                                        Style="{StaticResource FieldTextBlockStyle}" />
 
                             <TextBox Text="{Binding EditFamilyName,
                                                    Mode=TwoWay,
@@ -319,7 +319,7 @@
                                        Margin="0,0,0,15" />
 
                             <TextBlock Text="Adicionar Utilizador"
-                                       Style="{StaticResource FieldLabelStyle}" />
+                                       Style="{StaticResource FieldTextBlockStyle}" />
 
                             <ComboBox ItemsSource="{Binding AllAvailableUsers}"
                                       SelectedItem="{Binding SelectedUserToAdd,
@@ -334,8 +334,8 @@
                                     HorizontalAlignment="Stretch" />
 
                             <TextBlock Text="Membros Atuais"
-                                       Style="{StaticResource FieldLabelStyle}"
-                                       Margin="0,20,0,8" />
+                                        Style="{StaticResource FieldTextBlockStyle}"
+                                        Margin="0,20,0,8" />
 
                             <DataGrid ItemsSource="{Binding SelectedFamilyMembers}"
                                       SelectedItem="{Binding SelectedUserToRemove,

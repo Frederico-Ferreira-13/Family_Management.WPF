@@ -1,3 +1,4 @@
+
 using FamilyManagement.Domain.Enums;
 
 namespace FamilyManagement.Application.UseCases.Transactions.DTOs;
@@ -26,4 +27,6 @@ public sealed record TransactionDTO(
     Guid? BudgetId,
     Guid? GoalId,
     DateTime CreatedAt,
-    DateTime? UpdatedAt);
+    DateTime? UpdatedAt,
+    Guid? FamilyId = null
+);

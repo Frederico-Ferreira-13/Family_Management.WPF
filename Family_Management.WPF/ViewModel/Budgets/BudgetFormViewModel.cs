@@ -270,13 +270,13 @@ public sealed class BudgetFormViewModel : BaseViewModel
         await RunSafeAsync(async () =>
         {
             if (Form.IsEditMode)
-            {
-                await UpdateAsync();
-            }
-            else
-            {
-                await CreateAsync(userId);
-            }
+        {
+            await UpdateAsync(userId);
+        }
+        else
+        {
+            await CreateAsync(userId);
+        }
         });
 
         RaiseSaveCanExecuteChanged();
@@ -316,7 +316,7 @@ public sealed class BudgetFormViewModel : BaseViewModel
         BudgetSaved?.Invoke(result.Value);
     }
 
-    private async Task UpdateAsync()
+    private async Task UpdateAsync(Guid userId)
     {
         if (!Form.BudgetId.HasValue ||
             Form.BudgetId.Value == Guid.Empty)
@@ -327,7 +327,8 @@ public sealed class BudgetFormViewModel : BaseViewModel
         var command = new UpdateBudgetCommand(
             Form.BudgetId.Value,
             Form.Name.Trim(),
-            Form.Amount);
+            Form.Amount,
+            userId);
 
         var result =
             await _updateBudgetHandler.HandleAsync(

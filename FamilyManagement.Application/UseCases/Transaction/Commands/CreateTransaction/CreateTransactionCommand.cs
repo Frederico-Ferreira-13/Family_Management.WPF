@@ -1,3 +1,4 @@
+
 using FamilyManagement.Domain.Enums;
 
 namespace FamilyManagement.Application.UseCases.Transactions.Commands.CreateTransaction;
@@ -14,4 +15,5 @@ public sealed record CreateTransactionCommand(
     Guid CategoryId,
     Guid? BudgetId = null,
     Guid? GoalId = null,
-    bool IsConfirmed = true);
+    bool IsConfirmed = true,
+    Guid? FamilyId = null);

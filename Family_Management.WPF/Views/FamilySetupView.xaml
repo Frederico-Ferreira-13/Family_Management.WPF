@@ -107,8 +107,8 @@
                                Margin="0,0,0,25" />
 
                     <TextBlock Text="Nome da Família"
-                               Style="{StaticResource FieldLabelStyle}"
-                               Margin="0,0,0,5" />
+                                Style="{StaticResource FieldTextBlockStyle}"
+                                Margin="0,0,0,5" />
 
                     <TextBox Text="{Binding NewFamilyName,
                                            Mode=TwoWay,
@@ -174,8 +174,8 @@
                                Margin="0,0,0,25" />
 
                     <TextBlock Text="Código de Convite"
-                               Style="{StaticResource FieldLabelStyle}"
-                               Margin="0,0,0,5" />
+                                Style="{StaticResource FieldTextBlockStyle}"
+                                Margin="0,0,0,5" />
 
                     <TextBox Text="{Binding InvitationCode,
                                            Mode=TwoWay,

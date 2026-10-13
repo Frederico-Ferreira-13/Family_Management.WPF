@@ -58,6 +58,11 @@ public static class DependencyInjection
         services.AddScoped<ICurrencyRepository, CurrencyRepository>();
         services.AddScoped<IFamilyRepository, FamilyRepository>();
         services.AddScoped<IGoalRepository, GoalRepository>();
+
+        services.AddScoped<
+            IGoalContributionImpactRepository,
+            GoalContributionImpactRepository>();
+
         services.AddScoped<IInvestmentRepository, InvestmentRepository>();
 
         services.AddScoped<
@@ -75,10 +80,6 @@ public static class DependencyInjection
         IServiceCollection services,
         IConfiguration configuration)
     {
-        // ---------------------------------------------------------
-        // JWT / Autenticação
-        // ---------------------------------------------------------
-
         var jwtSettings = configuration
             .GetSection(JwtSettings.SectionName)
             .Get<JwtSettings>()
@@ -94,10 +95,6 @@ public static class DependencyInjection
         }
 
         services.AddSingleton(jwtSettings);
-
-        // ---------------------------------------------------------
-        // Serviços de autenticação
-        // ---------------------------------------------------------
 
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<ITokenService, TokenService>();

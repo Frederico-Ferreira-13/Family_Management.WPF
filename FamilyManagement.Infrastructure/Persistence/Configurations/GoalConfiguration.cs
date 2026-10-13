@@ -1,10 +1,12 @@
-﻿using FamilyManagement.Domain.Model;
+﻿
+using FamilyManagement.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FamilyManagement.Infrastructure.Persistence.Configurations;
 
-public sealed class GoalConfiguration : IEntityTypeConfiguration<Goal>
+public sealed class GoalConfiguration
+    : IEntityTypeConfiguration<Goal>
 {
     public void Configure(EntityTypeBuilder<Goal> builder)
     {
@@ -54,13 +56,24 @@ public sealed class GoalConfiguration : IEntityTypeConfiguration<Goal>
             .IsRequired()
             .HasDefaultValue(false);
 
+        // Utilizador que criou a meta.
         builder.Property(g => g.UserId)
             .IsRequired();
+
+        // Âmbito familiar opcional.
+        builder.Property(g => g.FamilyId)
+            .IsRequired(false);
 
         // Goal -> User
         builder.HasOne(g => g.User)
             .WithMany(u => u.Goals)
             .HasForeignKey(g => g.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Goal -> Family
+        builder.HasOne(g => g.Family)
+            .WithMany()
+            .HasForeignKey(g => g.FamilyId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Goal -> Contributions (Transactions)
@@ -72,9 +85,10 @@ public sealed class GoalConfiguration : IEntityTypeConfiguration<Goal>
         builder.Navigation(g => g.Contributions)
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        // Calculadas no domínio.
+        // Propriedades calculadas no domínio.
         builder.Ignore(g => g.RemainingAmount);
         builder.Ignore(g => g.ProgressPercentage);
+        builder.Ignore(g => g.IsFamilyGoal);
 
         // BaseEntity
         builder.Property(g => g.CreatedAt)
@@ -93,6 +107,15 @@ public sealed class GoalConfiguration : IEntityTypeConfiguration<Goal>
         builder.HasIndex(g => new
         {
             g.UserId,
+            g.IsActive
+        });
+
+        // Consultas familiares.
+        builder.HasIndex(g => g.FamilyId);
+
+        builder.HasIndex(g => new
+        {
+            g.FamilyId,
             g.IsActive
         });
     }

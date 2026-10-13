@@ -55,7 +55,7 @@
                             Margin="0,0,0,15">
 
                     <TextBlock Text="Nome de utilizador"
-                               Style="{StaticResource FieldLabelStyle}"/>
+                               Style="{StaticResource FieldTextBlockStyle}"/>
 
                     <TextBox Text="{Binding UserName,
                                             Mode=TwoWay,
@@ -71,7 +71,7 @@
                             Margin="0,0,0,15">
 
                     <TextBlock Text="E-mail"
-                               Style="{StaticResource FieldLabelStyle}"/>
+                               Style="{StaticResource FieldTextBlockStyle}"/>
 
                     <TextBox Text="{Binding Email,
                                             Mode=TwoWay,
@@ -87,7 +87,7 @@
                             Margin="0,0,0,15">
 
                     <TextBlock Text="Família"
-                               Style="{StaticResource FieldLabelStyle}"/>
+                               Style="{StaticResource FieldTextBlockStyle}"/>
 
                     <ComboBox ItemsSource="{Binding AvailableFamilies}"
                               SelectedItem="{Binding SelectedFamily,

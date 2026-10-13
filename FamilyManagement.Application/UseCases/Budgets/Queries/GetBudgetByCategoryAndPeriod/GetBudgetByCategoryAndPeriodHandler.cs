@@ -1,3 +1,4 @@
+
 using FamilyManagement.Application.UseCases.Budgets.DTOs;
 using FamilyManagement.Application.UseCases.Budgets.Mapping;
 using FamilyManagement.Domain.Common;
@@ -10,9 +11,11 @@ public sealed class GetBudgetByCategoryAndPeriodHandler
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public GetBudgetByCategoryAndPeriodHandler(IUnitOfWork unitOfWork)
+    public GetBudgetByCategoryAndPeriodHandler(
+        IUnitOfWork unitOfWork)
     {
-        _unitOfWork = unitOfWork;
+        _unitOfWork = unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
     public async Task<Result<BudgetDTO>> HandleAsync(
@@ -31,6 +34,12 @@ public sealed class GetBudgetByCategoryAndPeriodHandler
                 "O utilizador é obrigatório.");
         }
 
+        if (query.FamilyId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da família é inválido.");
+        }
+
         if (query.Month is < 1 or > 12)
         {
             return Error.Validation(
@@ -43,12 +52,49 @@ public sealed class GetBudgetByCategoryAndPeriodHandler
                 "O ano é inválido.");
         }
 
-        var budget = await _unitOfWork.Budgets
-            .GetBudgetsByCategoryIdAndUserIdAndMonthYearAsync(
-                query.CategoryId,
-                query.UserId,
-                query.Month,
-                query.Year);
+        var user = await _unitOfWork.Users
+            .GetByIdAsync(query.UserId);
+
+        if (user is null || !user.IsActive)
+        {
+            return Error.NotFound(
+                "User.NotFound",
+                "Utilizador não encontrado ou inativo.");
+        }
+
+        if (query.FamilyId.HasValue)
+        {
+            if (user.FamilyId != query.FamilyId)
+            {
+                return Error.BusinessRule(
+                    "Budget.FamilyAccessDenied",
+                    "O utilizador não pertence à família indicada.");
+            }
+
+            var family = await _unitOfWork.Families
+                .GetByIdAsync(query.FamilyId.Value);
+
+            if (family is null || !family.IsActive)
+            {
+                return Error.NotFound(
+                    "Family.NotFound",
+                    "Família não encontrada ou inativa.");
+            }
+        }
+
+        var budget = query.FamilyId.HasValue
+            ? await _unitOfWork.Budgets
+                .GetBudgetByFamilyCategoryAndPeriodAsync(
+                    query.FamilyId.Value,
+                    query.CategoryId,
+                    query.Month,
+                    query.Year)
+            : await _unitOfWork.Budgets
+                .GetBudgetsByCategoryIdAndUserIdAndMonthYearAsync(
+                    query.CategoryId,
+                    query.UserId,
+                    query.Month,
+                    query.Year);
 
         if (budget is null)
         {

@@ -49,7 +49,8 @@
                 <!-- ========================================= -->
 
                 <TextBlock Text="E-mail ou nome de utilizador"
-                           Style="{StaticResource FieldLabelStyle}" />
+                            Style="{StaticResource LabelStyle}"
+                            Margin="0,5,5,5" />
 
                 <TextBox Text="{Binding EmailOrUsername,
                                         Mode=TwoWay,
@@ -63,8 +64,8 @@
                 <!-- ========================================= -->
 
                 <TextBlock Text="Palavra-passe"
-                           Style="{StaticResource FieldLabelStyle}"
-                           Margin="0,15,0,5" />
+                            Style="{StaticResource LabelStyle}"
+                            Margin="0,15,0,5" />
 
                 <PasswordBox helpers:PasswordBoxHelper.Attach="True"
                              helpers:PasswordBoxHelper.Password="{Binding Password,

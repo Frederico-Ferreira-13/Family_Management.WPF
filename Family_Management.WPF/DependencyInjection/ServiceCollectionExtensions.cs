@@ -25,6 +25,7 @@ using FamilyManagement.Application.Common.Interfaces;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Family_Management.WPF.Services.Finance;
 
 namespace Family_Management.WPF.DependencyInjection;
 
@@ -53,6 +54,8 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<CurrentUserService>();
 
+        services.AddScoped<FinanceContextService>();
+
         services.AddSingleton<ICurrentUserService>(
             serviceProvider =>
                 serviceProvider.GetRequiredService<CurrentUserService>());
@@ -69,7 +72,7 @@ public static class ServiceCollectionExtensions
         // Navigation
         // ---------------------------------------------------------
 
-        services.AddSingleton<
+        services.AddScoped<
             INavigationService,
             NavigationService>();
 

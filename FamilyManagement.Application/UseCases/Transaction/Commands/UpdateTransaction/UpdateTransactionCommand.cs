@@ -1,3 +1,4 @@
+
 namespace FamilyManagement.Application.UseCases.Transactions.Commands.UpdateTransaction;
 
 public sealed record UpdateTransactionCommand(
@@ -6,4 +7,5 @@ public sealed record UpdateTransactionCommand(
     string? Notes,
     Guid? CategoryId,
     decimal? Amount,
-    Guid? AccountId);
+    Guid? AccountId,
+    Guid UserId);

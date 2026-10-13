@@ -318,7 +318,10 @@ public sealed class BudgetViewModel : BaseViewModel
             var result =
                 await _deactivateBudgetHandler.HandleAsync(
                     new DeactivateBudgetCommand(
-                        budget.Id));
+                            budget.Id,
+                            _currentUserService.UserId
+                                ?? Guid.Empty)
+                            );
 
             if (result.IsFailure)
             {

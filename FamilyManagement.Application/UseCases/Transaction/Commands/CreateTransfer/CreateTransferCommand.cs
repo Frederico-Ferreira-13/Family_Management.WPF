@@ -1,3 +1,4 @@
+
 namespace FamilyManagement.Application.UseCases.Transactions.Commands.CreateTransfer;
 
 public sealed record CreateTransferCommand(
@@ -9,4 +10,5 @@ public sealed record CreateTransferCommand(
     Guid UserId,
     Guid SourceAccountId,
     Guid TargetAccountId,
-    bool IsConfirmed = true);
+    bool IsConfirmed = true,
+    Guid? FamilyId = null);

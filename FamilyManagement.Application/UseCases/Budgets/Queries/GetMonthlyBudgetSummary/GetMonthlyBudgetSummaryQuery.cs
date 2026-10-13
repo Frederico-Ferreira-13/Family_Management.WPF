@@ -1,6 +1,9 @@
+
 namespace FamilyManagement.Application.UseCases.Budgets.Queries.GetMonthlyBudgetSummary;
 
 public sealed record GetMonthlyBudgetSummaryQuery(
     Guid UserId,
     int Month,
-    int Year);
+    int Year,
+    Guid? FamilyId = null,
+    string? Currency = null);
