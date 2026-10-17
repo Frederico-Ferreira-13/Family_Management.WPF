@@ -1,7 +1,5 @@
 ﻿
 using System;
-using System.Collections.Generic;
-using System.Text;
 using FamilyManagement.Application.UseCases.Setup.DTOs;
 using FamilyManagement.Application.UseCases.Setup.Interfaces;
 using FamilyManagement.Domain.Common;
@@ -71,6 +69,7 @@ public sealed class SetupService : ISetupService
 
         var hasGoals =
             await _unitOfWork.Goals.AnyAsync(g =>
+                g.User != null &&
                 g.User.FamilyId == familyId &&
                 g.IsActive);
 

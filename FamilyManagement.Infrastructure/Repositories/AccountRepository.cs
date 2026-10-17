@@ -20,12 +20,15 @@ public sealed class AccountRepository
         Guid accountIdToExclude)
     {
         if (string.IsNullOrWhiteSpace(name))
+        {
             return Task.FromResult(false);
+        }
 
-        var normalizedName = name.Trim().ToLower();
+        var normalizedName = name.Trim().ToLowerInvariant();
 
         return DbSet.AnyAsync(a =>
             a.UserId == userId &&
+            a.FamilyId == null &&
             a.IsActive &&
             a.Id != accountIdToExclude &&
             a.Name.ToLower() == normalizedName);
@@ -36,7 +39,9 @@ public sealed class AccountRepository
     {
         return await DbSet
             .AsNoTracking()
-            .Where(a => a.UserId == userId)
+            .Where(a =>
+                a.UserId == userId &&
+                a.FamilyId == null)
             .OrderBy(a => a.Name)
             .ToListAsync();
     }
@@ -48,6 +53,7 @@ public sealed class AccountRepository
             .AsNoTracking()
             .Where(a =>
                 a.UserId == userId &&
+                a.FamilyId == null &&
                 a.IsActive)
             .OrderBy(a => a.Name)
             .ToListAsync();
@@ -91,6 +97,7 @@ public sealed class AccountRepository
         return await DbSet
             .Where(a =>
                 a.UserId == userId &&
+                a.FamilyId == null &&
                 a.IsActive)
             .SumAsync(a => a.Balance.Amount);
     }

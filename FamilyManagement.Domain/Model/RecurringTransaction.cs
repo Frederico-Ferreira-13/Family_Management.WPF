@@ -23,8 +23,14 @@ public class RecurringTransaction : BaseEntity
     public DateTime NextDueDate { get; private set; }
 
     public Guid CategoryId { get; private set; }
-    public Guid AccountId { get; private set; }
+    public Guid? AccountId { get; private set; }
     public Guid UserId { get; private set; }
+    public Guid? FinancialPlanId { get; private set; }
+    public Guid? FamilyId { get; private set; }
+
+    public virtual Family? Family { get; private set; }
+
+    public virtual FinancialPlan? FinancialPlan { get; private set; }
 
     public virtual Category? Category { get; private set; }
     public virtual Account? Account { get; private set; }
@@ -47,8 +53,10 @@ public class RecurringTransaction : BaseEntity
         Frequency frequency,
         DateTime startDate,
         Guid categoryId,
-        Guid accountId,
+        Guid? accountId,
+        Guid? familyId,
         Guid userId,
+        Guid? financialPlanId,
         DateTime? endDate)
     {
         Description = description.Trim();
@@ -68,6 +76,8 @@ public class RecurringTransaction : BaseEntity
         CategoryId = categoryId;
         AccountId = accountId;
         UserId = userId;
+        FinancialPlanId = financialPlanId;
+        FamilyId = familyId;
     }
 
     public static Result<RecurringTransaction> Create(
@@ -77,8 +87,10 @@ public class RecurringTransaction : BaseEntity
         Frequency frequency,
         DateTime startDate,
         Guid categoryId,
-        Guid accountId,
+        Guid? accountId,
         Guid userId,
+        Guid? familyId = null,
+        Guid? financialPlanId = null,
         DateTime? endDate = null)
     {
         var validation = ValidateDetails(
@@ -96,17 +108,31 @@ public class RecurringTransaction : BaseEntity
 
         if (userId == Guid.Empty)
             return Error.Validation("O utilizador é obrigatório.");
+            
+        if (financialPlanId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador do plano financeiro é inválido.");
+        }
+
+        if (familyId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da família é inválido.");
+        }
 
         return new RecurringTransaction(
-            description,
-            amount,
-            type,
-            frequency,
-            startDate,
-            categoryId,
-            accountId,
-            userId,
-            endDate);
+            description: description,
+            amount: amount,
+            type: type,
+            frequency: frequency,
+            startDate: startDate,
+            categoryId: categoryId,
+            accountId: accountId,
+            familyId: familyId,
+            userId: userId,
+            financialPlanId: financialPlanId,
+            endDate: endDate);
     }
 
     public Result<Transaction> GenerateTransaction(
@@ -120,16 +146,17 @@ public class RecurringTransaction : BaseEntity
 
         // Esta operação não altera NextDueDate nem LastGenerateDate.
         return Transaction.CreateFromRecurring(
-            date: NextDueDate,
-            amount: Amount,
-            description: Description,
-            type: Type,
-            userId: UserId,
-            accountId: AccountId,
-            categoryId: CategoryId,
-            recurringTransactionId: Id,
-            isConfirmed: isConfirmed,
-            referenceDate: referenceDate);
+        date: NextDueDate,
+        amount: Amount,
+        description: Description,
+        type: Type,
+        userId: UserId,
+        accountId: AccountId,
+        categoryId: CategoryId,
+        recurringTransactionId: Id,
+        isConfirmed: isConfirmed,
+        referenceDate: referenceDate,
+        financialPlanId: FinancialPlanId);
     }
 
     public Result RecordGeneratedTransaction(
@@ -160,6 +187,7 @@ public class RecurringTransaction : BaseEntity
             transaction.AccountId != AccountId ||
             transaction.CategoryId != CategoryId ||
             transaction.Type != Type ||
+            transaction.FinancialPlanId != FinancialPlanId ||
             transaction.Amount != Amount)
         {
             return Error.Validation(
@@ -368,7 +396,7 @@ public class RecurringTransaction : BaseEntity
         Frequency frequency,
         DateTime startDate,
         Guid categoryId,
-        Guid accountId,
+        Guid? accountId,
         DateTime? endDate)
     {
         if (string.IsNullOrWhiteSpace(description))
@@ -410,8 +438,11 @@ public class RecurringTransaction : BaseEntity
         if (categoryId == Guid.Empty)
             return Error.Validation("A categoria é obrigatória.");
 
-        if (accountId == Guid.Empty)
-            return Error.Validation("A conta é obrigatória.");
+        if (accountId.HasValue && accountId.Value == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da conta é inválido.");
+        }
 
         return Result.Success();
     }

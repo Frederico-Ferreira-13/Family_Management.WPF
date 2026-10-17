@@ -1,3 +1,4 @@
+
 using System;
 using System.Threading.Tasks;
 using FamilyManagement.Application.UseCases.Transactions.DTOs;
@@ -31,17 +32,37 @@ public sealed class UpdateTransactionHandler
     public async Task<Result<TransactionDTO>> HandleAsync(
         UpdateTransactionCommand command)
     {
+        // --------------------------------------------------
+        // 1. Validar identificadores
+        // --------------------------------------------------
+
         if (command.TransactionId == Guid.Empty)
-            return Error.Validation("A transação é obrigatória.");
+        {
+            return Error.Validation(
+                "A transação é obrigatória.");
+        }
 
         if (command.UserId == Guid.Empty)
-            return Error.Validation("O utilizador é obrigatório.");
+        {
+            return Error.Validation(
+                "O utilizador é obrigatório.");
+        }
 
         if (command.AccountId == Guid.Empty)
-            return Error.Validation("A conta indicada é inválida.");
+        {
+            return Error.Validation(
+                "A conta indicada é inválida.");
+        }
 
         if (command.CategoryId == Guid.Empty)
-            return Error.Validation("A categoria indicada é inválida.");
+        {
+            return Error.Validation(
+                "A categoria indicada é inválida.");
+        }
+
+        // --------------------------------------------------
+        // 2. Validar utilizador
+        // --------------------------------------------------
 
         var user = await _unitOfWork.Users
             .GetByIdAsync(command.UserId);
@@ -53,6 +74,10 @@ public sealed class UpdateTransactionHandler
                 "Utilizador não encontrado ou inativo.");
         }
 
+        // --------------------------------------------------
+        // 3. Obter transação
+        // --------------------------------------------------
+
         var transaction = await _unitOfWork.Transactions
             .GetByIdAsync(command.TransactionId);
 
@@ -63,7 +88,10 @@ public sealed class UpdateTransactionHandler
                 "Transação não encontrada ou inativa.");
         }
 
-        // Autorização pessoal ou familiar.
+        // --------------------------------------------------
+        // 4. Validar autorização
+        // --------------------------------------------------
+
         if (transaction.FamilyId.HasValue)
         {
             if (user.FamilyId != transaction.FamilyId)
@@ -90,6 +118,10 @@ public sealed class UpdateTransactionHandler
                 "Não tem autorização para editar esta transação pessoal.");
         }
 
+        // --------------------------------------------------
+        // 5. Preparar novo valor monetário
+        // --------------------------------------------------
+
         Money? newAmount = null;
 
         if (command.Amount.HasValue)
@@ -104,38 +136,72 @@ public sealed class UpdateTransactionHandler
             newAmount = moneyResult.Value;
         }
 
-        var resultingAccountId =
+        // --------------------------------------------------
+        // 6. Determinar conta e categoria resultantes
+        // --------------------------------------------------
+
+        // Null no comando significa manter a conta atual.
+        // A remoção explícita da conta deverá ser tratada
+        // por uma operação específica.
+        Guid? resultingAccountId =
             command.AccountId ?? transaction.AccountId;
 
-        var resultingCategoryId =
+        Guid? resultingCategoryId =
             command.CategoryId ?? transaction.CategoryId;
 
-        // Validar a conta resultante, mesmo quando
-        // o utilizador não pretende mudar de conta.
-        var account = await _unitOfWork.Accounts
-            .GetByIdAsync(resultingAccountId);
+        // --------------------------------------------------
+        // 7. Validar conta bancária opcional
+        // --------------------------------------------------
 
-        if (account is null || !account.IsActive)
+        Account? account = null;
+
+        if (resultingAccountId.HasValue)
         {
-            return Error.NotFound(
-                "Account.NotFound",
-                "Conta não encontrada ou inativa.");
+            account = await _unitOfWork.Accounts
+                .GetByIdAsync(resultingAccountId.Value);
+
+            if (account is null || !account.IsActive)
+            {
+                return Error.NotFound(
+                    "Account.NotFound",
+                    "Conta não encontrada ou inativa.");
+            }
+
+            var accountScopeResult =
+                ValidateAccountScope(transaction, account);
+
+            if (accountScopeResult.IsFailure)
+                return accountScopeResult.Error;
+
+            if (!string.Equals(
+                    account.Balance.Currency,
+                    transaction.Amount.Currency,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return DomainErrors.Money.CurrencyMismatch;
+            }
+        }
+        else
+        {
+            // Transferências exigem conta bancária.
+            if (transaction.Type == TransactionType.Transfer)
+            {
+                return Error.Validation(
+                    "Uma transferência exige uma conta de origem.");
+            }
+
+            // Receitas e despesas sem conta têm de estar
+            // associadas a um plano financeiro.
+            if (!transaction.FinancialPlanId.HasValue)
+            {
+                return Error.Validation(
+                    "Um movimento sem conta bancária deve estar associado a um plano financeiro.");
+            }
         }
 
-        var accountScopeResult = ValidateAccountScope(
-            transaction,
-            account);
-
-        if (accountScopeResult.IsFailure)
-            return accountScopeResult.Error;
-
-        if (!string.Equals(
-            account.Balance.Currency,
-            transaction.Amount.Currency,
-            StringComparison.OrdinalIgnoreCase))
-        {
-            return DomainErrors.Money.CurrencyMismatch;
-        }
+        // --------------------------------------------------
+        // 8. Validar transferência ou categoria
+        // --------------------------------------------------
 
         if (transaction.Type == TransactionType.Transfer)
         {
@@ -167,17 +233,16 @@ public sealed class UpdateTransactionHandler
                     "Conta de destino não encontrada ou inativa.");
             }
 
-            var targetScopeResult = ValidateAccountScope(
-                transaction,
-                targetAccount);
+            var targetScopeResult =
+                ValidateAccountScope(transaction, targetAccount);
 
             if (targetScopeResult.IsFailure)
                 return targetScopeResult.Error;
 
             if (!string.Equals(
-                targetAccount.Balance.Currency,
-                transaction.Amount.Currency,
-                StringComparison.OrdinalIgnoreCase))
+                    targetAccount.Balance.Currency,
+                    transaction.Amount.Currency,
+                    StringComparison.OrdinalIgnoreCase))
             {
                 return DomainErrors.Money.CurrencyMismatch;
             }
@@ -200,16 +265,16 @@ public sealed class UpdateTransactionHandler
                     "Categoria não encontrada ou inativa.");
             }
 
-            var categoryScopeResult = ValidateCategoryScope(
-                transaction,
-                category);
+            var categoryScopeResult =
+                ValidateCategoryScope(transaction, category);
 
             if (categoryScopeResult.IsFailure)
                 return categoryScopeResult.Error;
 
-            var expectedType = transaction.Type == TransactionType.Income
-                ? CategoryType.Income
-                : CategoryType.Expense;
+            var expectedType =
+                transaction.Type == TransactionType.Income
+                    ? CategoryType.Income
+                    : CategoryType.Expense;
 
             if (category.Type != expectedType)
             {
@@ -219,8 +284,10 @@ public sealed class UpdateTransactionHandler
             }
         }
 
-        // Se existir um orçamento associado, a categoria
-        // resultante tem de continuar a corresponder-lhe.
+        // --------------------------------------------------
+        // 9. Validar orçamento associado
+        // --------------------------------------------------
+
         if (transaction.BudgetId.HasValue)
         {
             var budget = await _unitOfWork.Budgets
@@ -258,16 +325,18 @@ public sealed class UpdateTransactionHandler
             }
 
             if (!string.Equals(
-                budget.BudgetedAmount.Currency,
-                transaction.Amount.Currency,
-                StringComparison.OrdinalIgnoreCase))
+                    budget.BudgetedAmount.Currency,
+                    transaction.Amount.Currency,
+                    StringComparison.OrdinalIgnoreCase))
             {
                 return DomainErrors.Money.CurrencyMismatch;
             }
         }
 
-        // Validar a meta associada antes de reverter
-        // ou aplicar qualquer impacto.
+        // --------------------------------------------------
+        // 10. Validar meta financeira associada
+        // --------------------------------------------------
+
         if (transaction.GoalId.HasValue)
         {
             var goal = await _unitOfWork.Goals
@@ -290,21 +359,59 @@ public sealed class UpdateTransactionHandler
             }
 
             if (!string.Equals(
-                goal.TargetAmount.Currency,
-                transaction.Amount.Currency,
-                StringComparison.OrdinalIgnoreCase))
+                    goal.TargetAmount.Currency,
+                    transaction.Amount.Currency,
+                    StringComparison.OrdinalIgnoreCase))
             {
                 return DomainErrors.Money.CurrencyMismatch;
             }
         }
 
-        // A transação mantém o seu estado de confirmação.
-        // Os impactos só são recalculados se estiver confirmada.
+        // --------------------------------------------------
+        // 11. Validar plano financeiro associado
+        // --------------------------------------------------
+
+        if (transaction.FinancialPlanId.HasValue)
+        {
+            var financialPlan = await _unitOfWork.FinancialPlans
+                .GetByIdAsync(transaction.FinancialPlanId.Value);
+
+            if (financialPlan is null || !financialPlan.IsActive)
+            {
+                return Error.NotFound(
+                    "FinancialPlan.NotFound",
+                    "Plano financeiro não encontrado ou inativo.");
+            }
+
+            if (!transaction.FamilyId.HasValue ||
+                financialPlan.FamilyId != transaction.FamilyId.Value)
+            {
+                return Error.BusinessRule(
+                    "Transaction.FinancialPlanScopeMismatch",
+                    "O plano financeiro não pertence à família da transação.");
+            }
+
+            if (!string.Equals(
+                    financialPlan.CurrencyCode,
+                    transaction.Amount.Currency,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return DomainErrors.Money.CurrencyMismatch;
+            }
+        }
+
+        // --------------------------------------------------
+        // 12. Reverter, atualizar e reaplicar impactos
+        // --------------------------------------------------
+
         using var dbTransaction =
             await _unitOfWork.BeginTransactionAsync();
 
         try
         {
+            // A confirmação da transação mantém-se.
+            // Apenas movimentos confirmados afetam
+            // saldos, orçamentos e metas.
             if (transaction.IsConfirmed)
             {
                 var revertResult =
@@ -346,6 +453,7 @@ public sealed class UpdateTransactionHandler
             _unitOfWork.Transactions.Update(transaction);
 
             await _unitOfWork.CompleteAsync();
+
             await dbTransaction.CommitAsync();
 
             return Result<TransactionDTO>.Success(
@@ -357,6 +465,10 @@ public sealed class UpdateTransactionHandler
             throw;
         }
     }
+
+    // --------------------------------------------------
+    // VALIDAR ÂMBITO DA CONTA
+    // --------------------------------------------------
 
     private static Result ValidateAccountScope(
         Transaction transaction,
@@ -381,6 +493,10 @@ public sealed class UpdateTransactionHandler
 
         return Result.Success();
     }
+
+    // --------------------------------------------------
+    // VALIDAR ÂMBITO DA CATEGORIA
+    // --------------------------------------------------
 
     private static Result ValidateCategoryScope(
         Transaction transaction,
@@ -409,6 +525,10 @@ public sealed class UpdateTransactionHandler
         return Result.Success();
     }
 
+    // --------------------------------------------------
+    // ROLLBACK E LIMPEZA DO CHANGE TRACKER
+    // --------------------------------------------------
+
     private async Task RollbackAndClearAsync(
         IDbTransaction dbTransaction)
     {
@@ -418,8 +538,8 @@ public sealed class UpdateTransactionHandler
         }
         finally
         {
-            // Um rollback de BD não restaura as entidades rastreadas.
-            // Este UnitOfWork não deve voltar a usar referências antigas.
+            // O rollback da base de dados não restaura
+            // automaticamente as entidades rastreadas.
             _unitOfWork.ClearTrackedChanges();
         }
     }

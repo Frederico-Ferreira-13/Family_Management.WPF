@@ -29,8 +29,7 @@ public static class DependencyInjection
 
     private static void RegisterApplicationServices(
         IServiceCollection services)
-    {        
-
+    {
         services.AddScoped<ISetupService, SetupService>();
 
         services.AddScoped<

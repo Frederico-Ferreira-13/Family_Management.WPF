@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using Microsoft.Extensions.Logging;
 using FamilyManagement.Application.Common.Interfaces;
 using FamilyManagement.Application.Common.Models;
 using FamilyManagement.Domain.Interfaces;
@@ -44,9 +47,48 @@ public static class DependencyInjection
                 connectionString,
                 AppContext.BaseDirectory);
 
-        services.AddDbContext<ApplicationDbContext>(
-            options => options.UseSqlite(
-                normalizedConnectionString));
+        var diagnosticDirectory = Path.Combine(
+            Path.GetTempPath(),
+            "FamilyManagement");
+
+        Directory.CreateDirectory(diagnosticDirectory);
+
+        var diagnosticFile = Path.Combine(
+            diagnosticDirectory,
+            "efcore-sql.log");
+
+        File.AppendAllText(
+            diagnosticFile,
+            $"{Environment.NewLine}=== Diagnóstico iniciado: {DateTime.Now:yyyy-MM-dd HH:mm:ss} ==={Environment.NewLine}");
+
+        services.AddDbContext<ApplicationDbContext>(options =>
+        {
+            options.UseSqlite(normalizedConnectionString);
+
+            options.LogTo(
+                message =>
+                {
+                    try
+                    {
+                        File.AppendAllText(
+                            diagnosticFile,
+                            message + Environment.NewLine);
+                    }
+                    catch (IOException)
+                    {
+                        // O diagnóstico não deve interromper a aplicação.
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        // O diagnóstico não deve interromper a aplicação.
+                    }
+                },
+                new[]
+                {
+                    DbLoggerCategory.Database.Command.Name
+                },
+                LogLevel.Information);
+        });
     }
 
     private static void RegisterRepositories(
@@ -73,6 +115,7 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserRoleRepository, UserRoleRepository>();
         services.AddScoped<IUserSettingRepository, UserSettingRepository>();
+        services.AddScoped<IFinancialPlanRepository, FinancialPlanRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
     }
 

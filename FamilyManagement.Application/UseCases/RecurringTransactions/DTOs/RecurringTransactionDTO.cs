@@ -17,10 +17,13 @@ public sealed record RecurringTransactionDTO(
     DateTime? LastGenerateDate,
     Guid UserId,
     string? UserName,
-    Guid AccountId,
+    Guid? AccountId,
     string? AccountName,
     Guid CategoryId,
     string? CategoryName,
     bool IsActive,
     DateTime CreatedAt,
-    DateTime? UpdatedAt);
+    DateTime? UpdatedAt,
+    Guid? FamilyId = null,
+    Guid? FinancialPlanId = null
+);

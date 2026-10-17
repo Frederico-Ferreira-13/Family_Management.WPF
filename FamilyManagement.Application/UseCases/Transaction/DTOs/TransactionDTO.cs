@@ -17,7 +17,7 @@ public sealed record TransactionDTO(
     bool IsRecurringGenerated,
     Guid UserId,
     string? UserName,
-    Guid AccountId,
+    Guid? AccountId,
     string? AccountName,
     Guid? CategoryId,
     string? CategoryName,

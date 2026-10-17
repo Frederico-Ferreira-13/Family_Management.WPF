@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Threading.Tasks;
 
 namespace FamilyManagement.Domain.Interfaces;
@@ -14,6 +15,9 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     ICurrencyRepository Currencies { get; }
 
     IFamilyRepository Families { get; }
+
+    // Repositório dos planos financeiros familiares
+    IFinancialPlanRepository FinancialPlans { get; }
 
     IGoalRepository Goals { get; }
 

@@ -14,7 +14,7 @@ public sealed class TransactionConfiguration
 
         builder.HasKey(t => t.Id);
 
-        // Amount : Money
+        // Valor monetário
         builder.OwnsOne(t => t.Amount, money =>
         {
             money.Property(m => m.Amount)
@@ -50,22 +50,26 @@ public sealed class TransactionConfiguration
             .IsRequired()
             .HasDefaultValue(false);
 
+        // Utilizador responsável pelo movimento
         builder.Property(t => t.UserId)
             .IsRequired();
 
-        // Âmbito familiar opcional.
+        // Âmbito financeiro:
         // null = movimento pessoal
         // valor = movimento familiar
         builder.Property(t => t.FamilyId)
             .IsRequired(false);
 
+        // Conta bancária opcional para receitas e despesas.
+        // As transferências continuam a exigir contas
+        // de origem e destino, por regra de domínio.
         builder.Property(t => t.AccountId)
-            .IsRequired();
-
-        builder.Property(t => t.CategoryId)
             .IsRequired(false);
 
         builder.Property(t => t.TargetAccountId)
+            .IsRequired(false);
+
+        builder.Property(t => t.CategoryId)
             .IsRequired(false);
 
         builder.Property(t => t.RecurringTransactionId)
@@ -77,94 +81,105 @@ public sealed class TransactionConfiguration
         builder.Property(t => t.GoalId)
             .IsRequired(false);
 
-        // User -> Transactions
+        // Plano financeiro opcional para compatibilidade
+        // com os movimentos anteriores à sua introdução.
+        builder.Property(t => t.FinancialPlanId)
+            .IsRequired(false);
+
+        // Utilizador -> Movimentos
         builder.HasOne(t => t.User)
             .WithMany(u => u.Transactions)
             .HasForeignKey(t => t.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Family -> Transactions
-        // Preserva a associação histórica do movimento
-        // à família, impedindo a eliminação física
-        // da família enquanto existirem transações associadas.
+        // Família -> Movimentos
         builder.HasOne(t => t.Family)
             .WithMany()
             .HasForeignKey(t => t.FamilyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Account -> Transactions
+        // Plano financeiro -> Movimentos
+        builder.HasOne(t => t.FinancialPlan)
+            .WithMany()
+            .HasForeignKey(t => t.FinancialPlanId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Conta bancária -> Movimentos
+        // A relação é opcional, mas impede a eliminação
+        // física de uma conta com histórico associado.
         builder.HasOne(t => t.Account)
             .WithMany(a => a.Transactions)
             .HasForeignKey(t => t.AccountId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Category -> Transactions
-        builder.HasOne(t => t.Category)
-            .WithMany(c => c.Transactions)
-            .HasForeignKey(t => t.CategoryId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // Budget não possui ICollection<Transaction>.
-        builder.HasOne(t => t.Budget)
-            .WithMany()
-            .HasForeignKey(t => t.BudgetId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        // Goal -> Contributions
-        builder.HasOne(t => t.Goal)
-            .WithMany(g => g.Contributions)
-            .HasForeignKey(t => t.GoalId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        // RecurringTransaction -> GeneratedTransactions
-        builder.HasOne(t => t.RecurringTransaction)
-            .WithMany(rt => rt.GeneratedTransactions)
-            .HasForeignKey(t => t.RecurringTransactionId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        // Conta de destino de uma transferência.
+        // Conta de destino das transferências
         builder.HasOne(t => t.TargetAccount)
             .WithMany()
             .HasForeignKey(t => t.TargetAccountId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Índices existentes
+        // Categoria -> Movimentos
+        builder.HasOne(t => t.Category)
+            .WithMany(c => c.Transactions)
+            .HasForeignKey(t => t.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Orçamento -> Movimentos
+        builder.HasOne(t => t.Budget)
+            .WithMany()
+            .HasForeignKey(t => t.BudgetId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Objetivo -> Contribuições
+        builder.HasOne(t => t.Goal)
+            .WithMany(g => g.Contributions)
+            .HasForeignKey(t => t.GoalId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Recorrência -> Movimentos gerados
+        builder.HasOne(t => t.RecurringTransaction)
+            .WithMany(rt => rt.GeneratedTransactions)
+            .HasForeignKey(t => t.RecurringTransactionId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Índices de pesquisa
         builder.HasIndex(t => t.Date);
-
         builder.HasIndex(t => t.UserId);
-
         builder.HasIndex(t => t.CategoryId);
-
         builder.HasIndex(t => t.BudgetId);
-
         builder.HasIndex(t => t.GoalId);
-
         builder.HasIndex(t => t.RecurringTransactionId);
+        builder.HasIndex(t => t.Type);
 
-        // Extrato de uma conta.
+        // Extrato bancário
         builder.HasIndex(t => new
         {
             t.AccountId,
             t.Date
         });
 
-        // Histórico pessoal por utilizador e data.
+        // Histórico pessoal
         builder.HasIndex(t => new
         {
             t.UserId,
             t.Date
         });
 
-        // Histórico familiar por família e data.
+        // Histórico familiar
         builder.HasIndex(t => new
         {
             t.FamilyId,
             t.Date
         });
 
-        builder.HasIndex(t => t.Type);
+        // Histórico do plano financeiro
+        builder.HasIndex(t => new
+        {
+            t.FinancialPlanId,
+            t.Date
+        });
 
-        // BaseEntity
+        // Propriedades comuns
         builder.Property(t => t.CreatedAt)
             .IsRequired();
 

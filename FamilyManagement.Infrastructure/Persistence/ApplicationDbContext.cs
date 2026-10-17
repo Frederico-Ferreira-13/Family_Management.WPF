@@ -31,6 +31,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<UserSetting> UserSettings => Set<UserSetting>();
 
+    public DbSet<FinancialPlan> FinancialPlans =>
+    Set<FinancialPlan>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

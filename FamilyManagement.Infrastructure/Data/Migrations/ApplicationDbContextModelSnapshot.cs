@@ -75,6 +75,9 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("FamilyId")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
@@ -101,10 +104,19 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("FamilyId", "Year", "Month");
+
                     b.HasIndex("UserId", "Year", "Month");
 
+                    b.HasIndex("FamilyId", "CategoryId", "Month", "Year")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Budgets_Family_Period")
+                        .HasFilter("\"FamilyId\" IS NOT NULL");
+
                     b.HasIndex("UserId", "CategoryId", "Month", "Year")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UX_Budgets_Personal_Period")
+                        .HasFilter("\"FamilyId\" IS NULL");
 
                     b.ToTable("Budgets", (string)null);
                 });
@@ -281,6 +293,55 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.ToTable("Families", (string)null);
                 });
 
+            modelBuilder.Entity("FamilyManagement.Domain.Model.FinancialPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("TEXT")
+                        .IsFixedLength();
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("FamilyId");
+
+                    b.HasIndex("FamilyId", "Name");
+
+                    b.ToTable("FinancialPlans", (string)null);
+                });
+
             modelBuilder.Entity("FamilyManagement.Domain.Model.Goal", b =>
                 {
                     b.Property<Guid>("Id")
@@ -288,6 +349,9 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("FamilyId")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsAchieved")
@@ -319,11 +383,66 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("FamilyId");
+
                     b.HasIndex("UserId");
+
+                    b.HasIndex("FamilyId", "IsActive");
 
                     b.HasIndex("UserId", "IsActive");
 
                     b.ToTable("Goals", (string)null);
+                });
+
+            modelBuilder.Entity("FamilyManagement.Domain.Model.GoalContributionImpact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("AppliedAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("AppliedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("GoalId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsApplied")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("RevertedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TransactionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TransactionId")
+                        .IsUnique();
+
+                    b.HasIndex("GoalId", "IsApplied");
+
+                    b.ToTable("GoalContributionImpacts", (string)null);
                 });
 
             modelBuilder.Entity("FamilyManagement.Domain.Model.Investment", b =>
@@ -380,7 +499,7 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("AccountId")
+                    b.Property<Guid?>("AccountId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("CategoryId")
@@ -395,6 +514,12 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("FamilyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("FinancialPlanId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Frequency")
@@ -431,6 +556,10 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("FamilyId", "NextDueDate");
+
+                    b.HasIndex("FinancialPlanId", "NextDueDate");
+
                     b.HasIndex("IsActive", "NextDueDate");
 
                     b.ToTable("RecurringTransactions", (string)null);
@@ -442,7 +571,7 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("AccountId")
+                    b.Property<Guid?>("AccountId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("BudgetId")
@@ -460,6 +589,12 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(250)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("FamilyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("FinancialPlanId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("GoalId")
@@ -518,6 +653,10 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.HasIndex("AccountId", "Date");
+
+                    b.HasIndex("FamilyId", "Date");
+
+                    b.HasIndex("FinancialPlanId", "Date");
 
                     b.HasIndex("UserId", "Date");
 
@@ -760,6 +899,11 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("FamilyManagement.Domain.Model.Family", "Family")
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("FamilyManagement.Domain.Model.User", null)
                         .WithMany("Budgets")
                         .HasForeignKey("UserId")
@@ -819,6 +963,8 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
 
                     b.Navigation("CurrentSpent")
                         .IsRequired();
+
+                    b.Navigation("Family");
                 });
 
             modelBuilder.Entity("FamilyManagement.Domain.Model.Category", b =>
@@ -856,8 +1002,32 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.Navigation("CreatorUser");
                 });
 
+            modelBuilder.Entity("FamilyManagement.Domain.Model.FinancialPlan", b =>
+                {
+                    b.HasOne("FamilyManagement.Domain.Model.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FamilyManagement.Domain.Model.Family", "Family")
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Family");
+                });
+
             modelBuilder.Entity("FamilyManagement.Domain.Model.Goal", b =>
                 {
+                    b.HasOne("FamilyManagement.Domain.Model.Family", "Family")
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("FamilyManagement.Domain.Model.User", "User")
                         .WithMany("Goals")
                         .HasForeignKey("UserId")
@@ -915,10 +1085,31 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.Navigation("CurrentAmount")
                         .IsRequired();
 
+                    b.Navigation("Family");
+
                     b.Navigation("TargetAmount")
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("FamilyManagement.Domain.Model.GoalContributionImpact", b =>
+                {
+                    b.HasOne("FamilyManagement.Domain.Model.Goal", "Goal")
+                        .WithMany()
+                        .HasForeignKey("GoalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FamilyManagement.Domain.Model.Transaction", "Transaction")
+                        .WithMany()
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Goal");
+
+                    b.Navigation("Transaction");
                 });
 
             modelBuilder.Entity("FamilyManagement.Domain.Model.Investment", b =>
@@ -998,14 +1189,23 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.HasOne("FamilyManagement.Domain.Model.Account", "Account")
                         .WithMany()
                         .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FamilyManagement.Domain.Model.Category", "Category")
                         .WithMany("RecurringTransactions")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("FamilyManagement.Domain.Model.Family", "Family")
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FamilyManagement.Domain.Model.FinancialPlan", "FinancialPlan")
+                        .WithMany()
+                        .HasForeignKey("FinancialPlanId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FamilyManagement.Domain.Model.User", "User")
                         .WithMany("RecurringTransactions")
@@ -1044,6 +1244,10 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
 
                     b.Navigation("Category");
 
+                    b.Navigation("Family");
+
+                    b.Navigation("FinancialPlan");
+
                     b.Navigation("User");
                 });
 
@@ -1052,8 +1256,7 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.HasOne("FamilyManagement.Domain.Model.Account", "Account")
                         .WithMany("Transactions")
                         .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FamilyManagement.Domain.Model.Budget", "Budget")
                         .WithMany()
@@ -1063,6 +1266,16 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.HasOne("FamilyManagement.Domain.Model.Category", "Category")
                         .WithMany("Transactions")
                         .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FamilyManagement.Domain.Model.Family", "Family")
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("FamilyManagement.Domain.Model.FinancialPlan", "FinancialPlan")
+                        .WithMany()
+                        .HasForeignKey("FinancialPlanId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FamilyManagement.Domain.Model.Goal", "Goal")
@@ -1118,6 +1331,10 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.Navigation("Budget");
 
                     b.Navigation("Category");
+
+                    b.Navigation("Family");
+
+                    b.Navigation("FinancialPlan");
 
                     b.Navigation("Goal");
 

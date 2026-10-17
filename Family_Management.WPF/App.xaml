@@ -17,6 +17,7 @@
              xmlns:shell="clr-namespace:Family_Management.WPF.ViewModel.Shell"
              xmlns:transactions="clr-namespace:Family_Management.WPF.ViewModel.Transactions"
              xmlns:users="clr-namespace:Family_Management.WPF.ViewModel.Users"
+             xmlns:finance="clr-namespace:Family_Management.WPF.ViewModel.Finance"
 
              xmlns:converters="clr-namespace:Family_Management.WPF.Converters">
 
@@ -154,6 +155,19 @@
                 DataType="{x:Type families:FamilySetupViewModel}">
                 <views:FamilySetupView />
             </DataTemplate>
+
+            <!-- =================================================
+                 FINANCE
+                 ================================================= -->
+
+                 <!-- UNIVERSAL FINANCE -->
+
+                <DataTemplate
+                    DataType="{x:Type finance:UniversalFinanceViewModel}">
+
+                    <views:UniversalFinanceView />
+
+                </DataTemplate>
 
             <!-- =================================================
                  INVESTMENTS

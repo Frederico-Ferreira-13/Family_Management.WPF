@@ -283,4 +283,23 @@ public sealed class TransactionRepository
             .Include(t => t.RecurringTransaction)
             .Include(t => t.User);
     }
+
+    
+    public async Task<IEnumerable<Transaction>>
+        GetConfirmedByFinancialPlanIdAsync(Guid financialPlanId)
+    {
+        if (financialPlanId == Guid.Empty)
+            return Array.Empty<Transaction>();
+
+        return await DbSet
+            .AsNoTracking()
+            .Where(t =>
+                t.FinancialPlanId == financialPlanId &&
+                t.IsActive &&
+                t.IsConfirmed &&
+                (t.Type == TransactionType.Income ||
+                t.Type == TransactionType.Expense))
+            .OrderByDescending(t => t.Date)
+            .ToListAsync();
+    }
 }

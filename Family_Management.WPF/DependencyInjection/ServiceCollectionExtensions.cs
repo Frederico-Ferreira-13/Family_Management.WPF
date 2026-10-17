@@ -18,6 +18,7 @@ using Family_Management.WPF.ViewModel.RecurringTransactions;
 using Family_Management.WPF.ViewModel.Shell;
 using Family_Management.WPF.ViewModel.Transactions;
 using Family_Management.WPF.ViewModel.Users;
+using Family_Management.WPF.ViewModel.Finance;
 
 using Family_Management.WPF.Views;
 
@@ -151,6 +152,12 @@ public static class ServiceCollectionExtensions
         services.AddTransient<FamilySetupViewModel>();
 
         // ---------------------------------------------------------
+        // Finance
+        // ---------------------------------------------------------
+
+            services.AddTransient<UniversalFinanceViewModel>();
+
+        // ---------------------------------------------------------
         // Goals
         // ---------------------------------------------------------
 
@@ -238,6 +245,12 @@ public static class ServiceCollectionExtensions
 
         services.AddTransient<FamilyView>();
         services.AddTransient<FamilySetupView>();
+
+        // ---------------------------------------------------------
+        // Finance
+        // ---------------------------------------------------------
+
+        services.AddTransient<UniversalFinanceView>();
 
         // ---------------------------------------------------------
         // Goals

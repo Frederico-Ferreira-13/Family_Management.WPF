@@ -29,16 +29,14 @@ public sealed class CreateTransactionHandler
     public async Task<Result<TransactionDTO>> HandleAsync(
         CreateTransactionCommand command)
     {
+        // --------------------------------------------------
+        // 1. Validação dos identificadores
+        // --------------------------------------------------
+
         if (command.UserId == Guid.Empty)
         {
             return Error.Validation(
                 "O utilizador é obrigatório.");
-        }
-
-        if (command.AccountId == Guid.Empty)
-        {
-            return Error.Validation(
-                "A conta é obrigatória.");
         }
 
         if (command.CategoryId == Guid.Empty)
@@ -47,11 +45,36 @@ public sealed class CreateTransactionHandler
                 "A categoria é obrigatória.");
         }
 
+        if (command.AccountId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da conta é inválido.");
+        }
+
         if (command.FamilyId == Guid.Empty)
         {
             return Error.Validation(
                 "O identificador da família é inválido.");
         }
+
+        if (command.FinancialPlanId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador do plano financeiro é inválido.");
+        }
+
+        // Um movimento sem conta bancária deve
+        // estar associado a um plano financeiro.
+        if (!command.AccountId.HasValue &&
+            !command.FinancialPlanId.HasValue)
+        {
+            return Error.Validation(
+                "Um movimento sem conta bancária deve estar associado a um plano financeiro.");
+        }
+
+        // --------------------------------------------------
+        // 2. Validar utilizador
+        // --------------------------------------------------
 
         var user = await _unitOfWork.Users
             .GetByIdAsync(command.UserId);
@@ -60,11 +83,13 @@ public sealed class CreateTransactionHandler
         {
             return Error.NotFound(
                 "User.NotFound",
-                "Utilizador não encontrado.");
+                "Utilizador não encontrado ou inativo.");
         }
 
-        // Validar a pertença à família antes de
-        // permitir operações no âmbito familiar.
+        // --------------------------------------------------
+        // 3. Validar âmbito familiar
+        // --------------------------------------------------
+
         if (command.FamilyId.HasValue)
         {
             if (user.FamilyId != command.FamilyId)
@@ -85,39 +110,91 @@ public sealed class CreateTransactionHandler
             }
         }
 
-        var account = await _unitOfWork.Accounts
-            .GetByIdAsync(command.AccountId);
+        // --------------------------------------------------
+        // 4. Validar plano financeiro
+        // --------------------------------------------------
 
-        if (account is null || !account.IsActive)
-        {
-            return Error.NotFound(
-                "Account.NotFound",
-                "Conta não encontrada.");
-        }
+        FinancialPlan? financialPlan = null;
 
-        if (command.FamilyId.HasValue)
+        if (command.FinancialPlanId.HasValue)
         {
-            // A conta pode pertencer a outro membro,
-            // mas tem de estar associada à mesma família.
-            if (account.FamilyId != command.FamilyId)
+            financialPlan = await _unitOfWork.FinancialPlans
+                .GetByIdAsync(command.FinancialPlanId.Value);
+
+            if (financialPlan is null || !financialPlan.IsActive)
             {
+                return Error.NotFound(
+                    "FinancialPlan.NotFound",
+                    "Plano financeiro não encontrado ou inativo.");
+            }
+
+            // O plano financeiro tem de pertencer
+            // à família indicada.
+            if (command.FamilyId.HasValue)
+            {
+                if (financialPlan.FamilyId != command.FamilyId.Value)
+                {
+                    return Error.BusinessRule(
+                        "Transaction.FinancialPlanFamilyMismatch",
+                        "O plano financeiro não pertence à família indicada.");
+                }
+            }
+            else
+            {
+                // Não permitir associar um movimento
+                // pessoal a um plano familiar.
                 return Error.BusinessRule(
-                    "Transaction.AccountFamilyMismatch",
-                    "A conta não pertence à família indicada.");
+                    "Transaction.FinancialPlanRequiresFamily",
+                    "É necessário indicar a família para utilizar um plano financeiro familiar.");
             }
         }
-        else
+
+        // --------------------------------------------------
+        // 5. Validar conta bancária (opcional)
+        // --------------------------------------------------
+
+        Account? account = null;
+
+        if (command.AccountId.HasValue)
         {
-            // Um movimento pessoal só pode utilizar
-            // contas pessoais do próprio utilizador.
-            if (account.UserId != command.UserId ||
-                account.FamilyId.HasValue)
+            account = await _unitOfWork.Accounts
+                .GetByIdAsync(command.AccountId.Value);
+
+            if (account is null || !account.IsActive)
             {
-                return Error.BusinessRule(
-                    "Transaction.AccountOwnerMismatch",
-                    "A conta não é uma conta pessoal do utilizador.");
+                return Error.NotFound(
+                    "Account.NotFound",
+                    "Conta bancária não encontrada ou inativa.");
+            }
+
+            if (command.FamilyId.HasValue)
+            {
+                // A conta pode pertencer a outro membro,
+                // desde que esteja associada à família.
+                if (account.FamilyId != command.FamilyId)
+                {
+                    return Error.BusinessRule(
+                        "Transaction.AccountFamilyMismatch",
+                        "A conta bancária não pertence à família indicada.");
+                }
+            }
+            else
+            {
+                // Movimento pessoal:
+                // apenas contas pessoais do utilizador.
+                if (account.UserId != command.UserId ||
+                    account.FamilyId.HasValue)
+                {
+                    return Error.BusinessRule(
+                        "Transaction.AccountOwnerMismatch",
+                        "A conta não é uma conta pessoal do utilizador.");
+                }
             }
         }
+
+        // --------------------------------------------------
+        // 6. Validar categoria
+        // --------------------------------------------------
 
         var category = await _unitOfWork.Categories
             .GetByIdAsync(command.CategoryId);
@@ -126,11 +203,11 @@ public sealed class CreateTransactionHandler
         {
             return Error.NotFound(
                 "Category.NotFound",
-                "Categoria não encontrada.");
+                "Categoria não encontrada ou inativa.");
         }
 
-        // Categorias globais podem ser usadas
-        // nos dois âmbitos.
+        // Categorias globais podem ser utilizadas
+        // em movimentos pessoais e familiares.
         if (!category.IsGlobal)
         {
             if (command.FamilyId.HasValue)
@@ -154,22 +231,50 @@ public sealed class CreateTransactionHandler
             }
         }
 
+        // --------------------------------------------------
+        // 7. Criar e validar valor monetário
+        // --------------------------------------------------
+
         var moneyResult = Money.TryCreate(
             command.Amount,
             command.Currency);
 
         if (moneyResult.IsFailure)
+        {
             return moneyResult.Error;
+        }
 
         var money = moneyResult.Value;
 
-        if (!string.Equals(
+        // --------------------------------------------------
+        // 8. Validar moeda da conta bancária
+        // --------------------------------------------------
+
+        if (account is not null &&
+            !string.Equals(
                 account.Balance.Currency,
                 money.Currency,
                 StringComparison.OrdinalIgnoreCase))
         {
             return DomainErrors.Money.CurrencyMismatch;
         }
+
+        // --------------------------------------------------
+        // 9. Validar moeda do plano financeiro
+        // --------------------------------------------------
+
+        if (financialPlan is not null &&
+            !string.Equals(
+                financialPlan.CurrencyCode,
+                money.Currency,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return DomainErrors.Money.CurrencyMismatch;
+        }
+
+        // --------------------------------------------------
+        // 10. Criar movimento
+        // --------------------------------------------------
 
         var transactionResult =
             Transaction.CreateIncomeOrExpense(
@@ -184,18 +289,27 @@ public sealed class CreateTransactionHandler
                 command.BudgetId,
                 command.GoalId,
                 command.IsConfirmed,
-                familyId: command.FamilyId);
+                familyId: command.FamilyId,
+                financialPlanId: command.FinancialPlanId);
 
         if (transactionResult.IsFailure)
+        {
             return transactionResult.Error;
+        }
 
         var transaction = transactionResult.Value;
+
+        // --------------------------------------------------
+        // 11. Persistir numa transação de base de dados
+        // --------------------------------------------------
 
         using var databaseTransaction =
             await _unitOfWork.BeginTransactionAsync();
 
         try
         {
+            // Apenas movimentos confirmados
+            // produzem impactos financeiros reais.
             if (transaction.IsConfirmed)
             {
                 var impactResult =
@@ -208,7 +322,8 @@ public sealed class CreateTransactionHandler
                 }
             }
 
-            await _unitOfWork.Transactions.AddAsync(transaction);
+            await _unitOfWork.Transactions
+                .AddAsync(transaction);
 
             await _unitOfWork.CompleteAsync();
 

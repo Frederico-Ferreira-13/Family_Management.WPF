@@ -2,13 +2,10 @@
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
-
 using Family_Management.WPF.DependencyInjection;
 using Family_Management.WPF.Views;
-
 using FamilyManagement.Application;
 using FamilyManagement.Infrastructure;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

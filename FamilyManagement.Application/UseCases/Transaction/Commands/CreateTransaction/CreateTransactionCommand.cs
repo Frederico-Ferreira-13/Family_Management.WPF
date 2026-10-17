@@ -1,4 +1,3 @@
-
 using FamilyManagement.Domain.Enums;
 
 namespace FamilyManagement.Application.UseCases.Transactions.Commands.CreateTransaction;
@@ -10,10 +9,11 @@ public sealed record CreateTransactionCommand(
     string Description,
     string? Notes,
     TransactionType Type,
-    Guid AccountId,
+    Guid? AccountId,
     Guid UserId,
     Guid CategoryId,
     Guid? BudgetId = null,
     Guid? GoalId = null,
     bool IsConfirmed = true,
-    Guid? FamilyId = null);
+    Guid? FamilyId = null,
+    Guid? FinancialPlanId = null);

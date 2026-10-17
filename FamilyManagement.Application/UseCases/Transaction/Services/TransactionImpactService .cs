@@ -1,3 +1,4 @@
+
 using System;
 using System.Threading.Tasks;
 using FamilyManagement.Domain.Common;
@@ -30,36 +31,59 @@ public sealed class TransactionImpactService : ITransactionImpactService
                 "A transação deve estar ativa e confirmada.");
         }
 
-        var account = await _unitOfWork.Accounts
-            .GetByIdAsync(transaction.AccountId);
-
-        if (account is null || !account.IsActive)
+        // As transferências exigem sempre uma conta de origem.
+        // As receitas e despesas podem não ter conta bancária,
+        // desde que estejam associadas a um plano financeiro.
+        if (!transaction.AccountId.HasValue &&
+            (transaction.Type == TransactionType.Transfer ||
+             !transaction.FinancialPlanId.HasValue))
         {
-            return Error.NotFound(
-                "Account.NotFound",
-                "Conta não encontrada ou inativa.");
+            return Error.Validation(
+                "A transação necessita de uma conta bancária ou de um plano financeiro válido.");
         }
 
-        var scopeResult = ValidateAccountScope(transaction, account);
+        Account? account = null;
 
-        if (scopeResult.IsFailure)
-            return scopeResult;
+        if (transaction.AccountId.HasValue)
+        {
+            account = await _unitOfWork.Accounts
+                .GetByIdAsync(transaction.AccountId.Value);
 
-        if (account.Balance.Currency != transaction.Amount.Currency)
-            return DomainErrors.Money.CurrencyMismatch;
+            if (account is null || !account.IsActive)
+            {
+                return Error.NotFound(
+                    "Account.NotFound",
+                    "Conta não encontrada ou inativa.");
+            }
+
+            var scopeResult = ValidateAccountScope(
+                transaction,
+                account);
+
+            if (scopeResult.IsFailure)
+                return scopeResult;
+
+            if (account.Balance.Currency != transaction.Amount.Currency)
+                return DomainErrors.Money.CurrencyMismatch;
+        }
 
         return transaction.Type switch
         {
             TransactionType.Income =>
-                account.Deposit(transaction.Amount),
+                ApplyIncome(transaction, account),
 
             TransactionType.Expense =>
                 await ApplyExpenseAsync(transaction, account),
 
-            TransactionType.Transfer =>
+            TransactionType.Transfer when account is not null =>
                 await ApplyTransferAsync(transaction, account),
 
-            _ => Error.Validation("Tipo de transação inválido.")
+            TransactionType.Transfer =>
+                Error.Validation(
+                    "A conta de origem é obrigatória numa transferência."),
+
+            _ => Error.Validation(
+                "Tipo de transação inválido.")
         };
     }
 
@@ -70,47 +94,100 @@ public sealed class TransactionImpactService : ITransactionImpactService
         if (!transaction.IsConfirmed)
             return Result.Success();
 
-        var account = await _unitOfWork.Accounts
-            .GetByIdAsync(transaction.AccountId);
-
-        if (account is null)
+        // Não permitir transferências sem conta de origem.
+        if (!transaction.AccountId.HasValue &&
+            transaction.Type == TransactionType.Transfer)
         {
-            return Error.NotFound(
-                "Account.NotFound",
-                "Conta não encontrada.");
+            return Error.Validation(
+                "A conta de origem é obrigatória numa transferência.");
         }
 
-        var scopeResult = ValidateAccountScope(transaction, account);
+        Account? account = null;
 
-        if (scopeResult.IsFailure)
-            return scopeResult;
+        if (transaction.AccountId.HasValue)
+        {
+            account = await _unitOfWork.Accounts
+                .GetByIdAsync(transaction.AccountId.Value);
 
-        if (account.Balance.Currency != transaction.Amount.Currency)
-            return DomainErrors.Money.CurrencyMismatch;
+            // Na reversão, uma conta inativa pode continuar
+            // a necessitar de correção do seu saldo histórico.
+            if (account is null)
+            {
+                return Error.NotFound(
+                    "Account.NotFound",
+                    "Conta não encontrada.");
+            }
+
+            var scopeResult = ValidateAccountScope(
+                transaction,
+                account);
+
+            if (scopeResult.IsFailure)
+                return scopeResult;
+
+            if (account.Balance.Currency != transaction.Amount.Currency)
+                return DomainErrors.Money.CurrencyMismatch;
+        }
 
         return transaction.Type switch
         {
             TransactionType.Income =>
-                account.Withdraw(transaction.Amount),
+                RevertIncome(transaction, account),
 
             TransactionType.Expense =>
                 await RevertExpenseAsync(transaction, account),
 
-            TransactionType.Transfer =>
+            TransactionType.Transfer when account is not null =>
                 await RevertTransferAsync(transaction, account),
 
-            _ => Error.Validation("Tipo de transação inválido.")
+            TransactionType.Transfer =>
+                Error.Validation(
+                    "A conta de origem é obrigatória numa transferência."),
+
+            _ => Error.Validation(
+                "Tipo de transação inválido.")
         };
     }
 
+    // --------------------------------------------------
+    // RECEITAS
+    // --------------------------------------------------
+
+    private static Result ApplyIncome(
+        Transaction transaction,
+        Account? account)
+    {
+        // Uma receita sem conta bancária pertence ao plano
+        // financeiro, mas não altera qualquer saldo bancário.
+        if (account is null)
+            return Result.Success();
+
+        return account.Deposit(transaction.Amount);
+    }
+
+    private static Result RevertIncome(
+        Transaction transaction,
+        Account? account)
+    {
+        if (account is null)
+            return Result.Success();
+
+        return account.Withdraw(transaction.Amount);
+    }
+
+    // --------------------------------------------------
+    // DESPESAS - APLICAÇÃO
+    // --------------------------------------------------
+
     private async Task<Result> ApplyExpenseAsync(
         Transaction transaction,
-        Account account)
+        Account? account)
     {
         Budget? budget = null;
         Goal? goal = null;
         GoalContributionImpact? existingImpact = null;
 
+        // Validar orçamento.
         if (transaction.BudgetId.HasValue)
         {
             budget = await _unitOfWork.Budgets
@@ -123,12 +200,15 @@ public sealed class TransactionImpactService : ITransactionImpactService
                     "Orçamento não encontrado ou inativo.");
             }
 
-            var validation = ValidateBudgetScope(transaction, budget);
+            var validation = ValidateBudgetScope(
+                transaction,
+                budget);
 
             if (validation.IsFailure)
                 return validation;
         }
 
+        // Validar meta financeira.
         if (transaction.GoalId.HasValue)
         {
             goal = await _unitOfWork.Goals
@@ -141,15 +221,19 @@ public sealed class TransactionImpactService : ITransactionImpactService
                     "Meta não encontrada ou inativa.");
             }
 
-            var validation = ValidateGoalScope(transaction, goal);
+            var validation = ValidateGoalScope(
+                transaction,
+                goal);
 
             if (validation.IsFailure)
                 return validation;
 
-            existingImpact = await _unitOfWork.GoalContributionImpacts
-                .GetByTransactionIdAsync(transaction.Id);
+            existingImpact =
+                await _unitOfWork.GoalContributionImpacts
+                    .GetByTransactionIdAsync(transaction.Id);
 
-            if (existingImpact is not null && existingImpact.IsApplied)
+            if (existingImpact is not null &&
+                existingImpact.IsApplied)
             {
                 return Error.Conflict(
                     "GoalContribution.AlreadyApplied",
@@ -157,35 +241,44 @@ public sealed class TransactionImpactService : ITransactionImpactService
             }
         }
 
-        // Todas as referências e âmbitos foram validados.
-        var withdrawResult = account.Withdraw(transaction.Amount);
+        // Todas as referências foram validadas.
+        // Apenas retirar dinheiro da conta se existir.
+        if (account is not null)
+        {
+            var withdrawResult =
+                account.Withdraw(transaction.Amount);
 
-        if (withdrawResult.IsFailure)
-            return withdrawResult;
+            if (withdrawResult.IsFailure)
+                return withdrawResult;
+        }
 
+        // Atualizar o orçamento, mesmo quando
+        // a transação não possui conta bancária.
         if (budget is not null)
         {
-            var budgetResult = budget.AddExpense(transaction.Amount);
+            var budgetResult =
+                budget.AddExpense(transaction.Amount);
 
             if (budgetResult.IsFailure)
                 return budgetResult;
         }
 
+        // Aplicar contribuição para a meta financeira.
         if (goal is not null)
         {
-            // A coleção Goal.Contributions deixa de ser
-            // utilizada para controlar a contabilização.
-            var depositResult = goal.Deposit(transaction.Amount);
+            var depositResult =
+                goal.Deposit(transaction.Amount);
 
             if (depositResult.IsFailure)
                 return depositResult;
 
             if (existingImpact is null)
             {
-                var createResult = GoalContributionImpact.Create(
-                    transaction.Id,
-                    goal.Id,
-                    transaction.Amount);
+                var createResult =
+                    GoalContributionImpact.Create(
+                        transaction.Id,
+                        goal.Id,
+                        transaction.Amount);
 
                 if (createResult.IsFailure)
                     return createResult.Error;
@@ -195,9 +288,10 @@ public sealed class TransactionImpactService : ITransactionImpactService
             }
             else
             {
-                var reapplyResult = existingImpact.Reapply(
-                    goal.Id,
-                    transaction.Amount);
+                var reapplyResult =
+                    existingImpact.Reapply(
+                        goal.Id,
+                        transaction.Amount);
 
                 if (reapplyResult.IsFailure)
                     return reapplyResult;
@@ -207,9 +301,13 @@ public sealed class TransactionImpactService : ITransactionImpactService
         return Result.Success();
     }
 
+    // --------------------------------------------------
+    // DESPESAS - REVERSÃO
+    // --------------------------------------------------
+
     private async Task<Result> RevertExpenseAsync(
         Transaction transaction,
-        Account account)
+        Account? account)
     {
         Budget? budget = null;
         Goal? goal = null;
@@ -227,7 +325,9 @@ public sealed class TransactionImpactService : ITransactionImpactService
                     "Orçamento associado não encontrado.");
             }
 
-            var validation = ValidateBudgetScope(transaction, budget);
+            var validation = ValidateBudgetScope(
+                transaction,
+                budget);
 
             if (validation.IsFailure)
                 return validation;
@@ -238,8 +338,8 @@ public sealed class TransactionImpactService : ITransactionImpactService
             impact = await _unitOfWork.GoalContributionImpacts
                 .GetByTransactionIdAsync(transaction.Id);
 
-            // Não presumimos que a ausência de registo
-            // significa ausência de impacto histórico.
+            // Nunca presumir que a ausência de histórico
+            // significa que a contribuição não foi aplicada.
             if (impact is null)
             {
                 return Error.Conflict(
@@ -265,7 +365,9 @@ public sealed class TransactionImpactService : ITransactionImpactService
                     "Meta associada ao impacto não encontrada.");
             }
 
-            var validation = ValidateGoalScope(transaction, goal);
+            var validation = ValidateGoalScope(
+                transaction,
+                goal);
 
             if (validation.IsFailure)
                 return validation;
@@ -274,42 +376,60 @@ public sealed class TransactionImpactService : ITransactionImpactService
                 return DomainErrors.Money.CurrencyMismatch;
         }
 
+        // Reverter a contribuição usando o montante
+        // efetivamente aplicado, preservado no histórico.
         if (goal is not null && impact is not null)
         {
-            // Reverter o valor realmente contabilizado,
-            // não necessariamente o valor atual da transação.
             var appliedAmount = Money.Create(
                 impact.AppliedAmount,
                 impact.Currency);
 
-            var goalResult = goal.Withdraw(appliedAmount);
+            var goalResult =
+                goal.Withdraw(appliedAmount);
 
             if (goalResult.IsFailure)
                 return goalResult;
 
-            var markResult = impact.MarkReverted();
+            var markResult =
+                impact.MarkReverted();
 
             if (markResult.IsFailure)
                 return markResult;
         }
 
+        // Reverter o impacto no orçamento.
         if (budget is not null)
         {
-            var budgetResult = budget.RemoveExpense(transaction.Amount);
+            var budgetResult =
+                budget.RemoveExpense(transaction.Amount);
 
             if (budgetResult.IsFailure)
                 return budgetResult;
         }
 
-        return account.Deposit(transaction.Amount);
+        // Repor o saldo apenas quando existe
+        // uma conta bancária associada.
+        if (account is not null)
+        {
+            return account.Deposit(transaction.Amount);
+        }
+
+        return Result.Success();
     }
+
+    // --------------------------------------------------
+    // TRANSFERÊNCIAS - APLICAÇÃO
+    // --------------------------------------------------
 
     private async Task<Result> ApplyTransferAsync(
         Transaction transaction,
         Account sourceAccount)
     {
         if (!transaction.TargetAccountId.HasValue)
-            return Error.Validation("A conta de destino é obrigatória.");
+        {
+            return Error.Validation(
+                "A conta de destino é obrigatória.");
+        }
 
         var targetAccount = await _unitOfWork.Accounts
             .GetByIdAsync(transaction.TargetAccountId.Value);
@@ -321,13 +441,18 @@ public sealed class TransactionImpactService : ITransactionImpactService
                 "Conta de destino não encontrada ou inativa.");
         }
 
-        var validation = ValidateAccountScope(transaction, targetAccount);
+        var validation = ValidateAccountScope(
+            transaction,
+            targetAccount);
 
         if (validation.IsFailure)
             return validation;
 
         if (sourceAccount.Id == targetAccount.Id)
-            return Error.Validation("As contas devem ser diferentes.");
+        {
+            return Error.Validation(
+                "As contas devem ser diferentes.");
+        }
 
         if (targetAccount.Balance.Currency != transaction.Amount.Currency)
             return DomainErrors.Money.CurrencyMismatch;
@@ -337,12 +462,19 @@ public sealed class TransactionImpactService : ITransactionImpactService
             transaction.Amount);
     }
 
+    // --------------------------------------------------
+    // TRANSFERÊNCIAS - REVERSÃO
+    // --------------------------------------------------
+
     private async Task<Result> RevertTransferAsync(
         Transaction transaction,
         Account sourceAccount)
     {
         if (!transaction.TargetAccountId.HasValue)
-            return Error.Validation("A conta de destino é obrigatória.");
+        {
+            return Error.Validation(
+                "A conta de destino é obrigatória.");
+        }
 
         var targetAccount = await _unitOfWork.Accounts
             .GetByIdAsync(transaction.TargetAccountId.Value);
@@ -354,13 +486,18 @@ public sealed class TransactionImpactService : ITransactionImpactService
                 "Conta de destino não encontrada.");
         }
 
-        var validation = ValidateAccountScope(transaction, targetAccount);
+        var validation = ValidateAccountScope(
+            transaction,
+            targetAccount);
 
         if (validation.IsFailure)
             return validation;
 
         if (sourceAccount.Id == targetAccount.Id)
-            return Error.Validation("As contas devem ser diferentes.");
+        {
+            return Error.Validation(
+                "As contas devem ser diferentes.");
+        }
 
         if (targetAccount.Balance.Currency != transaction.Amount.Currency)
             return DomainErrors.Money.CurrencyMismatch;
@@ -369,6 +506,10 @@ public sealed class TransactionImpactService : ITransactionImpactService
             sourceAccount,
             transaction.Amount);
     }
+
+    // --------------------------------------------------
+    // VALIDAÇÃO DO ÂMBITO DA CONTA
+    // --------------------------------------------------
 
     private static Result ValidateAccountScope(
         Transaction transaction,
@@ -393,6 +534,10 @@ public sealed class TransactionImpactService : ITransactionImpactService
 
         return Result.Success();
     }
+
+    // --------------------------------------------------
+    // VALIDAÇÃO DO ÂMBITO DO ORÇAMENTO
+    // --------------------------------------------------
 
     private static Result ValidateBudgetScope(
         Transaction transaction,
@@ -427,6 +572,10 @@ public sealed class TransactionImpactService : ITransactionImpactService
 
         return Result.Success();
     }
+
+    // --------------------------------------------------
+    // VALIDAÇÃO DO ÂMBITO DA META
+    // --------------------------------------------------
 
     private static Result ValidateGoalScope(
         Transaction transaction,

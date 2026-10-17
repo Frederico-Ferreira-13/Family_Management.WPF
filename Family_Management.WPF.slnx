@@ -5,5 +5,7 @@
 
   <Project Path="FamilyManagement.Domain/FamilyManagement.Domain.csproj" />
   <Project Path="FamilyManagement.Infrastructure/FamilyManagement.Infrastructure.csproj" />
+  <Project Path="FamilyManagement.Tests/FamilyManagement.Tests.csproj" />
   <Project Path="Family_Management.WPF/Family_Management.WPF.csproj" />
+  <Project Path="SqliteDiagnostic/SqliteDiagnostic.csproj" />
 </Solution>

@@ -1,4 +1,5 @@
-﻿using FamilyManagement.Domain.Interfaces;
+﻿
+using FamilyManagement.Domain.Interfaces;
 using FamilyManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,17 +12,32 @@ public sealed class UnitOfWork : IUnitOfWork
     private readonly ILogger<UnitOfWork> _logger;
 
     public IAccountRepository Accounts { get; }
+
     public IUserRepository Users { get; }
+
     public IBudgetRepository Budgets { get; }
+
     public ICategoryRepository Categories { get; }
+
     public ICurrencyRepository Currencies { get; }
+
     public IFamilyRepository Families { get; }
+
+    // Repositório dos planos financeiros
+    public IFinancialPlanRepository FinancialPlans { get; }
+
     public IGoalRepository Goals { get; }
+
     public IGoalContributionImpactRepository GoalContributionImpacts { get; }
+
     public IInvestmentRepository Investments { get; }
+
     public IRecurringTransactionRepository RecurringTransactions { get; }
+
     public ITransactionRepository Transactions { get; }
+
     public IUserSettingRepository UserSettings { get; }
+
     public IUserRoleRepository UserRoles { get; }
 
     public UnitOfWork(
@@ -33,6 +49,7 @@ public sealed class UnitOfWork : IUnitOfWork
         ICategoryRepository categories,
         ICurrencyRepository currencies,
         IFamilyRepository families,
+        IFinancialPlanRepository financialPlans,
         IGoalRepository goals,
         IGoalContributionImpactRepository goalContributionImpacts,
         IInvestmentRepository investments,
@@ -47,19 +64,47 @@ public sealed class UnitOfWork : IUnitOfWork
         _logger = logger
             ?? throw new ArgumentNullException(nameof(logger));
 
-        Accounts = accounts;
-        Users = users;
-        Budgets = budgets;
-        Categories = categories;
-        Currencies = currencies;
-        Families = families;
-        Goals = goals;
-        GoalContributionImpacts = goalContributionImpacts;
-        Investments = investments;
-        RecurringTransactions = recurringTransactions;
-        Transactions = transactions;
-        UserSettings = userSettings;
-        UserRoles = userRoles;
+        Accounts = accounts
+            ?? throw new ArgumentNullException(nameof(accounts));
+
+        Users = users
+            ?? throw new ArgumentNullException(nameof(users));
+
+        Budgets = budgets
+            ?? throw new ArgumentNullException(nameof(budgets));
+
+        Categories = categories
+            ?? throw new ArgumentNullException(nameof(categories));
+
+        Currencies = currencies
+            ?? throw new ArgumentNullException(nameof(currencies));
+
+        Families = families
+            ?? throw new ArgumentNullException(nameof(families));
+
+        FinancialPlans = financialPlans
+            ?? throw new ArgumentNullException(nameof(financialPlans));
+
+        Goals = goals
+            ?? throw new ArgumentNullException(nameof(goals));
+
+        GoalContributionImpacts = goalContributionImpacts
+            ?? throw new ArgumentNullException(nameof(goalContributionImpacts));
+
+        Investments = investments
+            ?? throw new ArgumentNullException(nameof(investments));
+
+        RecurringTransactions = recurringTransactions
+            ?? throw new ArgumentNullException(nameof(recurringTransactions));
+
+        Transactions = transactions
+            ?? throw new ArgumentNullException(nameof(transactions));
+
+        UserSettings = userSettings
+            ?? throw new ArgumentNullException(nameof(userSettings));
+
+        UserRoles = userRoles
+            ?? throw new ArgumentNullException(nameof(userRoles));
     }
 
     public async Task<IDbTransaction> BeginTransactionAsync()

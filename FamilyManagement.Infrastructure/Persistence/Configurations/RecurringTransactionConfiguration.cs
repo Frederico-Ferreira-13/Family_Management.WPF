@@ -1,4 +1,5 @@
-﻿using FamilyManagement.Domain.Model;
+﻿
+using FamilyManagement.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -18,7 +19,7 @@ public sealed class RecurringTransactionConfiguration
             .IsRequired()
             .HasMaxLength(200);
 
-        // Amount : Money
+        // Valor monetário
         builder.OwnsOne(rt => rt.Amount, money =>
         {
             money.Property(m => m.Amount)
@@ -50,36 +51,58 @@ public sealed class RecurringTransactionConfiguration
         builder.Property(rt => rt.NextDueDate)
             .IsRequired();
 
+        // Categoria obrigatória
         builder.Property(rt => rt.CategoryId)
             .IsRequired();
 
+        // Conta bancária opcional
         builder.Property(rt => rt.AccountId)
-            .IsRequired();
+            .IsRequired(false);
 
+        // Utilizador responsável
         builder.Property(rt => rt.UserId)
             .IsRequired();
 
-        // RecurringTransaction -> User
+        // Âmbito familiar opcional
+        builder.Property(rt => rt.FamilyId)
+            .IsRequired(false);
+
+        // Plano financeiro opcional para manter
+        // compatibilidade com recorrências existentes
+        builder.Property(rt => rt.FinancialPlanId)
+            .IsRequired(false);
+
+        // Utilizador -> Recorrências
         builder.HasOne(rt => rt.User)
             .WithMany(u => u.RecurringTransactions)
             .HasForeignKey(rt => rt.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // RecurringTransaction -> Account
-        //
-        // Account não possui RecurringTransactions.
+        // Família -> Recorrências
+        builder.HasOne(rt => rt.Family)
+            .WithMany()
+            .HasForeignKey(rt => rt.FamilyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Plano financeiro -> Recorrências
+        builder.HasOne(rt => rt.FinancialPlan)
+            .WithMany()
+            .HasForeignKey(rt => rt.FinancialPlanId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Conta bancária -> Recorrências
         builder.HasOne(rt => rt.Account)
             .WithMany()
             .HasForeignKey(rt => rt.AccountId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // RecurringTransaction -> Category
+        // Categoria -> Recorrências
         builder.HasOne(rt => rt.Category)
             .WithMany(c => c.RecurringTransactions)
             .HasForeignKey(rt => rt.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // RecurringTransaction -> Transactions geradas
+        // Recorrência -> Movimentos gerados
         builder.HasMany(rt => rt.GeneratedTransactions)
             .WithOne(t => t.RecurringTransaction)
             .HasForeignKey(t => t.RecurringTransactionId)
@@ -88,18 +111,37 @@ public sealed class RecurringTransactionConfiguration
         builder.Navigation(rt => rt.GeneratedTransactions)
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        // Pesquisa frequente do motor de recorrências.
+        // Índice utilizado pelo motor de recorrências
         builder.HasIndex(rt => new
         {
             rt.IsActive,
             rt.NextDueDate
         });
 
+        // Pesquisa por utilizador
         builder.HasIndex(rt => rt.UserId);
+
+        // Pesquisa por conta bancária
         builder.HasIndex(rt => rt.AccountId);
+
+        // Pesquisa por categoria
         builder.HasIndex(rt => rt.CategoryId);
 
-        // BaseEntity
+        // Pesquisa por família
+        builder.HasIndex(rt => new
+        {
+            rt.FamilyId,
+            rt.NextDueDate
+        });
+
+        // Pesquisa por plano financeiro
+        builder.HasIndex(rt => new
+        {
+            rt.FinancialPlanId,
+            rt.NextDueDate
+        });
+
+        // Propriedades comuns
         builder.Property(rt => rt.CreatedAt)
             .IsRequired();
 

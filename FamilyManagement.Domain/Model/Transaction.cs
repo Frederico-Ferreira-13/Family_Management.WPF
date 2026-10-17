@@ -29,7 +29,7 @@ public class Transaction : BaseEntity
 
     public bool IsFamilyTransaction => FamilyId.HasValue;
 
-    public Guid AccountId { get; private set; }
+    public Guid? AccountId { get; private set; }
 
     public Guid? CategoryId { get; private set; }
 
@@ -46,6 +46,10 @@ public class Transaction : BaseEntity
     public virtual Family? Family { get; private set; }
 
     public virtual Account? Account { get; private set; }
+
+    public Guid? FinancialPlanId { get; private set; }
+
+    public virtual FinancialPlan? FinancialPlan { get; private set; }
 
     public virtual Category? Category { get; private set; }
 
@@ -72,14 +76,15 @@ public class Transaction : BaseEntity
         TransactionType type,
         Guid userId,
         Guid? familyId,
-        Guid accountId,
+        Guid? accountId,
         Guid? categoryId,
         Guid? targetAccountId,
         string? notes,
         Guid? budgetId,
         Guid? goalId,
         Guid? recurringTransactionId,
-        bool isConfirmed)
+        bool isConfirmed,
+        Guid? financialPlanId)
     {
         Date = NormalizeDate(date);
 
@@ -101,6 +106,7 @@ public class Transaction : BaseEntity
 
         IsConfirmed = isConfirmed;
         IsRecurringGenerated = recurringTransactionId.HasValue;
+        FinancialPlanId = financialPlanId;
     }
 
     public static Result<Transaction> CreateIncomeOrExpense(
@@ -109,7 +115,7 @@ public class Transaction : BaseEntity
         string description,
         TransactionType type,
         Guid userId,
-        Guid accountId,
+        Guid? accountId,
         Guid categoryId,
         string? notes = null,
         Guid? budgetId = null,
@@ -117,7 +123,8 @@ public class Transaction : BaseEntity
         bool isConfirmed = true,
         bool isRecurringGenerated = false,
         DateTime? referenceDate = null,
-        Guid? familyId = null)
+        Guid? familyId = null,
+        Guid? financialPlanId = null)
     {
         var validation = ValidateBase(
             date,
@@ -170,6 +177,18 @@ public class Transaction : BaseEntity
                 "O identificador da família é inválido.");
         }
 
+        if (financialPlanId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador do plano financeiro é inválido.");
+        }
+
+        if (!accountId.HasValue && !financialPlanId.HasValue)
+        {
+            return Error.Validation(
+                "Uma receita ou despesa sem conta bancária deve estar associada a um plano financeiro.");
+        }
+
         return new Transaction(
             date,
             amount,
@@ -184,6 +203,7 @@ public class Transaction : BaseEntity
             budgetId: budgetId,
             goalId: goalId,
             recurringTransactionId: null,
+            financialPlanId: financialPlanId,
             isConfirmed: isConfirmed);
     }
 
@@ -197,7 +217,8 @@ public class Transaction : BaseEntity
         string? notes = null,
         bool isConfirmed = true,
         DateTime? referenceDate = null,
-        Guid? familyId = null)
+        Guid? familyId = null,
+        Guid? financialPlanId = null)
     {
         var validation = ValidateBase(
             date,
@@ -243,7 +264,8 @@ public class Transaction : BaseEntity
             budgetId: null,
             goalId: null,
             recurringTransactionId: null,
-            isConfirmed: isConfirmed);
+            isConfirmed: isConfirmed,
+            financialPlanId: financialPlanId);
     }
 
     public static Result<Transaction> CreateFromRecurring(
@@ -252,12 +274,13 @@ public class Transaction : BaseEntity
         string description,
         TransactionType type,
         Guid userId,
-        Guid accountId,
+        Guid? accountId,
         Guid categoryId,
         Guid recurringTransactionId,
         bool isConfirmed = false,
         DateTime? referenceDate = null,
-        Guid? familyId = null)
+        Guid? familyId = null,
+        Guid? financialPlanId = null)
     {
         var validation = ValidateBase(
             date,
@@ -310,7 +333,8 @@ public class Transaction : BaseEntity
             budgetId: null,
             goalId: null,
             recurringTransactionId: recurringTransactionId,
-            isConfirmed: isConfirmed);
+            isConfirmed: isConfirmed,
+            financialPlanId: financialPlanId);
     }
 
     public Result Confirm(DateTime? referenceDate = null)
@@ -465,7 +489,7 @@ public class Transaction : BaseEntity
         Money? amount,
         string description,
         Guid userId,
-        Guid accountId,
+        Guid? accountId,
         bool isConfirmed,
         DateTime? referenceDate)
     {

@@ -1,9 +1,12 @@
-﻿using System.Collections.ObjectModel;
+﻿
+using System.Collections.ObjectModel;
 using System.Threading;
+using System.Windows;
 using System.Windows.Input;
 using Family_Management.WPF.Commands;
 using Family_Management.WPF.Services.Authentication;
 using Family_Management.WPF.Services.Dialogs;
+using Family_Management.WPF.Services.Finance;
 using Family_Management.WPF.Services.Navigation;
 using Family_Management.WPF.ViewModel.Common;
 using Family_Management.WPF.ViewModel.Models;
@@ -19,7 +22,7 @@ using FamilyManagement.Domain.Enums;
 
 namespace Family_Management.WPF.ViewModel.Accounts;
 
-public sealed class AccountViewModel : BaseViewModel
+public sealed class AccountViewModel : BaseViewModel, IDisposable
 {
     private readonly CreateAccountHandler _createAccountHandler;
     private readonly UpdateAccountHandler _updateAccountHandler;
@@ -28,12 +31,18 @@ public sealed class AccountViewModel : BaseViewModel
     private readonly GetCurrenciesHandler _getCurrenciesHandler;
     private readonly GetDefaultCurrencyHandler _getDefaultCurrencyHandler;
     private readonly CurrentUserService _currentUserService;
+    private readonly FinanceContextService _financeContext;
+
+    private readonly SemaphoreSlim _operationLock = new(1, 1);
 
     private ObservableCollection<AccountDTO> _accounts = new();
     private ObservableCollection<CurrencyDTO> _availableCurrencies = new();
 
     private AccountDTO? _selectedAccount;
     private AccountFormModel _form = new();
+
+    private int _contextVersion;
+    private bool _isDisposed;
 
     public AccountViewModel(
         CreateAccountHandler createAccountHandler,
@@ -43,39 +52,34 @@ public sealed class AccountViewModel : BaseViewModel
         GetCurrenciesHandler getCurrenciesHandler,
         GetDefaultCurrencyHandler getDefaultCurrencyHandler,
         CurrentUserService currentUserService,
+        FinanceContextService financeContext,
         INavigationService navigationService,
         INotificationService notificationService)
-        : base(
-            navigationService,
-            notificationService)
+        : base(navigationService, notificationService)
     {
         _createAccountHandler = createAccountHandler
-            ?? throw new ArgumentNullException(
-                nameof(createAccountHandler));
+            ?? throw new ArgumentNullException(nameof(createAccountHandler));
 
         _updateAccountHandler = updateAccountHandler
-            ?? throw new ArgumentNullException(
-                nameof(updateAccountHandler));
+            ?? throw new ArgumentNullException(nameof(updateAccountHandler));
 
         _deactivateAccountHandler = deactivateAccountHandler
-            ?? throw new ArgumentNullException(
-                nameof(deactivateAccountHandler));
+            ?? throw new ArgumentNullException(nameof(deactivateAccountHandler));
 
         _getAccountsByUserHandler = getAccountsByUserHandler
-            ?? throw new ArgumentNullException(
-                nameof(getAccountsByUserHandler));
+            ?? throw new ArgumentNullException(nameof(getAccountsByUserHandler));
 
         _getCurrenciesHandler = getCurrenciesHandler
-            ?? throw new ArgumentNullException(
-                nameof(getCurrenciesHandler));
+            ?? throw new ArgumentNullException(nameof(getCurrenciesHandler));
 
         _getDefaultCurrencyHandler = getDefaultCurrencyHandler
-            ?? throw new ArgumentNullException(
-                nameof(getDefaultCurrencyHandler));
+            ?? throw new ArgumentNullException(nameof(getDefaultCurrencyHandler));
 
         _currentUserService = currentUserService
-            ?? throw new ArgumentNullException(
-                nameof(currentUserService));
+            ?? throw new ArgumentNullException(nameof(currentUserService));
+
+        _financeContext = financeContext
+            ?? throw new ArgumentNullException(nameof(financeContext));
 
         Title = "Contas";
 
@@ -87,34 +91,31 @@ public sealed class AccountViewModel : BaseViewModel
             SaveAsync,
             CanSave);
 
-        DeactivateAccountCommand =
-            new AsyncRelayCommand(
-                DeactivateSelectedAccountAsync,
-                CanDeactivateAccount);
+        DeactivateAccountCommand = new AsyncRelayCommand(
+            DeactivateSelectedAccountAsync,
+            CanDeactivateAccount);
 
-        CancelEditCommand =
-            new RelayCommand(
-                CancelEdit);
+        CancelEditCommand = new RelayCommand(
+            CancelEdit);
 
-        SelectAccountCommand =
-            new RelayCommand<AccountDTO?>(
-                SelectAccount);
+        SelectAccountCommand = new RelayCommand<AccountDTO?>(
+            SelectAccount);
+
+        _financeContext.ContextChanged += OnFinanceContextChanged;
     }
 
     public ObservableCollection<AccountDTO> Accounts
     {
         get => _accounts;
 
-        private set =>
-            SetProperty(ref _accounts, value);
+        private set => SetProperty(ref _accounts, value);
     }
 
     public ObservableCollection<CurrencyDTO> AvailableCurrencies
     {
         get => _availableCurrencies;
 
-        private set =>
-            SetProperty(ref _availableCurrencies, value);
+        private set => SetProperty(ref _availableCurrencies, value);
     }
 
     public AccountDTO? SelectedAccount
@@ -144,17 +145,26 @@ public sealed class AccountViewModel : BaseViewModel
             }
 
             OnPropertyChanged(nameof(IsEditing));
-
             RaiseCommandStates();
         }
     }
 
     public bool IsEditing => Form.IsEditMode;
 
+    public bool IsFamilyScope =>
+        _financeContext.Scope == FinanceScope.Family;
+
+    public bool IsPersonalScope =>
+        _financeContext.Scope == FinanceScope.Personal;
+
+    public string ActiveContextDescription =>
+        IsFamilyScope
+            ? "Contas familiares"
+            : "Contas pessoais";
+
     public IReadOnlyList<AccountType> AccountTypes { get; } =
         Enum.GetValues<AccountType>()
-            .Where(type =>
-                type != AccountType.NotSpecified)
+            .Where(type => type != AccountType.NotSpecified)
             .ToArray();
 
     public ICommand RefreshCommand { get; }
@@ -170,7 +180,7 @@ public sealed class AccountViewModel : BaseViewModel
     public override async Task InitializeAsync(
         CancellationToken cancellationToken = default)
     {
-        if (IsInitialized)
+        if (IsInitialized || _isDisposed)
         {
             return;
         }
@@ -179,6 +189,8 @@ public sealed class AccountViewModel : BaseViewModel
 
         await RunSafeAsync(async () =>
         {
+            await _financeContext.RefreshAsync(cancellationToken);
+
             if (!TryGetCurrentUserId(out var userId))
             {
                 await NotificationService.ShowErrorAsync(
@@ -188,15 +200,13 @@ public sealed class AccountViewModel : BaseViewModel
                 return;
             }
 
-            await LoadCurrenciesAsync(
-                cancellationToken);
+            await LoadCurrenciesAsync(cancellationToken);
 
             await LoadAccountsAsync(
                 userId,
                 cancellationToken);
 
-            await ResetFormAsync(
-                cancellationToken);
+            await ResetFormAsync(cancellationToken);
 
             IsInitialized = true;
         });
@@ -204,22 +214,32 @@ public sealed class AccountViewModel : BaseViewModel
 
     private async Task RefreshAsync()
     {
-        if (!TryGetCurrentUserId(out var userId))
+        if (_isDisposed)
         {
-            await NotificationService.ShowErrorAsync(
-                "Não existe um utilizador autenticado.",
-                "Sessão");
-
             return;
         }
 
         await RunSafeAsync(async () =>
         {
+            await _financeContext.RefreshAsync();
+
+            if (!TryGetCurrentUserId(out var userId))
+            {
+                Accounts = new ObservableCollection<AccountDTO>();
+                SelectedAccount = null;
+
+                await NotificationService.ShowErrorAsync(
+                    "Não existe um utilizador autenticado.",
+                    "Sessão");
+
+                return;
+            }
+
             await LoadAccountsAsync(
                 userId,
                 CancellationToken.None);
 
-            SelectedAccount = null;
+            await ResetFormAsync(CancellationToken.None);
         });
 
         RaiseCommandStates();
@@ -229,13 +249,34 @@ public sealed class AccountViewModel : BaseViewModel
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var result =
-            await _getAccountsByUserHandler.HandleAsync(
-                new GetAccountsByUserQuery(userId),
-                cancellationToken);
+        var version = Volatile.Read(ref _contextVersion);
+        var scope = _financeContext.Scope;
+        var familyId = _financeContext.ActiveFamilyId;
+
+        if (scope == FinanceScope.Family && !familyId.HasValue)
+        {
+            Accounts = new ObservableCollection<AccountDTO>();
+            return;
+        }
+
+        var result = await _getAccountsByUserHandler.HandleAsync(
+            new GetAccountsByUserQuery(userId, familyId),
+            cancellationToken);
+
+        // Impede que uma consulta anterior substitua
+        // os dados de um contexto entretanto alterado.
+        if (_isDisposed ||
+            version != Volatile.Read(ref _contextVersion) ||
+            scope != _financeContext.Scope ||
+            familyId != _financeContext.ActiveFamilyId)
+        {
+            return;
+        }
 
         if (result.IsFailure)
         {
+            Accounts = new ObservableCollection<AccountDTO>();
+
             await NotificationService.ShowErrorAsync(
                 result.Error.Message,
                 "Contas");
@@ -250,11 +291,9 @@ public sealed class AccountViewModel : BaseViewModel
     private async Task LoadCurrenciesAsync(
         CancellationToken cancellationToken)
     {
-        var result =
-            await _getCurrenciesHandler.HandleAsync(
-                new GetCurrenciesQuery(
-                    OnlyActive: true),
-                cancellationToken);
+        var result = await _getCurrenciesHandler.HandleAsync(
+            new GetCurrenciesQuery(OnlyActive: true),
+            cancellationToken);
 
         if (result.IsFailure)
         {
@@ -266,8 +305,7 @@ public sealed class AccountViewModel : BaseViewModel
         }
 
         AvailableCurrencies =
-            new ObservableCollection<CurrencyDTO>(
-                result.Value);
+            new ObservableCollection<CurrencyDTO>(result.Value);
     }
 
     private async Task ResetFormAsync(
@@ -281,34 +319,46 @@ public sealed class AccountViewModel : BaseViewModel
         var currencyCode =
             defaultCurrencyResult.IsSuccess
                 ? defaultCurrencyResult.Value.Code
-                : AvailableCurrencies
-                    .FirstOrDefault()
-                    ?.Code
+                : AvailableCurrencies.FirstOrDefault()?.Code
                   ?? string.Empty;
 
         SelectedAccount = null;
 
-        Form = AccountFormModel.CreateNew(
-            currencyCode);
+        Form = AccountFormModel.CreateNew(currencyCode);
     }
 
-    private void SelectAccount(
-        AccountDTO? account)
+    private void SelectAccount(AccountDTO? account)
     {
-        if (account is null)
+        if (account is null || IsBusy || _isDisposed)
+        {
+            return;
+        }
+
+        if (!Accounts.Any(existing => existing.Id == account.Id))
         {
             return;
         }
 
         SelectedAccount = account;
 
-        Form = AccountFormModel.FromAccount(
-            account);
+        Form = AccountFormModel.FromAccount(account);
     }
 
     private bool CanSave()
     {
-        if (IsBusy)
+        if (_isDisposed || IsBusy)
+        {
+            return false;
+        }
+
+        // Até os handlers de escrita serem revistos,
+        // apenas permitimos criar contas familiares.
+        if (IsFamilyScope && Form.IsEditMode)
+        {
+            return false;
+        }
+
+        if (IsFamilyScope && !_financeContext.CanUseFamilyScope)
         {
             return false;
         }
@@ -348,25 +398,62 @@ public sealed class AccountViewModel : BaseViewModel
             return;
         }
 
+        var version = Volatile.Read(ref _contextVersion);
+
         await RunSafeAsync(async () =>
         {
-            if (Form.IsEditMode)
+            await _operationLock.WaitAsync();
+
+            try
             {
-                await UpdateAccountAsync();
+                if (_isDisposed ||
+                    version != Volatile.Read(ref _contextVersion))
+                {
+                    return;
+                }
+
+                if (Form.IsEditMode)
+                {
+                    if (IsFamilyScope)
+                    {
+                        await NotificationService.ShowErrorAsync(
+                            "A edição de contas familiares ainda não está disponível.",
+                            "Operação indisponível");
+
+                        return;
+                    }
+
+                    await UpdateAccountAsync();
+                }
+                else
+                {
+                    await CreateAccountAsync(userId);
+                }
             }
-            else
+            finally
             {
-                await CreateAccountAsync(
-                    userId);
+                _operationLock.Release();
             }
         });
 
         RaiseCommandStates();
     }
 
-    private async Task CreateAccountAsync(
-        Guid userId)
+    private async Task CreateAccountAsync(Guid userId)
     {
+        var scope = _financeContext.Scope;
+        var familyId = _financeContext.ActiveFamilyId;
+        var version = Volatile.Read(ref _contextVersion);
+
+        if (scope == FinanceScope.Family && !familyId.HasValue)
+        {
+            await NotificationService.ShowErrorAsync(
+                "Não existe uma família ativa selecionada.",
+                "Contexto financeiro");
+
+            return;
+        }
+
         var command = new CreateAccountCommand(
             Form.Name.Trim(),
             NormalizeDescription(Form.Description),
@@ -374,11 +461,9 @@ public sealed class AccountViewModel : BaseViewModel
             Form.InitialBalance,
             Form.Currency.Trim().ToUpperInvariant(),
             userId,
-            FamilyId: null);
+            FamilyId: familyId);
 
-        var result =
-            await _createAccountHandler.HandleAsync(
-                command);
+        var result = await _createAccountHandler.HandleAsync(command);
 
         if (result.IsFailure)
         {
@@ -389,14 +474,20 @@ public sealed class AccountViewModel : BaseViewModel
             return;
         }
 
-        Accounts.Add(result.Value);
+        // A conta foi criada no contexto capturado antes
+        // da operação. Não a adicionar a outro contexto.
+        if (version == Volatile.Read(ref _contextVersion) &&
+            scope == _financeContext.Scope &&
+            familyId == _financeContext.ActiveFamilyId)
+        {
+            Accounts.Add(result.Value);
+
+            await ResetFormAsync(CancellationToken.None);
+        }
 
         await NotificationService.ShowInformationAsync(
             "Conta criada com sucesso.",
             "Sucesso");
-
-        await ResetFormAsync(
-            CancellationToken.None);
     }
 
     private async Task UpdateAccountAsync()
@@ -406,15 +497,22 @@ public sealed class AccountViewModel : BaseViewModel
             return;
         }
 
+        if (IsFamilyScope)
+        {
+            await NotificationService.ShowErrorAsync(
+                "A edição de contas familiares ainda não está disponível.",
+                "Operação indisponível");
+
+            return;
+        }
+
         var command = new UpdateAccountCommand(
             Form.AccountId.Value,
             Form.Name.Trim(),
             NormalizeDescription(Form.Description),
             Form.Type);
 
-        var result =
-            await _updateAccountHandler.HandleAsync(
-                command);
+        var result = await _updateAccountHandler.HandleAsync(command);
 
         if (result.IsFailure)
         {
@@ -431,25 +529,28 @@ public sealed class AccountViewModel : BaseViewModel
             "Conta atualizada com sucesso.",
             "Sucesso");
 
-        await ResetFormAsync(
-            CancellationToken.None);
+        await ResetFormAsync(CancellationToken.None);
     }
 
     private bool CanDeactivateAccount()
     {
-        return !IsBusy &&
+        return !_isDisposed &&
+               !IsBusy &&
+               !IsFamilyScope &&
                SelectedAccount is not null &&
                SelectedAccount.IsActive;
     }
 
     private async Task DeactivateSelectedAccountAsync()
     {
-        if (SelectedAccount is null)
+        if (!CanDeactivateAccount())
         {
             return;
         }
 
-        var account = SelectedAccount;
+        var account = SelectedAccount!;
+
+        var version = Volatile.Read(ref _contextVersion);
 
         var confirmed =
             await NotificationService.ShowConfirmationAsync(
@@ -461,35 +562,56 @@ public sealed class AccountViewModel : BaseViewModel
             return;
         }
 
+        if (_isDisposed ||
+            version != Volatile.Read(ref _contextVersion) ||
+            IsFamilyScope)
+        {
+            return;
+        }
+
         await RunSafeAsync(async () =>
         {
-            var result =
-                await _deactivateAccountHandler.HandleAsync(
-                    new DeactivateAccountCommand(
-                        account.Id));
+            await _operationLock.WaitAsync();
 
-            if (result.IsFailure)
+            try
             {
-                await NotificationService.ShowErrorAsync(
-                    result.Error.Message,
-                    "Desativar conta");
+                if (_isDisposed ||
+                    version != Volatile.Read(ref _contextVersion) ||
+                    IsFamilyScope)
+                {
+                    return;
+                }
 
-                return;
+                var result =
+                    await _deactivateAccountHandler.HandleAsync(
+                        new DeactivateAccountCommand(account.Id));
+
+                if (result.IsFailure)
+                {
+                    await NotificationService.ShowErrorAsync(
+                        result.Error.Message,
+                        "Desativar conta");
+
+                    return;
+                }
+
+                if (TryGetCurrentUserId(out var userId))
+                {
+                    await LoadAccountsAsync(
+                        userId,
+                        CancellationToken.None);
+                }
+
+                await ResetFormAsync(CancellationToken.None);
+
+                await NotificationService.ShowInformationAsync(
+                    "Conta desativada com sucesso.",
+                    "Sucesso");
             }
-
-            if (TryGetCurrentUserId(out var userId))
+            finally
             {
-                await LoadAccountsAsync(
-                    userId,
-                    CancellationToken.None);
+                _operationLock.Release();
             }
-
-            await ResetFormAsync(
-                CancellationToken.None);
-
-            await NotificationService.ShowInformationAsync(
-                "Conta desativada com sucesso.",
-                "Sucesso");
         });
 
         RaiseCommandStates();
@@ -502,19 +624,23 @@ public sealed class AccountViewModel : BaseViewModel
 
     private async Task CancelEditAsync()
     {
-        await ResetFormAsync(
-            CancellationToken.None);
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        await RunSafeAsync(async () =>
+        {
+            await ResetFormAsync(CancellationToken.None);
+        });
 
         RaiseCommandStates();
     }
 
-    private void ReplaceAccount(
-        AccountDTO updatedAccount)
+    private void ReplaceAccount(AccountDTO updatedAccount)
     {
-        var existing =
-            Accounts.FirstOrDefault(
-                account =>
-                    account.Id == updatedAccount.Id);
+        var existing = Accounts.FirstOrDefault(
+            account => account.Id == updatedAccount.Id);
 
         if (existing is null)
         {
@@ -522,21 +648,91 @@ public sealed class AccountViewModel : BaseViewModel
             return;
         }
 
-        var index =
-            Accounts.IndexOf(existing);
+        var index = Accounts.IndexOf(existing);
 
-        Accounts[index] =
-            updatedAccount;
+        Accounts[index] = updatedAccount;
     }
 
-    private bool TryGetCurrentUserId(
-        out Guid userId)
+    private bool TryGetCurrentUserId(out Guid userId)
     {
-        userId =
-            _currentUserService.UserId
-            ?? Guid.Empty;
+        userId = _currentUserService.UserId ?? Guid.Empty;
 
-        return userId != Guid.Empty;
+        return _currentUserService.IsAuthenticated &&
+               userId != Guid.Empty;
+    }
+
+    private void OnFinanceContextChanged()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        Interlocked.Increment(ref _contextVersion);
+
+        var dispatcher = Application.Current?.Dispatcher;
+
+        if (dispatcher is null || dispatcher.HasShutdownStarted)
+        {
+            return;
+        }
+
+        _ = dispatcher.InvokeAsync(async () =>
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            await RefreshForFinanceContextAsync();
+        });
+    }
+
+    private async Task RefreshForFinanceContextAsync()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        Accounts = new ObservableCollection<AccountDTO>();
+        SelectedAccount = null;
+
+        OnPropertyChanged(nameof(IsFamilyScope));
+        OnPropertyChanged(nameof(IsPersonalScope));
+        OnPropertyChanged(nameof(ActiveContextDescription));
+
+        RaiseCommandStates();
+
+        await RunSafeAsync(async () =>
+        {
+            await _operationLock.WaitAsync();
+
+            try
+            {
+                if (_isDisposed)
+                {
+                    return;
+                }
+
+                await ResetFormAsync(CancellationToken.None);
+
+                if (!TryGetCurrentUserId(out var userId))
+                {
+                    return;
+                }
+
+                await LoadAccountsAsync(
+                    userId,
+                    CancellationToken.None);
+            }
+            finally
+            {
+                _operationLock.Release();
+            }
+        });
+
+        RaiseCommandStates();
     }
 
     private void RaiseCommandStates()
@@ -564,5 +760,20 @@ public sealed class AccountViewModel : BaseViewModel
         return string.IsNullOrWhiteSpace(description)
             ? null
             : description.Trim();
+    }
+
+    public void Dispose()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
+
+        _financeContext.ContextChanged -= OnFinanceContextChanged;
+
+        // Não libertamos o SemaphoreSlim aqui:
+        // pode existir uma operação assíncrona ainda em curso.
     }
 }

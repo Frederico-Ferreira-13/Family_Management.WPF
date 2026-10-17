@@ -45,4 +45,7 @@ public interface ITransactionRepository : IRepository<Transaction>
     Task<decimal> GetAccountBalanceAsOfDateAsync(
         Guid accountId,
         DateTime asOfDate);
+
+    Task<IEnumerable<Transaction>> GetConfirmedByFinancialPlanIdAsync(
+        Guid financialPlanId);
 }

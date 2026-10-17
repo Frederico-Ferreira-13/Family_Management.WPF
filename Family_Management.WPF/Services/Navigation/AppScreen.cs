@@ -3,6 +3,7 @@
 public enum AppScreen
 {
     Dashboard,
+    UniversalFinance,
     Accounts,
     Transactions,
     Category,

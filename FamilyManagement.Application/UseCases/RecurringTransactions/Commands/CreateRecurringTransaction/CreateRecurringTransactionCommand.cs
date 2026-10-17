@@ -11,5 +11,7 @@ public sealed record CreateRecurringTransactionCommand(
     DateTime StartDate,
     DateTime? EndDate,
     Guid CategoryId,
-    Guid AccountId,
-    Guid UserId);
+    Guid? AccountId,
+    Guid UserId,
+    Guid? FamilyId = null,
+    Guid? FinancialPlanId = null);

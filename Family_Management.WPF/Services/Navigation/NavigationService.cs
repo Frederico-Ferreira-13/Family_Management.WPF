@@ -1,6 +1,9 @@
-﻿using System.Windows;
+﻿
+using System.Windows;
 using System.Windows.Media;
+
 using Family_Management.WPF.Services.Threading;
+
 using Family_Management.WPF.ViewModel;
 using Family_Management.WPF.ViewModel.Accounts;
 using Family_Management.WPF.ViewModel.Authentication;
@@ -9,17 +12,21 @@ using Family_Management.WPF.ViewModel.Categories;
 using Family_Management.WPF.ViewModel.Common;
 using Family_Management.WPF.ViewModel.Dashboard;
 using Family_Management.WPF.ViewModel.Families;
+using Family_Management.WPF.ViewModel.Finance;
 using Family_Management.WPF.ViewModel.Goals;
 using Family_Management.WPF.ViewModel.Investments;
 using Family_Management.WPF.ViewModel.RecurringTransactions;
 using Family_Management.WPF.ViewModel.Shell;
 using Family_Management.WPF.ViewModel.Transactions;
 using Family_Management.WPF.ViewModel.Users;
+
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Family_Management.WPF.Services.Navigation;
 
-public sealed class NavigationService : INavigationService
+public sealed class NavigationService :
+    INavigationService,
+    IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IDispatcherService _dispatcherService;
@@ -28,15 +35,19 @@ public sealed class NavigationService : INavigationService
 
     private BaseViewModel? _currentViewModel;
 
+    private bool _isDisposed;
+
     public NavigationService(
         IServiceProvider serviceProvider,
         IDispatcherService dispatcherService)
     {
         _serviceProvider = serviceProvider
-            ?? throw new ArgumentNullException(nameof(serviceProvider));
+            ?? throw new ArgumentNullException(
+                nameof(serviceProvider));
 
         _dispatcherService = dispatcherService
-            ?? throw new ArgumentNullException(nameof(dispatcherService));
+            ?? throw new ArgumentNullException(
+                nameof(dispatcherService));
     }
 
     public event Action<BaseViewModel>? CurrentChildViewModelChanged;
@@ -48,8 +59,10 @@ public sealed class NavigationService : INavigationService
     public async Task NavigateTo<TViewModel>()
         where TViewModel : BaseViewModel
     {
-        var viewModel =
-            _serviceProvider.GetRequiredService<TViewModel>();
+        ThrowIfDisposed();
+
+        var viewModel = _serviceProvider
+            .GetRequiredService<TViewModel>();
 
         await InternalNavigateAsync(viewModel);
     }
@@ -58,8 +71,10 @@ public sealed class NavigationService : INavigationService
         TParameter parameter)
         where TViewModel : BaseViewModel
     {
-        var viewModel =
-            _serviceProvider.GetRequiredService<TViewModel>();
+        ThrowIfDisposed();
+
+        var viewModel = _serviceProvider
+            .GetRequiredService<TViewModel>();
 
         ApplyParameter(viewModel, parameter);
 
@@ -68,6 +83,8 @@ public sealed class NavigationService : INavigationService
 
     public async Task NavigateToScreen(AppScreen screen)
     {
+        ThrowIfDisposed();
+
         if (!_screenToViewModelMap.TryGetValue(
                 screen,
                 out var viewModelType))
@@ -78,8 +95,8 @@ public sealed class NavigationService : INavigationService
                 "O ecrã solicitado não possui um ViewModel associado.");
         }
 
-        var viewModel =
-            _serviceProvider.GetRequiredService(viewModelType)
+        var viewModel = _serviceProvider
+            .GetRequiredService(viewModelType)
             as BaseViewModel;
 
         if (viewModel is null)
@@ -103,6 +120,8 @@ public sealed class NavigationService : INavigationService
 
     public void GoBack()
     {
+        ThrowIfDisposed();
+
         if (_navigationHistory.Count == 0)
         {
             return;
@@ -125,10 +144,12 @@ public sealed class NavigationService : INavigationService
         TParameter parameter)
         where TViewModel : BaseViewModel
     {
+        ThrowIfDisposed();
+
         return _dispatcherService.InvokeAsync(() =>
         {
-            var viewModel =
-                _serviceProvider.GetRequiredService<TViewModel>();
+            var viewModel = _serviceProvider
+                .GetRequiredService<TViewModel>();
 
             ApplyParameter(viewModel, parameter);
 
@@ -156,6 +177,8 @@ public sealed class NavigationService : INavigationService
 
     public void CloseModal()
     {
+        ThrowIfDisposed();
+
         _dispatcherService.Invoke(() =>
         {
             var application = Application.Current;
@@ -178,6 +201,8 @@ public sealed class NavigationService : INavigationService
     private async Task InternalNavigateAsync(
         BaseViewModel viewModel)
     {
+        ThrowIfDisposed();
+
         ArgumentNullException.ThrowIfNull(viewModel);
 
         if (ReferenceEquals(_currentViewModel, viewModel))
@@ -186,12 +211,15 @@ public sealed class NavigationService : INavigationService
             return;
         }
 
+        // Inicializar antes de alterar o histórico.
+        // Se falhar, o ecrã atual mantém-se.
+
+        await InitializeViewModelAsync(viewModel);
+
         if (_currentViewModel is not null)
         {
             _navigationHistory.Push(_currentViewModel);
         }
-
-        await InitializeViewModelAsync(viewModel);
 
         _currentViewModel = viewModel;
 
@@ -219,9 +247,39 @@ public sealed class NavigationService : INavigationService
         }
     }
 
+    private void ThrowIfDisposed()
+    {
+        ObjectDisposedException.ThrowIf(
+            _isDisposed,
+            this);
+    }
+
+    public void Dispose()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
+
+        // Não libertar individualmente os ViewModels
+        // resolvidos pelo DI: o âmbito da aplicação
+        // gere a libertação dos serviços IDisposable.
+
+        _navigationHistory.Clear();
+
+        _currentViewModel = null;
+
+        CurrentChildViewModelChanged = null;
+    }
+
     private readonly Dictionary<AppScreen, Type>
         _screenToViewModelMap = new()
         {
+            [AppScreen.UniversalFinance] =
+                typeof(UniversalFinanceViewModel),
+
             [AppScreen.Dashboard] =
                 typeof(DashboardViewModel),
 
