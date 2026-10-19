@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FamilyManagement.Infrastructure.Persistence.Configurations;
 
-public sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
+public sealed class AccountConfiguration
+    : IEntityTypeConfiguration<Account>
 {
     public void Configure(EntityTypeBuilder<Account> builder)
     {
@@ -15,6 +16,11 @@ public sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
         builder.Property(a => a.Name)
             .IsRequired()
             .HasMaxLength(100);
+
+        builder.Property(a => a.BankName)
+            .IsRequired()
+            .HasMaxLength(120)
+            .HasDefaultValue(string.Empty);
 
         builder.Property(a => a.Description)
             .HasMaxLength(500);
@@ -47,16 +53,11 @@ public sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
             .HasForeignKey(a => a.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Relação Account -> Transactions
-        //
-        // Transaction.AccountId será configurado com mais detalhe
-        // em TransactionConfiguration.
         builder.HasMany(a => a.Transactions)
             .WithOne(t => t.Account)
             .HasForeignKey(t => t.AccountId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Coleção gerida pelo campo privado _transactions.
         builder.Navigation(a => a.Transactions)
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
@@ -71,8 +72,6 @@ public sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
             .IsRequired()
             .HasDefaultValue(true);
 
-        // Evita duas contas ativas/antigas com combinações completamente
-        // desnecessárias de pesquisa sem indexação.
         builder.HasIndex(a => a.UserId);
 
         builder.HasIndex(a => a.FamilyId);
@@ -82,5 +81,7 @@ public sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
             a.UserId,
             a.Name
         });
+
+        builder.HasIndex(a => a.BankName);
     }
 }

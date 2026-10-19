@@ -47,4 +47,7 @@
     <conv:ValueToHeightConverter
         x:Key="ValueToHeight" />
 
+    <conv:SelectedScreenConverter
+        x:Key="SelectedScreenConverter" />
+
 </ResourceDictionary>

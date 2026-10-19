@@ -1,3 +1,4 @@
+
 using FamilyManagement.Domain.Enums;
 
 namespace FamilyManagement.Application.UseCases.Accounts.DTOs;
@@ -13,5 +14,6 @@ public sealed record AccountDTO(
     Guid? FamilyId,
     bool IsActive,
     DateTime CreatedAt,
-    DateTime? UpdatedAt
+    DateTime? UpdatedAt,
+    string BankName = ""
 );

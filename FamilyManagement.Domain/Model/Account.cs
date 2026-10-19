@@ -10,12 +10,17 @@ namespace FamilyManagement.Domain.Model;
 public class Account : BaseEntity
 {
     public string Name { get; private set; } = string.Empty;
+
+    public string BankName { get; private set; } = string.Empty;
+
     public string? Description { get; private set; }
 
     public Money Balance { get; private set; } = null!;
+
     public AccountType Type { get; private set; }
 
     public Guid UserId { get; private set; }
+
     public Guid? FamilyId { get; private set; }
 
     private readonly List<Transaction> _transactions = new();
@@ -30,6 +35,7 @@ public class Account : BaseEntity
 
     private Account(
         string name,
+        string bankName,
         Money initialBalance,
         AccountType type,
         Guid userId,
@@ -37,6 +43,7 @@ public class Account : BaseEntity
         string? description)
     {
         Name = name;
+        BankName = bankName;
         Balance = initialBalance;
         Type = type;
         UserId = userId;
@@ -44,8 +51,29 @@ public class Account : BaseEntity
         Description = description;
     }
 
+    // Mantém a assinatura anterior para compatibilidade.
     public static Result<Account> Create(
         string name,
+        Money initialBalance,
+        AccountType type,
+        Guid userId,
+        Guid? familyId = null,
+        string? description = null)
+    {
+        return Create(
+            name,
+            string.Empty,
+            initialBalance,
+            type,
+            userId,
+            familyId,
+            description);
+    }
+
+    // Nova assinatura com banco associado.
+    public static Result<Account> Create(
+        string name,
+        string bankName,
         Money initialBalance,
         AccountType type,
         Guid userId,
@@ -56,6 +84,11 @@ public class Account : BaseEntity
 
         if (detailsValidation.IsFailure)
             return detailsValidation.Error;
+
+        var bankValidation = ValidateBankName(bankName);
+
+        if (bankValidation.IsFailure)
+            return bankValidation.Error;
 
         if (initialBalance is null)
             return Error.Validation("O saldo inicial é obrigatório.");
@@ -68,6 +101,7 @@ public class Account : BaseEntity
 
         return new Account(
             name.Trim(),
+            bankName.Trim(),
             initialBalance,
             type,
             userId,
@@ -117,7 +151,10 @@ public class Account : BaseEntity
     public Result TransferTo(Account targetAccount, Money amount)
     {
         if (targetAccount is null)
-            return Error.Validation("A conta de destino é obrigatória.");
+        {
+            return Error.Validation(
+                "A conta de destino é obrigatória.");
+        }
 
         if (targetAccount.Id == Id)
         {
@@ -143,12 +180,12 @@ public class Account : BaseEntity
         if (sourceBalanceResult.IsFailure)
             return sourceBalanceResult.Error;
 
-        var targetBalanceResult = targetAccount.Balance.TryAdd(amount);
+        var targetBalanceResult =
+            targetAccount.Balance.TryAdd(amount);
 
         if (targetBalanceResult.IsFailure)
             return targetBalanceResult.Error;
 
-        // Só alteramos as contas depois de validar os dois resultados.
         Balance = sourceBalanceResult.Value;
         targetAccount.Balance = targetBalanceResult.Value;
 
@@ -170,6 +207,24 @@ public class Account : BaseEntity
 
         Name = name.Trim();
         Type = type;
+
+        Touch();
+
+        return Result.Success();
+    }
+
+    public Result UpdateBank(string bankName)
+    {
+        if (!IsActive)
+            return DomainErrors.Account.Inactive;
+
+        var validation = ValidateBankName(bankName);
+
+        if (validation.IsFailure)
+            return validation;
+
+        BankName = bankName.Trim();
+
         Touch();
 
         return Result.Success();
@@ -181,6 +236,7 @@ public class Account : BaseEntity
             return DomainErrors.Account.Inactive;
 
         Description = NormalizeDescription(description);
+
         Touch();
 
         return Result.Success();
@@ -198,6 +254,7 @@ public class Account : BaseEntity
             return Result.Success();
 
         FamilyId = familyId;
+
         Touch();
 
         return Result.Success();
@@ -225,15 +282,44 @@ public class Account : BaseEntity
         AccountType type)
     {
         if (string.IsNullOrWhiteSpace(name))
-            return Error.Validation("O nome da conta é obrigatório.");
+        {
+            return Error.Validation(
+                "O nome da conta é obrigatório.");
+        }
 
-        if (!Enum.IsDefined(type) || type == AccountType.NotSpecified)
-            return Error.Validation("O tipo de conta é inválido.");
+        if (name.Trim().Length > 100)
+        {
+            return Error.Validation(
+                "O nome da conta não pode exceder 100 caracteres.");
+        }
+
+        if (!Enum.IsDefined(type) ||
+            type == AccountType.NotSpecified)
+        {
+            return Error.Validation(
+                "O tipo de conta é inválido.");
+        }
 
         return Result.Success();
     }
 
-    private static string? NormalizeDescription(string? description)
+    private static Result ValidateBankName(string bankName)
+    {
+        // Permite contas antigas sem banco associado.
+        if (string.IsNullOrWhiteSpace(bankName))
+            return Result.Success();
+
+        if (bankName.Trim().Length > 120)
+        {
+            return Error.Validation(
+                "O nome do banco não pode exceder 120 caracteres.");
+        }
+
+        return Result.Success();
+    }
+
+    private static string? NormalizeDescription(
+        string? description)
     {
         return string.IsNullOrWhiteSpace(description)
             ? null

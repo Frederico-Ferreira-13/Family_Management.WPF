@@ -4,127 +4,390 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Users"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              d:DesignHeight="650"
-             d:DesignWidth="1000"
+             d:DesignWidth="1100"
              d:DataContext="{d:DesignInstance Type=viewmodels:UserManagementViewModel,
                                              IsDesignTimeCreatable=False}">
 
-    <Grid Background="{StaticResource GrayBackground}"
-          Margin="20">
+    <Grid Background="{StaticResource FM.Background.Brush}"
+          Margin="24">
 
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Cabeçalho -->
+        <!-- =========================================
+             CABEÇALHO
+             ========================================= -->
+
         <Grid Grid.Row="0"
-              Margin="0,0,0,20">
+              Margin="0,0,0,22">
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0">
+            <StackPanel Grid.Column="0"
+                        VerticalAlignment="Center">
 
                 <TextBlock Text="{Binding Title}"
-                           Style="{StaticResource TitleStyle}"/>
+                           FontSize="27"
+                           FontWeight="Bold"
+                           Foreground="{StaticResource FM.TextPrimary.Brush}"/>
 
-                <TextBlock Text="Visualize e gira os utilizadores do sistema."
-                           Foreground="#666"
-                           FontSize="14"
-                           Margin="0,5,0,0"/>
+                <TextBlock Text="Gira o seu perfil, os utilizadores e o agregado familiar."
+                           Foreground="{StaticResource FM.TextSecondary.Brush}"
+                           FontSize="13"
+                           Margin="0,6,0,0"/>
 
             </StackPanel>
 
             <Button Grid.Column="1"
-                    Content="Atualizar"
                     Command="{Binding LoadUsersCommand}"
                     Style="{StaticResource SecondaryButton}"
-                    VerticalAlignment="Center"/>
+                    VerticalAlignment="Center"
+                    Padding="16,10"
+                    ToolTip="Atualizar a lista de utilizadores">
+
+                <StackPanel Orientation="Horizontal">
+
+                    <materialDesign:PackIcon Kind="Refresh"
+                                             Width="17"
+                                             Height="17"
+                                             VerticalAlignment="Center"/>
+
+                    <TextBlock Text="Atualizar"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"/>
+
+                </StackPanel>
+
+            </Button>
 
         </Grid>
 
-        <!-- Lista -->
+        <!-- =========================================
+             AÇÕES PRINCIPAIS
+             ========================================= -->
+
         <Border Grid.Row="1"
-                Style="{StaticResource CardBorderStyle}"
-                Padding="15"
-                Margin="0,0,0,20">
+                Background="{StaticResource FM.Surface.Brush}"
+                BorderBrush="{StaticResource FM.Border.Brush}"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="16"
+                Margin="0,0,0,18">
+
+            <WrapPanel Orientation="Horizontal">
+
+                <!-- O meu perfil -->
+
+                <Button Command="{Binding OpenMyProfileCommand}"
+                        Style="{StaticResource SecondaryButton}"
+                        Padding="16,11"
+                        Margin="0,0,10,8"
+                        ToolTip="Consultar e editar o meu perfil">
+
+                    <StackPanel Orientation="Horizontal">
+
+                        <materialDesign:PackIcon Kind="AccountCircleOutline"
+                                                 Width="19"
+                                                 Height="19"
+                                                 VerticalAlignment="Center"/>
+
+                        <TextBlock Text="O meu perfil"
+                                   Margin="9,0,0,0"
+                                   VerticalAlignment="Center"/>
+
+                    </StackPanel>
+
+                </Button>
+
+                <!-- Adicionar membro -->
+
+                <Button Command="{Binding AddFamilyMemberCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        Padding="16,11"
+                        Margin="0,0,10,8"
+                        ToolTip="Criar e associar um novo membro à família">
+
+                    <StackPanel Orientation="Horizontal">
+
+                        <materialDesign:PackIcon Kind="AccountPlusOutline"
+                                                 Width="19"
+                                                 Height="19"
+                                                 VerticalAlignment="Center"/>
+
+                        <TextBlock Text="Adicionar membro"
+                                   Margin="9,0,0,0"
+                                   VerticalAlignment="Center"/>
+
+                    </StackPanel>
+
+                </Button>
+
+                <!-- Agregado familiar -->
+
+                <Button Command="{Binding OpenFamilyManagementCommand}"
+                        Style="{StaticResource SecondaryButton}"
+                        Padding="16,11"
+                        Margin="0,0,0,8"
+                        ToolTip="Abrir a gestão do agregado familiar">
+
+                    <StackPanel Orientation="Horizontal">
+
+                        <materialDesign:PackIcon Kind="HomeOutline"
+                                                 Width="19"
+                                                 Height="19"
+                                                 VerticalAlignment="Center"/>
+
+                        <TextBlock Text="Agregado familiar"
+                                   Margin="9,0,0,0"
+                                   VerticalAlignment="Center"/>
+
+                    </StackPanel>
+
+                </Button>
+
+            </WrapPanel>
+
+        </Border>
+
+        <!-- =========================================
+             LISTA DE UTILIZADORES
+             ========================================= -->
+
+        <Border Grid.Row="2"
+                Background="{StaticResource FM.Surface.Brush}"
+                BorderBrush="{StaticResource FM.Border.Brush}"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="18"
+                Margin="0,0,0,18">
 
             <Grid>
 
-                <DataGrid ItemsSource="{Binding Users}"
-                          SelectedItem="{Binding SelectedUser,
-                                                 Mode=TwoWay,
-                                                 UpdateSourceTrigger=PropertyChanged}"
-                          AutoGenerateColumns="False"
-                          IsReadOnly="True"
-                          SelectionMode="Single"
-                          SelectionUnit="FullRow"
-                          Style="{StaticResource CustomDataGridStyle}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                    <DataGrid.Columns>
+                <!-- Título da lista -->
 
-                        <DataGridTextColumn Header="Nome de utilizador"
-                                            Binding="{Binding UserName}"
-                                            Width="2*"/>
+                <Grid Grid.Row="0"
+                      Margin="0,0,0,15">
 
-                        <DataGridTextColumn Header="E-mail"
-                                            Binding="{Binding Email}"
-                                            Width="3*"/>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                        <DataGridTextColumn Header="Família"
-                                            Binding="{Binding FamilyName,
-                                                              TargetNullValue=Sem família}"
-                                            Width="2*"/>
+                    <StackPanel Grid.Column="0">
 
-                        <DataGridCheckBoxColumn Header="Administrador"
-                                                Binding="{Binding IsAdmin}"
-                                                Width="120"/>
+                        <TextBlock Text="Utilizadores"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource FM.TextPrimary.Brush}"/>
 
-                        <DataGridCheckBoxColumn Header="Ativo"
-                                                Binding="{Binding IsActive}"
-                                                Width="90"/>
+                        <TextBlock Text="Selecione um utilizador para editar ou alterar o estado da conta."
+                                   FontSize="12"
+                                   Foreground="{StaticResource FM.TextSecondary.Brush}"
+                                   Margin="0,5,0,0"/>
 
-                    </DataGrid.Columns>
+                    </StackPanel>
 
-                </DataGrid>
+                    <Border Grid.Column="1"
+                            Background="{StaticResource FM.SurfaceAlt.Brush}"
+                            CornerRadius="8"
+                            Padding="12,6"
+                            VerticalAlignment="Center">
 
-                <TextBlock Text="Não existem utilizadores para apresentar."
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           FontSize="15"
-                           Foreground="#777"
-                           Visibility="{Binding Users.Count,
-                                                Converter={StaticResource InverseUniversalVis}}"/>
+                        <StackPanel Orientation="Horizontal">
+
+                            <TextBlock Text="{Binding Users.Count}"
+                                       FontSize="13"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource FM.TextPrimary.Brush}"/>
+
+                            <TextBlock Text=" utilizadores"
+                                       FontSize="12"
+                                       Foreground="{StaticResource FM.TextSecondary.Brush}"/>
+
+                        </StackPanel>
+
+                    </Border>
+
+                </Grid>
+
+                <!-- DataGrid -->
+
+                <Grid Grid.Row="1">
+
+                    <DataGrid ItemsSource="{Binding Users}"
+                              SelectedItem="{Binding SelectedUser,
+                                                     Mode=TwoWay,
+                                                     UpdateSourceTrigger=PropertyChanged}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              Style="{StaticResource CustomDataGridStyle}">
+
+                        <DataGrid.Columns>
+
+                            <DataGridTextColumn
+                                Header="Nome de utilizador"
+                                Binding="{Binding UserName}"
+                                Width="2*"/>
+
+                            <DataGridTextColumn
+                                Header="E-mail"
+                                Binding="{Binding Email}"
+                                Width="3*"/>
+
+                            <DataGridTextColumn
+                                Header="Família"
+                                Binding="{Binding FamilyName,
+                                                  TargetNullValue=Sem família}"
+                                Width="2*"/>
+
+                            <DataGridCheckBoxColumn
+                                Header="Administrador"
+                                Binding="{Binding IsAdmin}"
+                                Width="120"/>
+
+                            <DataGridCheckBoxColumn
+                                Header="Ativo"
+                                Binding="{Binding IsActive}"
+                                Width="90"/>
+
+                        </DataGrid.Columns>
+
+                    </DataGrid>
+
+                    <!-- Estado vazio -->
+
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding Users.Count,
+                                                     Converter={StaticResource InverseUniversalVis}}">
+
+                        <materialDesign:PackIcon Kind="AccountGroupOutline"
+                                                 Width="42"
+                                                 Height="42"
+                                                 Foreground="{StaticResource FM.TextSecondary.Brush}"
+                                                 HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Não existem utilizadores para apresentar."
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   FontSize="14"
+                                   Foreground="{StaticResource FM.TextSecondary.Brush}"
+                                   Margin="0,12,0,0"/>
+
+                    </StackPanel>
+
+                </Grid>
 
             </Grid>
 
         </Border>
 
-        <!-- Ações -->
-        <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right">
+        <!-- =========================================
+             AÇÕES DO UTILIZADOR SELECIONADO
+             ========================================= -->
 
-            <Button Content="Editar"
-                    Command="{Binding EditUserCommand}"
-                    Style="{StaticResource SecondaryButton}"
-                    Margin="0,0,10,0"/>
+        <Grid Grid.Row="3">
 
-            <Button Content="Desativar"
-                    Command="{Binding DeactivateUserCommand}"
-                    Style="{StaticResource DangerButton}"
-                    Margin="0,0,10,0"/>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-            <Button Content="Ativar"
-                    Command="{Binding ActivateUserCommand}"
-                    Style="{StaticResource PrimaryButton}"/>
+            <TextBlock Grid.Column="0"
+                       Text="Selecione um utilizador na lista para gerir a sua conta."
+                       FontSize="12"
+                       Foreground="{StaticResource FM.TextSecondary.Brush}"
+                       VerticalAlignment="Center"/>
 
-        </StackPanel>
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+
+                <!-- Editar -->
+
+                <Button Command="{Binding EditUserCommand}"
+                        Style="{StaticResource SecondaryButton}"
+                        Padding="16,10"
+                        Margin="0,0,10,0">
+
+                    <StackPanel Orientation="Horizontal">
+
+                        <materialDesign:PackIcon Kind="PencilOutline"
+                                                 Width="17"
+                                                 Height="17"
+                                                 VerticalAlignment="Center"/>
+
+                        <TextBlock Text="Editar"
+                                   Margin="7,0,0,0"
+                                   VerticalAlignment="Center"/>
+
+                    </StackPanel>
+
+                </Button>
+
+                <!-- Desativar -->
+
+                <Button Command="{Binding DeactivateUserCommand}"
+                        Style="{StaticResource DangerButton}"
+                        Padding="16,10"
+                        Margin="0,0,10,0">
+
+                    <StackPanel Orientation="Horizontal">
+
+                        <materialDesign:PackIcon Kind="AccountOffOutline"
+                                                 Width="17"
+                                                 Height="17"
+                                                 VerticalAlignment="Center"/>
+
+                        <TextBlock Text="Desativar"
+                                   Margin="7,0,0,0"
+                                   VerticalAlignment="Center"/>
+
+                    </StackPanel>
+
+                </Button>
+
+                <!-- Ativar -->
+
+                <Button Command="{Binding ActivateUserCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        Padding="16,10">
+
+                    <StackPanel Orientation="Horizontal">
+
+                        <materialDesign:PackIcon Kind="AccountCheckOutline"
+                                                 Width="17"
+                                                 Height="17"
+                                                 VerticalAlignment="Center"/>
+
+                        <TextBlock Text="Ativar"
+                                   Margin="7,0,0,0"
+                                   VerticalAlignment="Center"/>
+
+                    </StackPanel>
+
+                </Button>
+
+            </StackPanel>
+
+        </Grid>
 
     </Grid>
 

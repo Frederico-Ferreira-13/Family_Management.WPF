@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.ComponentModel;
+using Family_Management.WPF.ViewModel.Transactions;
 
 namespace Family_Management.WPF.Validation;
 
@@ -83,6 +84,11 @@ public abstract class ValidatorBase : INotifyDataErrorInfo
         {
             OnErrorsChanged(propertyName);
         }
+    }
+
+    public void ClearDateErrors()
+    {
+        ClearErrors("Date");
     }
 
     protected virtual void OnErrorsChanged(

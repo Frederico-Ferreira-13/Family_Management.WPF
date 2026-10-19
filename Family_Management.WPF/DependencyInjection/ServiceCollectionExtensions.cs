@@ -27,6 +27,7 @@ using FamilyManagement.Application.Common.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Family_Management.WPF.Services.Finance;
+using Family_Management.WPF.Views.Families;
 
 namespace Family_Management.WPF.DependencyInjection;
 
@@ -150,6 +151,7 @@ public static class ServiceCollectionExtensions
 
         services.AddTransient<FamilyViewModel>();
         services.AddTransient<FamilySetupViewModel>();
+        services.AddTransient<FamilyMemberCreateViewModel>();
 
         // ---------------------------------------------------------
         // Finance
@@ -245,6 +247,7 @@ public static class ServiceCollectionExtensions
 
         services.AddTransient<FamilyView>();
         services.AddTransient<FamilySetupView>();
+        services.AddTransient<FamilyMemberCreateView>();
 
         // ---------------------------------------------------------
         // Finance

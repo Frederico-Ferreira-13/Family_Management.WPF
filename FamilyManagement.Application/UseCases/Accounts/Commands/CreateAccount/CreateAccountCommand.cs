@@ -1,3 +1,4 @@
+
 using FamilyManagement.Domain.Enums;
 
 namespace FamilyManagement.Application.UseCases.Accounts.Commands.CreateAccount;
@@ -9,5 +10,6 @@ public sealed record CreateAccountCommand(
     decimal InitialBalance,
     string Currency,
     Guid UserId,
-    Guid? FamilyId
+    Guid? FamilyId,
+    string BankName = ""
 );

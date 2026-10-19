@@ -10,6 +10,7 @@ using FamilyManagement.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using FamilyManagement.Infrastructure.Persistence.Seeders;
 
 namespace FamilyManagement.Infrastructure;
 
@@ -25,6 +26,8 @@ public static class DependencyInjection
         RegisterPersistence(services, configuration);
         RegisterRepositories(services);
         RegisterInfrastructureServices(services, configuration);
+
+        services.AddScoped<CategoryDataSeeder>();
 
         return services;
     }
@@ -120,21 +123,29 @@ public static class DependencyInjection
     }
 
     private static void RegisterInfrastructureServices(
-        IServiceCollection services,
-        IConfiguration configuration)
+    IServiceCollection services,
+    IConfiguration configuration)
     {
         var jwtSettings = configuration
             .GetSection(JwtSettings.SectionName)
             .Get<JwtSettings>()
             ?? throw new InvalidOperationException(
-                "A secção 'JwtSettings' não está configurada.");
+                $"A secção '{JwtSettings.SectionName}' não está configurada.");
 
         if (!jwtSettings.IsValid())
         {
             throw new InvalidOperationException(
-                "As definições JWT são inválidas. " +
-                "Verifica SecurityKey, Issuer, Audience " +
-                "e ExpirationMinutes.");
+                "Configuração JWT inválida." +
+                Environment.NewLine +
+                $"Ambiente: {configuration["DOTNET_ENVIRONMENT"] ?? "Não definido"}" +
+                Environment.NewLine +
+                $"SecurityKey presente: {!string.IsNullOrWhiteSpace(jwtSettings.SecurityKey)}" +
+                Environment.NewLine +
+                $"Issuer presente: {!string.IsNullOrWhiteSpace(jwtSettings.Issuer)}" +
+                Environment.NewLine +
+                $"Audience presente: {!string.IsNullOrWhiteSpace(jwtSettings.Audience)}" +
+                Environment.NewLine +
+                $"ExpirationMinutes: {jwtSettings.ExpirationMinutes}");
         }
 
         services.AddSingleton(jwtSettings);

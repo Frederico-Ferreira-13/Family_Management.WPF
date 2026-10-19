@@ -6,6 +6,9 @@ using Family_Management.WPF.DependencyInjection;
 using Family_Management.WPF.Views;
 using FamilyManagement.Application;
 using FamilyManagement.Infrastructure;
+using FamilyManagement.Infrastructure.Persistence;
+using FamilyManagement.Infrastructure.Persistence.Seeders;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -92,11 +95,44 @@ public partial class App : Application
                     })
                 .Build();
 
+            // =====================================================
+            // 1. INICIAR O HOST
+            // =====================================================
+
             await _host.StartAsync();
+
+            // =====================================================
+            // 2. CRIAR O SCOPE DA APLICAÇÃO
+            // =====================================================
 
             _applicationScope = _host.Services.CreateScope();
 
-            var mainWindow = _applicationScope.ServiceProvider
+            var serviceProvider =
+                _applicationScope.ServiceProvider;
+
+            // =====================================================
+            // 3. ATUALIZAR A BASE DE DADOS
+            // =====================================================
+
+            var dbContext = serviceProvider
+                .GetRequiredService<ApplicationDbContext>();
+
+            await dbContext.Database.MigrateAsync();
+
+            // =====================================================
+            // 4. INICIALIZAR CATEGORIAS PREDEFINIDAS
+            // =====================================================
+
+            var categorySeeder = serviceProvider
+                .GetRequiredService<CategoryDataSeeder>();
+
+            await categorySeeder.SeedAsync();
+
+            // =====================================================
+            // 5. ABRIR A JANELA PRINCIPAL
+            // =====================================================
+
+            var mainWindow = serviceProvider
                 .GetRequiredService<MainWindow>();
 
             MainWindow = mainWindow;

@@ -23,6 +23,13 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -53,6 +60,8 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BankName");
 
                     b.HasIndex("FamilyId");
 
@@ -502,6 +511,9 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.Property<Guid?>("AccountId")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("BeneficiaryUserId")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("TEXT");
 
@@ -552,6 +564,8 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
 
                     b.HasIndex("AccountId");
 
+                    b.HasIndex("BeneficiaryUserId");
+
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("UserId");
@@ -561,6 +575,8 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.HasIndex("FinancialPlanId", "NextDueDate");
 
                     b.HasIndex("IsActive", "NextDueDate");
+
+                    b.HasIndex("FamilyId", "BeneficiaryUserId", "IsActive");
 
                     b.ToTable("RecurringTransactions", (string)null);
                 });
@@ -1191,6 +1207,11 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("FamilyManagement.Domain.Model.User", "BeneficiaryUser")
+                        .WithMany("BeneficiaryRecurringTransactions")
+                        .HasForeignKey("BeneficiaryUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("FamilyManagement.Domain.Model.Category", "Category")
                         .WithMany("RecurringTransactions")
                         .HasForeignKey("CategoryId")
@@ -1241,6 +1262,8 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
 
                     b.Navigation("Amount")
                         .IsRequired();
+
+                    b.Navigation("BeneficiaryUser");
 
                     b.Navigation("Category");
 
@@ -1423,6 +1446,8 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
             modelBuilder.Entity("FamilyManagement.Domain.Model.User", b =>
                 {
                     b.Navigation("Accounts");
+
+                    b.Navigation("BeneficiaryRecurringTransactions");
 
                     b.Navigation("Budgets");
 

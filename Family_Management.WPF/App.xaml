@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 
              xmlns:views="clr-namespace:Family_Management.WPF.Views"
+             xmlns:familyViews="clr-namespace:Family_Management.WPF.Views.Families"
 
              xmlns:authentication="clr-namespace:Family_Management.WPF.ViewModel.Authentication"
              xmlns:accounts="clr-namespace:Family_Management.WPF.ViewModel.Accounts"
@@ -45,6 +46,10 @@
 
                 <ResourceDictionary
                     Source="/Family_Management.WPF;component/Styles/DesignResources.xaml" />
+
+                <!-- Novo tema visual -->
+                <ResourceDictionary
+                    Source="/Family_Management.WPF;component/Styles/Theme.FamilyManagement.xaml" />
 
                 <ResourceDictionary
                     Source="/Family_Management.WPF;component/Styles/Styles.ButtonsAndValidation.xaml" />
@@ -154,6 +159,11 @@
             <DataTemplate
                 DataType="{x:Type families:FamilySetupViewModel}">
                 <views:FamilySetupView />
+            </DataTemplate>
+
+            <DataTemplate
+                DataType="{x:Type families:FamilyMemberCreateViewModel}">
+                <familyViews:FamilyMemberCreateView />
             </DataTemplate>
 
             <!-- =================================================

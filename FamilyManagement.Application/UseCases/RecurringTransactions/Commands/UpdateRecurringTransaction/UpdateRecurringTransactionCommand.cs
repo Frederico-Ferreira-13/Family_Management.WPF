@@ -1,3 +1,4 @@
+using System;
 using FamilyManagement.Domain.Enums;
 
 namespace FamilyManagement.Application.UseCases.RecurringTransactions.Commands.UpdateRecurringTransaction;
@@ -9,5 +10,7 @@ public sealed record UpdateRecurringTransactionCommand(
     TransactionType Type,
     Frequency Frequency,
     Guid CategoryId,
-    Guid AccountId,
-    DateTime? EndDate);
+    Guid? AccountId,
+    DateTime? EndDate,
+    Guid? BeneficiaryUserId = null
+);

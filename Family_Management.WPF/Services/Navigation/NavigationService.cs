@@ -1,9 +1,6 @@
-﻿
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Media;
-
 using Family_Management.WPF.Services.Threading;
-
 using Family_Management.WPF.ViewModel;
 using Family_Management.WPF.ViewModel.Accounts;
 using Family_Management.WPF.ViewModel.Authentication;

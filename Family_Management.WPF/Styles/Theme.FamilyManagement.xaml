@@ -1,0 +1,239 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ==========================================
+         FAMILY MANAGEMENT — DESIGN TOKENS
+         ========================================== -->
+
+    <!-- Identidade -->
+    <Color x:Key="FM.Primary.Color">#172B4D</Color>
+    <Color x:Key="FM.Accent.Color">#2563EB</Color>
+    <Color x:Key="FM.AccentHover.Color">#1D4ED8</Color>
+
+    <!-- Estados financeiros -->
+    <Color x:Key="FM.Success.Color">#0D9488</Color>
+    <Color x:Key="FM.Danger.Color">#DC2626</Color>
+    <Color x:Key="FM.Warning.Color">#D97706</Color>
+
+    <!-- Superfícies -->
+    <Color x:Key="FM.Background.Color">#F3F6FB</Color>
+    <Color x:Key="FM.Surface.Color">#FFFFFF</Color>
+    <Color x:Key="FM.SurfaceAlt.Color">#F8FAFC</Color>
+    <Color x:Key="FM.Border.Color">#E2E8F0</Color>
+
+    <!-- Texto -->
+    <Color x:Key="FM.TextPrimary.Color">#172B4D</Color>
+    <Color x:Key="FM.TextSecondary.Color">#475569</Color>
+    <Color x:Key="FM.TextMuted.Color">#64748B</Color>
+
+    <!-- Sidebar -->
+    <Color x:Key="FM.Sidebar.Color">#172B4D</Color>
+    <Color x:Key="FM.SidebarHover.Color">#30476A</Color>
+    <Color x:Key="FM.SidebarText.Color">#D7E1EE</Color>
+
+    <!-- ==========================================
+         BRUSHES
+         ========================================== -->
+
+    <SolidColorBrush
+        x:Key="FM.Primary.Brush"
+        Color="{StaticResource FM.Primary.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.Accent.Brush"
+        Color="{StaticResource FM.Accent.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.AccentHover.Brush"
+        Color="{StaticResource FM.AccentHover.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.Success.Brush"
+        Color="{StaticResource FM.Success.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.Danger.Brush"
+        Color="{StaticResource FM.Danger.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.Warning.Brush"
+        Color="{StaticResource FM.Warning.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.Background.Brush"
+        Color="{StaticResource FM.Background.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.Surface.Brush"
+        Color="{StaticResource FM.Surface.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.SurfaceAlt.Brush"
+        Color="{StaticResource FM.SurfaceAlt.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.Border.Brush"
+        Color="{StaticResource FM.Border.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.TextPrimary.Brush"
+        Color="{StaticResource FM.TextPrimary.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.TextSecondary.Brush"
+        Color="{StaticResource FM.TextSecondary.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.TextMuted.Brush"
+        Color="{StaticResource FM.TextMuted.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.Sidebar.Brush"
+        Color="{StaticResource FM.Sidebar.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.SidebarHover.Brush"
+        Color="{StaticResource FM.SidebarHover.Color}" />
+
+    <SolidColorBrush
+        x:Key="FM.SidebarText.Brush"
+        Color="{StaticResource FM.SidebarText.Color}" />
+
+    <!-- ==========================================
+         TYPOGRAPHY
+         ========================================== -->
+
+    <Style
+        x:Key="FM.PageTitle"
+        TargetType="{x:Type TextBlock}">
+
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="26" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground"
+                Value="{StaticResource FM.TextPrimary.Brush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+
+    </Style>
+
+    <Style
+        x:Key="FM.SectionTitle"
+        TargetType="{x:Type TextBlock}">
+
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground"
+                Value="{StaticResource FM.TextPrimary.Brush}" />
+
+    </Style>
+
+    <Style
+        x:Key="FM.BodyText"
+        TargetType="{x:Type TextBlock}">
+
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground"
+                Value="{StaticResource FM.TextSecondary.Brush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+
+    </Style>
+
+    <Style
+        x:Key="FM.Caption"
+        TargetType="{x:Type TextBlock}">
+
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground"
+                Value="{StaticResource FM.TextMuted.Brush}" />
+
+    </Style>
+
+    <!-- ==========================================
+         CARDS
+         ========================================== -->
+
+    <Style
+        x:Key="FM.Card"
+        TargetType="{x:Type Border}">
+
+        <Setter Property="Background"
+                Value="{StaticResource FM.Surface.Brush}" />
+
+        <Setter Property="BorderBrush"
+                Value="{StaticResource FM.Border.Brush}" />
+
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="20" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+
+    </Style>
+
+    <!-- ==========================================
+         PRIMARY BUTTON
+         ========================================== -->
+
+    <Style
+        x:Key="FM.PrimaryButton"
+        TargetType="{x:Type Button}"
+        BasedOn="{StaticResource MaterialDesignRaisedButton}">
+
+        <Setter Property="Background"
+                Value="{StaticResource FM.Accent.Brush}" />
+
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="MinWidth" Value="100" />
+        <Setter Property="Padding" Value="18,10" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="Hand" />
+
+        <Style.Triggers>
+
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background"
+                        Value="{StaticResource FM.AccentHover.Brush}" />
+            </Trigger>
+
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.55" />
+            </Trigger>
+
+        </Style.Triggers>
+
+    </Style>
+
+    <!-- ==========================================
+         SECONDARY BUTTON
+         ========================================== -->
+
+    <Style
+        x:Key="FM.SecondaryButton"
+        TargetType="{x:Type Button}"
+        BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+
+        <Setter Property="Foreground"
+                Value="{StaticResource FM.Accent.Brush}" />
+
+        <Setter Property="BorderBrush"
+                Value="{StaticResource FM.Accent.Brush}" />
+
+        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="Padding" Value="16,9" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.55" />
+            </Trigger>
+        </Style.Triggers>
+
+    </Style>
+
+</ResourceDictionary>

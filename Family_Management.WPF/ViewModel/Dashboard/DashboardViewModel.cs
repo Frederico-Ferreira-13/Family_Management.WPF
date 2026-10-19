@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Input;
+using System.Diagnostics;
 using Family_Management.WPF.Commands;
 using Family_Management.WPF.Services.Authentication;
 using Family_Management.WPF.Services.Dialogs;
@@ -20,6 +21,7 @@ using FamilyManagement.Application.UseCases.Users.Queries.GetUserById;
 using FamilyManagement.Domain.Enums;
 using FamilyManagement.Domain.Interfaces;
 using FamilyManagement.Domain.Common;
+using System.Windows;
 
 namespace Family_Management.WPF.ViewModel.Dashboard;
 
@@ -632,8 +634,7 @@ public sealed class DashboardViewModel : BaseViewModel
     private bool CanExport()
     {
         return !IsBusy &&
-               _currentUserService.IsAuthenticated &&
-               _currentMonthTransactions.Count > 0;
+            _currentUserService.IsAuthenticated;
     }
 
     private async Task ExportCurrentMonthAsync()
@@ -645,21 +646,28 @@ public sealed class DashboardViewModel : BaseViewModel
 
         await RunSafeAsync(async () =>
         {
+            if (_currentMonthTransactions.Count == 0)
+            {
+                await NotificationService.ShowInformationAsync(
+                    "Não existem movimentos registados no mês atual para exportar.",
+                    "Exportar CSV");
+
+                return;
+            }
+
             var exported =
-                await _transactionExportService
-                    .ExportToCsvAsync(
-                        _currentMonthTransactions,
-                        DateTime.Today);
+                await _transactionExportService.ExportToCsvAsync(
+                    _currentMonthTransactions,
+                    DateTime.Today);
 
             if (!exported)
             {
                 return;
             }
 
-            await NotificationService
-                .ShowInformationAsync(
-                    "Movimentos mensais exportados para um ficheiro compatível com Excel.",
-                    "Exportação concluída");
+            await NotificationService.ShowInformationAsync(
+                "Movimentos mensais exportados para um ficheiro compatível com Excel.",
+                "Exportação concluída");
         });
 
         RaiseCommandStates();

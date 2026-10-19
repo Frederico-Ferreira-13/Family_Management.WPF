@@ -14,18 +14,29 @@ public class RecurringTransaction : BaseEntity
     public Money Amount { get; private set; } = null!;
 
     public TransactionType Type { get; private set; }
+
     public Frequency Frequency { get; private set; }
 
     public DateTime StartDate { get; private set; }
+
     public DateTime? EndDate { get; private set; }
 
     public DateTime? LastGenerateDate { get; private set; }
+
     public DateTime NextDueDate { get; private set; }
 
     public Guid CategoryId { get; private set; }
+
     public Guid? AccountId { get; private set; }
+
+    // Utilizador responsável pelo registo.
     public Guid UserId { get; private set; }
+
+    // Membro da família que recebe o rendimento.
+    public Guid? BeneficiaryUserId { get; private set; }
+
     public Guid? FinancialPlanId { get; private set; }
+
     public Guid? FamilyId { get; private set; }
 
     public virtual Family? Family { get; private set; }
@@ -33,8 +44,12 @@ public class RecurringTransaction : BaseEntity
     public virtual FinancialPlan? FinancialPlan { get; private set; }
 
     public virtual Category? Category { get; private set; }
+
     public virtual Account? Account { get; private set; }
+
     public virtual User? User { get; private set; }
+
+    public virtual User? BeneficiaryUser { get; private set; }
 
     private readonly List<Transaction> _generatedTransactions = new();
 
@@ -57,12 +72,15 @@ public class RecurringTransaction : BaseEntity
         Guid? familyId,
         Guid userId,
         Guid? financialPlanId,
-        DateTime? endDate)
+        DateTime? endDate,
+        Guid? beneficiaryUserId)
     {
         Description = description.Trim();
+
         Amount = amount;
 
         Type = type;
+
         Frequency = frequency;
 
         StartDate = NormalizeDate(startDate);
@@ -74,10 +92,16 @@ public class RecurringTransaction : BaseEntity
         NextDueDate = StartDate;
 
         CategoryId = categoryId;
+
         AccountId = accountId;
+
         UserId = userId;
+
         FinancialPlanId = financialPlanId;
+
         FamilyId = familyId;
+
+        BeneficiaryUserId = beneficiaryUserId;
     }
 
     public static Result<RecurringTransaction> Create(
@@ -91,7 +115,8 @@ public class RecurringTransaction : BaseEntity
         Guid userId,
         Guid? familyId = null,
         Guid? financialPlanId = null,
-        DateTime? endDate = null)
+        DateTime? endDate = null,
+        Guid? beneficiaryUserId = null)
     {
         var validation = ValidateDetails(
             description,
@@ -107,8 +132,11 @@ public class RecurringTransaction : BaseEntity
             return validation.Error;
 
         if (userId == Guid.Empty)
-            return Error.Validation("O utilizador é obrigatório.");
-            
+        {
+            return Error.Validation(
+                "O utilizador é obrigatório.");
+        }
+
         if (financialPlanId == Guid.Empty)
         {
             return Error.Validation(
@@ -121,6 +149,14 @@ public class RecurringTransaction : BaseEntity
                 "O identificador da família é inválido.");
         }
 
+        var beneficiaryValidation = ValidateBeneficiary(
+            beneficiaryUserId,
+            type,
+            familyId);
+
+        if (beneficiaryValidation.IsFailure)
+            return beneficiaryValidation.Error;
+
         return new RecurringTransaction(
             description: description,
             amount: amount,
@@ -132,7 +168,35 @@ public class RecurringTransaction : BaseEntity
             familyId: familyId,
             userId: userId,
             financialPlanId: financialPlanId,
-            endDate: endDate);
+            endDate: endDate,
+            beneficiaryUserId: beneficiaryUserId);
+    }
+
+    public Result AssignBeneficiary(Guid? beneficiaryUserId)
+    {
+        if (!IsActive)
+        {
+            return Error.Conflict(
+                "recurring.inactive",
+                "Não é possível alterar uma recorrência inativa.");
+        }
+
+        var validation = ValidateBeneficiary(
+            beneficiaryUserId,
+            Type,
+            FamilyId);
+
+        if (validation.IsFailure)
+            return validation;
+
+        if (BeneficiaryUserId == beneficiaryUserId)
+            return Result.Success();
+
+        BeneficiaryUserId = beneficiaryUserId;
+
+        Touch();
+
+        return Result.Success();
     }
 
     public Result<Transaction> GenerateTransaction(
@@ -145,18 +209,19 @@ public class RecurringTransaction : BaseEntity
             return validation.Error;
 
         // Esta operação não altera NextDueDate nem LastGenerateDate.
+        // A associação à regra permite identificar o beneficiário.
         return Transaction.CreateFromRecurring(
-        date: NextDueDate,
-        amount: Amount,
-        description: Description,
-        type: Type,
-        userId: UserId,
-        accountId: AccountId,
-        categoryId: CategoryId,
-        recurringTransactionId: Id,
-        isConfirmed: isConfirmed,
-        referenceDate: referenceDate,
-        financialPlanId: FinancialPlanId);
+            date: NextDueDate,
+            amount: Amount,
+            description: Description,
+            type: Type,
+            userId: UserId,
+            accountId: AccountId,
+            categoryId: CategoryId,
+            recurringTransactionId: Id,
+            isConfirmed: isConfirmed,
+            referenceDate: referenceDate,
+            financialPlanId: FinancialPlanId);
     }
 
     public Result RecordGeneratedTransaction(
@@ -207,10 +272,10 @@ public class RecurringTransaction : BaseEntity
                 "A próxima ocorrência ultrapassa o calendário suportado.");
         }
 
-        // Só alteramos o estado depois de concluir as validações.
         _generatedTransactions.Add(transaction);
 
         LastGenerateDate = NextDueDate;
+
         NextDueDate = nextDueDate;
 
         if (EndDate.HasValue &&
@@ -230,7 +295,7 @@ public class RecurringTransaction : BaseEntity
         TransactionType type,
         Frequency frequency,
         Guid categoryId,
-        Guid accountId,
+        Guid? accountId,
         DateTime? endDate,
         bool isActive)
     {
@@ -272,15 +337,19 @@ public class RecurringTransaction : BaseEntity
         }
 
         Description = description.Trim();
+
         Amount = amount;
 
         Type = type;
+
         Frequency = frequency;
 
         CategoryId = categoryId;
+
         AccountId = accountId;
 
         EndDate = normalizedEndDate;
+
         IsActive = isActive;
 
         Touch();
@@ -383,8 +452,6 @@ public class RecurringTransaction : BaseEntity
             + NextDueDate.Month
             - StartDate.Month;
 
-        // Parte sempre da data inicial, preservando o dia original.
-        // Exemplo: 31/janeiro -> 28/fevereiro -> 31/março.
         return StartDate.AddMonths(
             elapsedMonths + monthsToAdd);
     }
@@ -442,6 +509,35 @@ public class RecurringTransaction : BaseEntity
         {
             return Error.Validation(
                 "O identificador da conta é inválido.");
+        }
+
+        return Result.Success();
+    }
+
+    private static Result ValidateBeneficiary(
+        Guid? beneficiaryUserId,
+        TransactionType type,
+        Guid? familyId)
+    {
+        if (!beneficiaryUserId.HasValue)
+            return Result.Success();
+
+        if (beneficiaryUserId.Value == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador do beneficiário é inválido.");
+        }
+
+        if (type != TransactionType.Income)
+        {
+            return Error.Validation(
+                "A associação de beneficiários está disponível apenas para receitas.");
+        }
+
+        if (!familyId.HasValue)
+        {
+            return Error.Validation(
+                "É necessário associar a receita a uma família.");
         }
 
         return Result.Success();

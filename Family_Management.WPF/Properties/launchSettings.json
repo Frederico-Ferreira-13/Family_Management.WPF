@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Family_Management.WPF": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

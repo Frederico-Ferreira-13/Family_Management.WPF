@@ -1,3 +1,4 @@
+using System;
 using FamilyManagement.Domain.Enums;
 
 namespace FamilyManagement.Application.UseCases.RecurringTransactions.Commands.CreateRecurringTransaction;
@@ -14,4 +15,5 @@ public sealed record CreateRecurringTransactionCommand(
     Guid? AccountId,
     Guid UserId,
     Guid? FamilyId = null,
-    Guid? FinancialPlanId = null);
+    Guid? FinancialPlanId = null,
+    Guid? BeneficiaryUserId = null);

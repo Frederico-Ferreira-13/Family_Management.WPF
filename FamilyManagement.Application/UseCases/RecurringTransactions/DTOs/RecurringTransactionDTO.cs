@@ -1,3 +1,4 @@
+using System;
 using FamilyManagement.Domain.Enums;
 
 namespace FamilyManagement.Application.UseCases.RecurringTransactions.DTOs;
@@ -25,5 +26,7 @@ public sealed record RecurringTransactionDTO(
     DateTime CreatedAt,
     DateTime? UpdatedAt,
     Guid? FamilyId = null,
-    Guid? FinancialPlanId = null
+    Guid? FinancialPlanId = null,
+    Guid? BeneficiaryUserId = null,
+    string? BeneficiaryUserName = null
 );

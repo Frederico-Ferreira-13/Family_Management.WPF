@@ -71,6 +71,7 @@ public sealed class RecurringTransactionViewModel :
     // EDIT
     private string _editDescription = string.Empty;
     private decimal _editAmount;
+    private bool _showInactiveRecurringTransactions;
     private TransactionType _editType = TransactionType.Expense;
     private Frequency _editFrequency = Frequency.Monthly;
     private DateTime _editStartDate;
@@ -304,6 +305,25 @@ public sealed class RecurringTransactionViewModel :
                 value);
 
             RaiseCommandStates();
+        }
+    }
+
+    public bool ShowInactiveRecurringTransactions
+    {
+        get => _showInactiveRecurringTransactions;
+
+        set
+        {
+            if (!SetProperty(
+                    ref _showInactiveRecurringTransactions,
+                    value))
+            {
+                return;
+            }
+
+            SelectedRecurringTransaction = null;
+
+            _ = LoadDataAsync();
         }
     }
 
@@ -708,6 +728,8 @@ public sealed class RecurringTransactionViewModel :
                 RecurringTransactions =
                     new ObservableCollection<RecurringTransactionDTO>(
                         recurringResult.Value
+                            .Where(item =>
+                                item.IsActive != ShowInactiveRecurringTransactions)
                             .OrderBy(item => item.NextDueDate)
                             .ThenBy(item => item.Description));
 
@@ -887,14 +909,10 @@ public sealed class RecurringTransactionViewModel :
 
     private async Task DeactivateRecurringTransactionAsync()
     {
-        var selected =
-            SelectedRecurringTransaction;
+        var selected = SelectedRecurringTransaction;
 
-        if (selected is null ||
-            !selected.IsActive)
-        {
+        if (selected is null || !selected.IsActive)
             return;
-        }
 
         var confirmed =
             await NotificationService.ShowConfirmationAsync(
@@ -921,14 +939,20 @@ public sealed class RecurringTransactionViewModel :
                 return;
             }
 
-            await LoadDataAsync();
+            // Limpar a seleção e fechar a edição.
+            SelectedRecurringTransaction = null;
 
-            SelectedRecurringTransaction =
-                RecurringTransactions.FirstOrDefault(
-                    item => item.Id == selected.Id);
+            // Remover imediatamente da lista de ativas.
+            var existing = RecurringTransactions
+                .FirstOrDefault(item => item.Id == selected.Id);
+
+            if (existing is not null)
+            {
+                RecurringTransactions.Remove(existing);
+            }
 
             await NotificationService.ShowInformationAsync(
-                "Transação recorrente desativada.",
+                "Recorrência desativada com sucesso.",
                 "Sucesso");
         });
 
@@ -941,14 +965,10 @@ public sealed class RecurringTransactionViewModel :
 
     private async Task ReactivateRecurringTransactionAsync()
     {
-        var selected =
-            SelectedRecurringTransaction;
+        var selected = SelectedRecurringTransaction;
 
-        if (selected is null ||
-            selected.IsActive)
-        {
+        if (selected is null || selected.IsActive)
             return;
-        }
 
         await RunSafeAsync(async () =>
         {
@@ -967,14 +987,18 @@ public sealed class RecurringTransactionViewModel :
                 return;
             }
 
-            await LoadDataAsync();
+            SelectedRecurringTransaction = null;
 
-            SelectedRecurringTransaction =
-                RecurringTransactions.FirstOrDefault(
-                    item => item.Id == selected.Id);
+            var existing = RecurringTransactions
+                .FirstOrDefault(item => item.Id == selected.Id);
+
+            if (existing is not null)
+            {
+                RecurringTransactions.Remove(existing);
+            }
 
             await NotificationService.ShowInformationAsync(
-                "Transação recorrente reativada.",
+                "Recorrência reativada com sucesso.",
                 "Sucesso");
         });
 

@@ -20,6 +20,7 @@ public static class AccountMapper
             account.FamilyId,
             account.IsActive,
             account.CreatedAt,
-            account.UpdatedAt);
+            account.UpdatedAt,
+            account.BankName);
     }
 }

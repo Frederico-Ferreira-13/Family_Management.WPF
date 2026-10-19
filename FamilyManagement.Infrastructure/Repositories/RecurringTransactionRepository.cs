@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using FamilyManagement.Domain.Enums;
 using FamilyManagement.Domain.Interfaces;
 using FamilyManagement.Domain.Model;
 using FamilyManagement.Infrastructure.Persistence;
@@ -153,6 +154,7 @@ public sealed class RecurringTransactionRepository
             .Include(rt => rt.Account)
             .Include(rt => rt.Category)
             .Include(rt => rt.GeneratedTransactions)
+            .Include(rt => rt.BeneficiaryUser)
             .FirstOrDefaultAsync(rt =>
                 rt.Id == recurringTransactionId);
     }
@@ -171,5 +173,82 @@ public sealed class RecurringTransactionRepository
             .Include(rt => rt.Category)
             .OrderBy(rt => rt.NextDueDate)
             .ToListAsync();
+    }
+
+    public async Task<IEnumerable<RecurringTransaction>>
+        GetActiveRecurringTransactionsByFamilyIdAsync(
+            Guid familyId)
+    {
+        if (familyId == Guid.Empty)
+            return [];
+
+        return await DbSet
+            .AsNoTracking()
+            .Where(rt =>
+                rt.FamilyId == familyId &&
+                rt.IsActive)
+            .Include(rt => rt.User)
+            .Include(rt => rt.BeneficiaryUser)
+            .Include(rt => rt.Category)
+            .Include(rt => rt.Account)
+            .OrderBy(rt => rt.NextDueDate)
+            .ToListAsync();
+    }
+
+// ============================================================
+// RECEITAS RECORRENTES POR BENEFICIÁRIO
+// ============================================================
+
+    public async Task<IEnumerable<RecurringTransaction>>
+        GetActiveRecurringIncomeByBeneficiaryAsync(
+            Guid familyId,
+            Guid beneficiaryUserId)
+    {
+        if (familyId == Guid.Empty ||
+            beneficiaryUserId == Guid.Empty)
+        {
+            return [];
+        }
+
+        return await DbSet
+            .AsNoTracking()
+            .Where(rt =>
+                rt.FamilyId == familyId &&
+                rt.BeneficiaryUserId == beneficiaryUserId &&
+                rt.Type == TransactionType.Income &&
+                rt.IsActive)
+            .Include(rt => rt.BeneficiaryUser)
+            .Include(rt => rt.Category)
+            .OrderBy(rt => rt.NextDueDate)
+            .ToListAsync();
+    }
+
+// ============================================================
+// VERIFICAR DESCRIÇÃO DUPLICADA POR BENEFICIÁRIO
+// ============================================================
+
+    public Task<bool>
+        RecurringTransactionExistsForBeneficiaryByDescriptionAsync(
+            string description,
+            Guid familyId,
+            Guid beneficiaryUserId)
+    {
+        if (string.IsNullOrWhiteSpace(description) ||
+            familyId == Guid.Empty ||
+            beneficiaryUserId == Guid.Empty)
+        {
+            return Task.FromResult(false);
+        }
+
+        var normalizedDescription = description
+            .Trim()
+            .ToLowerInvariant();
+
+        return DbSet.AnyAsync(rt =>
+            rt.Description.ToLower() == normalizedDescription &&
+            rt.FamilyId == familyId &&
+            rt.BeneficiaryUserId == beneficiaryUserId &&
+            rt.Type == TransactionType.Income &&
+            rt.IsActive);
     }
 }

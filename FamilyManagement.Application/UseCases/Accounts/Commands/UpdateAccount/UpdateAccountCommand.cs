@@ -6,5 +6,6 @@ public sealed record UpdateAccountCommand(
     Guid AccountId,
     string Name,
     string? Description,
-    AccountType Type
+    AccountType Type,
+    string BankName = ""
 );

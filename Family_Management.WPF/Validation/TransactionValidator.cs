@@ -33,9 +33,7 @@ public sealed class TransactionValidator : ValidatorBase
                 "A descrição deve ter pelo menos 2 caracteres.";
         }
 
-        SetError(
-            propertyName,
-            error);
+        SetError(propertyName, error);
     }
 
     public void ValidateSourceAccount(
@@ -49,6 +47,33 @@ public sealed class TransactionValidator : ValidatorBase
                 : null);
     }
 
+    public void ValidateSourceAccount(
+        string propertyName,
+        AccountDTO? account,
+        Guid? financialPlanId,
+        TransactionType transactionType)
+    {
+        string? error = null;
+
+        if (transactionType == TransactionType.Transfer)
+        {
+            if (account is null)
+            {
+                error =
+                    "Selecione a conta de origem da transferência.";
+            }
+        }
+        else if (account is null &&
+                 !financialPlanId.HasValue)
+        {
+            error =
+                "Selecione uma conta ou associe o movimento " +
+                "a um plano financeiro.";
+        }
+
+        SetError(propertyName, error);
+    }
+
     public void ValidateCategory(
         string propertyName,
         TransactionType type,
@@ -60,11 +85,37 @@ public sealed class TransactionValidator : ValidatorBase
             return;
         }
 
-        SetError(
-            propertyName,
-            category is null
-                ? "Selecione uma categoria."
-                : null);
+        string? error = null;
+
+        if (category is null)
+        {
+            error = "Selecione uma categoria.";
+        }
+        else
+        {
+            var requiredType = type switch
+            {
+                TransactionType.Income =>
+                    CategoryType.Income,
+
+                TransactionType.Expense =>
+                    CategoryType.Expense,
+
+                _ =>
+                    CategoryType.NotSpecified
+            };
+
+            if (!category.IsActive ||
+                requiredType == CategoryType.NotSpecified ||
+                category.Type != requiredType)
+            {
+                error =
+                    "A categoria selecionada não é compatível " +
+                    "com o tipo de movimento.";
+            }
+        }
+
+        SetError(propertyName, error);
     }
 
     public void ValidateTargetAccount(
@@ -83,8 +134,7 @@ public sealed class TransactionValidator : ValidatorBase
 
         if (targetAccount is null)
         {
-            error =
-                "Selecione a conta de destino.";
+            error = "Selecione a conta de destino.";
         }
         else if (sourceAccount is not null &&
                  sourceAccount.Id == targetAccount.Id)
@@ -99,12 +149,11 @@ public sealed class TransactionValidator : ValidatorBase
                      StringComparison.OrdinalIgnoreCase))
         {
             error =
-                "As contas da transferência devem utilizar a mesma moeda.";
+                "As contas da transferência devem utilizar " +
+                "a mesma moeda.";
         }
 
-        SetError(
-            propertyName,
-            error);
+        SetError(propertyName, error);
     }
 
     public void ValidateDate(
@@ -116,8 +165,7 @@ public sealed class TransactionValidator : ValidatorBase
 
         if (date == default)
         {
-            error =
-                "A data é obrigatória.";
+            error = "A data é obrigatória.";
         }
         else if (isConfirmed &&
                  date.Date > DateTime.Today)
@@ -126,9 +174,48 @@ public sealed class TransactionValidator : ValidatorBase
                 "Um movimento futuro deve permanecer por confirmar.";
         }
 
+        SetError(propertyName, error);
+    }
+
+    public void ValidateRecurrenceDates(
+        string propertyName,
+        DateTime startDate,
+        DateTime? endDate)
+    {
+        string? error = null;
+
+        if (startDate == default)
+        {
+            error =
+                "A data de início da recorrência é obrigatória.";
+        }
+        else if (endDate.HasValue &&
+                 endDate.Value.Date < startDate.Date)
+        {
+            error =
+                "A data de fim não pode ser anterior " +
+                "à data de início.";
+        }
+
+        SetError(propertyName, error);
+    }
+
+    public void ValidateFrequency(
+        string propertyName,
+        Frequency frequency)
+    {
         SetError(
             propertyName,
-            error);
+            !Enum.IsDefined(frequency)
+                ? "Selecione uma periodicidade válida."
+                : null);
+    }
+
+    public void ClearRecurrenceErrors()
+    {
+        ClearErrors("StartDate");
+        ClearErrors("EndDate");
+        ClearErrors("Frequency");
     }
 
     public void ClearTransactionErrors()
@@ -139,5 +226,7 @@ public sealed class TransactionValidator : ValidatorBase
         ClearErrors("SelectedCategory");
         ClearErrors("SelectedTargetAccount");
         ClearErrors("Date");
+
+        ClearRecurrenceErrors();
     }
 }

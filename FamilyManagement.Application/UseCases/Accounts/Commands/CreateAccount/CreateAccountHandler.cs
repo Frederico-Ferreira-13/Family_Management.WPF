@@ -24,7 +24,7 @@ public sealed class CreateAccountHandler
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        // 1. Validar utilizador autenticado
+        // 1. Validar utilizador
 
         if (command.UserId == Guid.Empty)
         {
@@ -50,7 +50,7 @@ public sealed class CreateAccountHandler
                 "Um utilizador inativo não pode criar contas.");
         }
 
-        // 2. Validar dados da conta
+        // 2. Validar nome da conta
 
         if (string.IsNullOrWhiteSpace(command.Name))
         {
@@ -59,11 +59,34 @@ public sealed class CreateAccountHandler
                 "O nome da conta é obrigatório.");
         }
 
-        var normalizedName = command.Name
-            .Trim()
-            .ToLowerInvariant();
+        var accountName = command.Name.Trim();
 
-        // 3. Validar contexto familiar
+        if (accountName.Length > 100)
+        {
+            return Error.BusinessRule(
+                "Account.InvalidNameLength",
+                "O nome da conta não pode exceder 100 caracteres.");
+        }
+
+        var normalizedName = accountName.ToLowerInvariant();
+
+        // 3. Validar banco associado
+
+        var bankName = command.BankName?.Trim()
+            ?? string.Empty;
+
+        if (bankName.Length > 120)
+        {
+            return Error.BusinessRule(
+                "Account.InvalidBankName",
+                "O nome do banco não pode exceder 120 caracteres.");
+        }
+
+        // Durante a transição, o campo pode estar vazio
+        // para manter compatibilidade com clientes antigos.
+        // O novo formulário deverá exigir uma seleção.
+
+        // 4. Validar contexto familiar
 
         if (command.FamilyId.HasValue)
         {
@@ -85,7 +108,7 @@ public sealed class CreateAccountHandler
             }
         }
 
-        // 4. Validar nome duplicado no contexto correto
+        // 5. Validar nome duplicado no contexto
 
         var duplicate = await _unitOfWork.Accounts.AnyAsync(
             account =>
@@ -102,24 +125,23 @@ public sealed class CreateAccountHandler
         {
             return Error.Conflict(
                 "Account.DuplicateName",
-                $"Já existe uma conta ativa com o nome '{command.Name}' neste contexto financeiro.");
+                $"Já existe uma conta ativa com o nome '{accountName}' neste contexto financeiro.");
         }
 
-        // 5. Validar saldo inicial e moeda
+        // 6. Validar saldo e moeda
 
         var moneyResult = Money.TryCreate(
             command.InitialBalance,
             command.Currency);
 
         if (moneyResult.IsFailure)
-        {
             return moneyResult.Error;
-        }
 
-        // 6. Criar conta
+        // 7. Criar entidade
 
         var accountResult = Account.Create(
-            command.Name.Trim(),
+            accountName,
+            bankName,
             moneyResult.Value,
             command.Type,
             command.UserId,
@@ -127,18 +149,17 @@ public sealed class CreateAccountHandler
             command.Description);
 
         if (accountResult.IsFailure)
-        {
             return accountResult.Error;
-        }
 
         var account = accountResult.Value;
 
-        // 7. Persistir
+        // 8. Persistir
 
         await _unitOfWork.Accounts.AddAsync(account);
 
         await _unitOfWork.CompleteAsync();
 
+        // O mapper também terá de incluir BankName.
         return AccountMapper.ToDTO(account);
     }
 }

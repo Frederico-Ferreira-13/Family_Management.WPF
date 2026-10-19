@@ -12,15 +12,47 @@ public sealed class UpdateAccountHandler
 
     public UpdateAccountHandler(IUnitOfWork unitOfWork)
     {
-        _unitOfWork = unitOfWork;
+        _unitOfWork = unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
     public async Task<Result<AccountDTO>> HandleAsync(
         UpdateAccountCommand command,
         CancellationToken cancellationToken = default)
     {
-        var account =
-            await _unitOfWork.Accounts.GetByIdAsync(command.AccountId);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (command.AccountId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da conta é inválido.");
+        }
+
+        if (string.IsNullOrWhiteSpace(command.Name))
+        {
+            return Error.Validation(
+                "O nome da conta é obrigatório.");
+        }
+
+        var normalizedName = command.Name.Trim();
+
+        if (normalizedName.Length > 100)
+        {
+            return Error.Validation(
+                "O nome da conta não pode exceder 100 caracteres.");
+        }
+
+        var normalizedBankName =
+            command.BankName?.Trim() ?? string.Empty;
+
+        if (normalizedBankName.Length > 120)
+        {
+            return Error.Validation(
+                "O nome do banco não pode exceder 120 caracteres.");
+        }
+
+        var account = await _unitOfWork.Accounts
+            .GetByIdAsync(command.AccountId);
 
         if (account is null)
         {
@@ -29,39 +61,52 @@ public sealed class UpdateAccountHandler
                 "Conta não encontrada.");
         }
 
-        var normalizedName = command.Name
-            .Trim()
-            .ToLowerInvariant();
+        if (!account.IsActive)
+        {
+            return Error.BusinessRule(
+                "Account.Inactive",
+                "Não é possível editar uma conta inativa.");
+        }
+
+        var normalizedNameLower =
+            normalizedName.ToLowerInvariant();
 
         var duplicate = await _unitOfWork.Accounts.AnyAsync(a =>
-            a.UserId == account.UserId &&
             a.Id != account.Id &&
-            a.Name.ToLower() == normalizedName &&
-            a.IsActive);
+            a.IsActive &&
+            a.Name.ToLower() == normalizedNameLower &&
+            (
+                account.FamilyId.HasValue
+                    ? a.FamilyId == account.FamilyId
+                    : a.FamilyId == null &&
+                      a.UserId == account.UserId
+            ));
 
         if (duplicate)
         {
             return Error.Conflict(
                 "Account.DuplicateName",
-                "Já existe outra conta ativa com este nome.");
+                "Já existe outra conta ativa com este nome no mesmo contexto financeiro.");
         }
 
         var detailsResult = account.UpdateDetails(
-            command.Name,
+            normalizedName,
             command.Type);
 
         if (detailsResult.IsFailure)
-        {
             return detailsResult.Error;
-        }
 
-        var descriptionResult =
-            account.UpdateDescription(command.Description);
+        var bankResult = account.UpdateBank(
+            normalizedBankName);
+
+        if (bankResult.IsFailure)
+            return bankResult.Error;
+
+        var descriptionResult = account.UpdateDescription(
+            command.Description);
 
         if (descriptionResult.IsFailure)
-        {
             return descriptionResult.Error;
-        }
 
         _unitOfWork.Accounts.Update(account);
 

@@ -29,7 +29,9 @@ public class Family : BaseEntity
     {
     }
 
-    private Family(string name, Guid creatorUserId)
+    private Family(
+        string name,
+        Guid creatorUserId)
     {
         Name = name;
         CreatorUserId = creatorUserId;
@@ -79,9 +81,27 @@ public class Family : BaseEntity
             return Result.Success();
 
         Name = normalizedName;
+
         Touch();
 
         return Result.Success();
+    }
+
+    public bool HasMember(Guid userId)
+    {
+        if (userId == Guid.Empty)
+            return false;
+
+        return _members.Any(member =>
+            member.Id == userId &&
+            member.IsActive &&
+            member.FamilyId == Id);
+    }
+
+    public bool IsCreator(Guid userId)
+    {
+        return userId != Guid.Empty &&
+               CreatorUserId == userId;
     }
 
     public Result RegenerateInvitationCode()
@@ -94,6 +114,7 @@ public class Family : BaseEntity
         }
 
         InvitationCode = GenerateInvitationCode();
+
         Touch();
 
         return Result.Success();
@@ -124,6 +145,7 @@ public class Family : BaseEntity
             return Result.Success();
 
         InvitationCode = normalizedCode;
+
         Touch();
 
         return Result.Success();

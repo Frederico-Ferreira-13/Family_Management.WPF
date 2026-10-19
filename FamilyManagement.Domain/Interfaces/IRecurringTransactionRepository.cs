@@ -48,4 +48,19 @@ public interface IRecurringTransactionRepository
     Task<IEnumerable<RecurringTransaction>>
         FindRecurringTransactionsWithDetailsAsync(
             Expression<Func<RecurringTransaction, bool>> predicate);
+
+    Task<IEnumerable<RecurringTransaction>>
+        GetActiveRecurringTransactionsByFamilyIdAsync(
+            Guid familyId);
+
+    Task<IEnumerable<RecurringTransaction>>
+        GetActiveRecurringIncomeByBeneficiaryAsync(
+            Guid familyId,
+            Guid beneficiaryUserId);
+
+    Task<bool>
+        RecurringTransactionExistsForBeneficiaryByDescriptionAsync(
+            string description,
+            Guid familyId,
+            Guid beneficiaryUserId);
 }

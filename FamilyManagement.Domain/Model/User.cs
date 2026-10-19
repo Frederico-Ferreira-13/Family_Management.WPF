@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using FamilyManagement.Domain.Common;
@@ -35,6 +34,9 @@ public class User : BaseEntity
     private readonly List<RecurringTransaction> _recurringTransactions =
         new();
 
+    private readonly List<RecurringTransaction>
+        _beneficiaryRecurringTransactions = new();
+
     private readonly List<Family> _familiesCreated = new();
 
     public virtual IReadOnlyCollection<UserRole> Roles =>
@@ -61,6 +63,10 @@ public class User : BaseEntity
     public virtual IReadOnlyCollection<RecurringTransaction>
         RecurringTransactions =>
             _recurringTransactions.AsReadOnly();
+
+    public virtual IReadOnlyCollection<RecurringTransaction>
+        BeneficiaryRecurringTransactions =>
+            _beneficiaryRecurringTransactions.AsReadOnly();
 
     public virtual IReadOnlyCollection<Family> FamiliesCreated =>
         _familiesCreated.AsReadOnly();
@@ -147,6 +153,7 @@ public class User : BaseEntity
         }
 
         PasswordHash = passwordHash;
+
         Touch();
 
         return Result.Success();
@@ -173,10 +180,10 @@ public class User : BaseEntity
                 "O utilizador já pertence a uma família.");
         }
 
-        // Os papéis são atribuídos pelo serviço após a associação.
         _roles.Clear();
 
         FamilyId = familyId;
+
         Touch();
 
         return Result.Success();
@@ -190,12 +197,18 @@ public class User : BaseEntity
         FamilyId = null;
         Family = null;
 
-        // Não transportar permissões para uma futura família.
         _roles.Clear();
 
         Touch();
 
         return Result.Success();
+    }
+
+    public bool BelongsToFamily(Guid familyId)
+    {
+        return IsActive &&
+               familyId != Guid.Empty &&
+               FamilyId == familyId;
     }
 
     public Result AssignRole(UserRole role)
@@ -233,6 +246,7 @@ public class User : BaseEntity
         }
 
         _roles.Add(role);
+
         Touch();
 
         return Result.Success();
@@ -260,6 +274,7 @@ public class User : BaseEntity
         }
 
         _roles.Remove(role);
+
         Touch();
 
         return Result.Success();
@@ -310,6 +325,7 @@ public class User : BaseEntity
         }
 
         UserSetting = settings;
+
         Touch();
 
         return Result.Success();

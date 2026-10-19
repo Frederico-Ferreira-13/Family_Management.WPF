@@ -1,5 +1,5 @@
-﻿
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Threading;
 using System.Windows;
 using System.Windows.Input;
@@ -81,11 +81,11 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
         _financeContext = financeContext
             ?? throw new ArgumentNullException(nameof(financeContext));
 
-        Title = "Contas";
+        Title = "Contas bancárias";
 
         RefreshCommand = new AsyncRelayCommand(
             RefreshAsync,
-            () => !IsBusy);
+            () => !_isDisposed && !IsBusy);
 
         SaveCommand = new AsyncRelayCommand(
             SaveAsync,
@@ -95,39 +95,49 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
             DeactivateSelectedAccountAsync,
             CanDeactivateAccount);
 
-        CancelEditCommand = new RelayCommand(
-            CancelEdit);
+        CancelEditCommand = new RelayCommand(CancelEdit);
 
         SelectAccountCommand = new RelayCommand<AccountDTO?>(
             SelectAccount);
 
+        _form.PropertyChanged += OnFormPropertyChanged;
         _financeContext.ContextChanged += OnFinanceContextChanged;
     }
+
+    public IReadOnlyList<string> AvailableBanks { get; } =
+    [
+        "ActivoBank",
+        "Banco BPI",
+        "Banco CTT",
+        "Bankinter",
+        "Caixa Geral de Depósitos",
+        "Crédito Agrícola",
+        "Millennium BCP",
+        "Montepio",
+        "Novo Banco",
+        "Santander",
+        "Outro banco"
+    ];
 
     public ObservableCollection<AccountDTO> Accounts
     {
         get => _accounts;
-
         private set => SetProperty(ref _accounts, value);
     }
 
     public ObservableCollection<CurrencyDTO> AvailableCurrencies
     {
         get => _availableCurrencies;
-
         private set => SetProperty(ref _availableCurrencies, value);
     }
 
     public AccountDTO? SelectedAccount
     {
         get => _selectedAccount;
-
         set
         {
             if (!SetProperty(ref _selectedAccount, value))
-            {
                 return;
-            }
 
             RaiseCommandStates();
         }
@@ -136,13 +146,16 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
     public AccountFormModel Form
     {
         get => _form;
-
         private set
         {
-            if (!SetProperty(ref _form, value))
-            {
+            if (ReferenceEquals(_form, value))
                 return;
-            }
+
+            _form.PropertyChanged -= OnFormPropertyChanged;
+
+            SetProperty(ref _form, value);
+
+            _form.PropertyChanged += OnFormPropertyChanged;
 
             OnPropertyChanged(nameof(IsEditing));
             RaiseCommandStates();
@@ -162,28 +175,33 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
             ? "Contas familiares"
             : "Contas pessoais";
 
-    public IReadOnlyList<AccountType> AccountTypes { get; } =
-        Enum.GetValues<AccountType>()
-            .Where(type => type != AccountType.NotSpecified)
-            .ToArray();
-
     public ICommand RefreshCommand { get; }
-
     public ICommand SaveCommand { get; }
-
     public ICommand DeactivateAccountCommand { get; }
-
     public ICommand CancelEditCommand { get; }
-
     public ICommand SelectAccountCommand { get; }
+
+    private void OnFormPropertyChanged(
+        object? sender,
+        PropertyChangedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        if (e.PropertyName == nameof(AccountFormModel.AccountId) ||
+            e.PropertyName == nameof(AccountFormModel.IsEditMode))
+        {
+            OnPropertyChanged(nameof(IsEditing));
+        }
+
+        RaiseCommandStates();
+    }
 
     public override async Task InitializeAsync(
         CancellationToken cancellationToken = default)
     {
         if (IsInitialized || _isDisposed)
-        {
             return;
-        }
 
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -196,16 +214,11 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
                 await NotificationService.ShowErrorAsync(
                     "Não existe um utilizador autenticado.",
                     "Sessão");
-
                 return;
             }
 
             await LoadCurrenciesAsync(cancellationToken);
-
-            await LoadAccountsAsync(
-                userId,
-                cancellationToken);
-
+            await LoadAccountsAsync(userId, cancellationToken);
             await ResetFormAsync(cancellationToken);
 
             IsInitialized = true;
@@ -215,9 +228,7 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
     private async Task RefreshAsync()
     {
         if (_isDisposed)
-        {
             return;
-        }
 
         await RunSafeAsync(async () =>
         {
@@ -231,14 +242,10 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
                 await NotificationService.ShowErrorAsync(
                     "Não existe um utilizador autenticado.",
                     "Sessão");
-
                 return;
             }
 
-            await LoadAccountsAsync(
-                userId,
-                CancellationToken.None);
-
+            await LoadAccountsAsync(userId, CancellationToken.None);
             await ResetFormAsync(CancellationToken.None);
         });
 
@@ -263,8 +270,6 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
             new GetAccountsByUserQuery(userId, familyId),
             cancellationToken);
 
-        // Impede que uma consulta anterior substitua
-        // os dados de um contexto entretanto alterado.
         if (_isDisposed ||
             version != Volatile.Read(ref _contextVersion) ||
             scope != _financeContext.Scope ||
@@ -280,12 +285,10 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
             await NotificationService.ShowErrorAsync(
                 result.Error.Message,
                 "Contas");
-
             return;
         }
 
-        Accounts = new ObservableCollection<AccountDTO>(
-            result.Value);
+        Accounts = new ObservableCollection<AccountDTO>(result.Value);
     }
 
     private async Task LoadCurrenciesAsync(
@@ -300,7 +303,6 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
             await NotificationService.ShowErrorAsync(
                 result.Error.Message,
                 "Moedas");
-
             return;
         }
 
@@ -311,73 +313,56 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
     private async Task ResetFormAsync(
         CancellationToken cancellationToken)
     {
-        var defaultCurrencyResult =
-            await _getDefaultCurrencyHandler.HandleAsync(
-                new GetDefaultCurrencyQuery(),
-                cancellationToken);
+        var result = await _getDefaultCurrencyHandler.HandleAsync(
+            new GetDefaultCurrencyQuery(),
+            cancellationToken);
 
-        var currencyCode =
-            defaultCurrencyResult.IsSuccess
-                ? defaultCurrencyResult.Value.Code
-                : AvailableCurrencies.FirstOrDefault()?.Code
-                  ?? string.Empty;
+        var currencyCode = result.IsSuccess
+            ? result.Value.Code
+            : AvailableCurrencies.FirstOrDefault()?.Code
+              ?? string.Empty;
 
         SelectedAccount = null;
-
         Form = AccountFormModel.CreateNew(currencyCode);
     }
 
     private void SelectAccount(AccountDTO? account)
     {
         if (account is null || IsBusy || _isDisposed)
-        {
             return;
-        }
 
         if (!Accounts.Any(existing => existing.Id == account.Id))
-        {
             return;
-        }
 
         SelectedAccount = account;
-
         Form = AccountFormModel.FromAccount(account);
     }
 
     private bool CanSave()
     {
         if (_isDisposed || IsBusy)
-        {
             return false;
-        }
 
-        // Até os handlers de escrita serem revistos,
-        // apenas permitimos criar contas familiares.
         if (IsFamilyScope && Form.IsEditMode)
-        {
             return false;
-        }
 
         if (IsFamilyScope && !_financeContext.CanUseFamilyScope)
-        {
             return false;
-        }
 
-        if (string.IsNullOrWhiteSpace(Form.Name))
-        {
+        if (string.IsNullOrWhiteSpace(Form.Name) ||
+            Form.Name.Trim().Length > 100)
             return false;
-        }
+
+        if (string.IsNullOrWhiteSpace(Form.BankName) ||
+            Form.BankName.Trim().Length > 120)
+            return false;
 
         if (Form.Type == AccountType.NotSpecified)
-        {
             return false;
-        }
 
         if (!Form.IsEditMode &&
             string.IsNullOrWhiteSpace(Form.Currency))
-        {
             return false;
-        }
 
         return true;
     }
@@ -385,16 +370,13 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
     private async Task SaveAsync()
     {
         if (!CanSave())
-        {
             return;
-        }
 
         if (!TryGetCurrentUserId(out var userId))
         {
             await NotificationService.ShowErrorAsync(
                 "Não existe um utilizador autenticado.",
                 "Sessão");
-
             return;
         }
 
@@ -408,9 +390,7 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
             {
                 if (_isDisposed ||
                     version != Volatile.Read(ref _contextVersion))
-                {
                     return;
-                }
 
                 if (Form.IsEditMode)
                 {
@@ -419,7 +399,6 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
                         await NotificationService.ShowErrorAsync(
                             "A edição de contas familiares ainda não está disponível.",
                             "Operação indisponível");
-
                         return;
                     }
 
@@ -450,18 +429,18 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
             await NotificationService.ShowErrorAsync(
                 "Não existe uma família ativa selecionada.",
                 "Contexto financeiro");
-
             return;
         }
 
         var command = new CreateAccountCommand(
             Form.Name.Trim(),
             NormalizeDescription(Form.Description),
-            Form.Type,
+            AccountType.Checking,
             Form.InitialBalance,
             Form.Currency.Trim().ToUpperInvariant(),
             userId,
-            FamilyId: familyId);
+            FamilyId: familyId,
+            BankName: Form.BankName.Trim());
 
         var result = await _createAccountHandler.HandleAsync(command);
 
@@ -470,18 +449,14 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
             await NotificationService.ShowErrorAsync(
                 result.Error.Message,
                 "Criar conta");
-
             return;
         }
 
-        // A conta foi criada no contexto capturado antes
-        // da operação. Não a adicionar a outro contexto.
         if (version == Volatile.Read(ref _contextVersion) &&
             scope == _financeContext.Scope &&
             familyId == _financeContext.ActiveFamilyId)
         {
             Accounts.Add(result.Value);
-
             await ResetFormAsync(CancellationToken.None);
         }
 
@@ -493,16 +468,13 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
     private async Task UpdateAccountAsync()
     {
         if (!Form.AccountId.HasValue)
-        {
             return;
-        }
 
         if (IsFamilyScope)
         {
             await NotificationService.ShowErrorAsync(
                 "A edição de contas familiares ainda não está disponível.",
                 "Operação indisponível");
-
             return;
         }
 
@@ -510,7 +482,8 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
             Form.AccountId.Value,
             Form.Name.Trim(),
             NormalizeDescription(Form.Description),
-            Form.Type);
+            Form.Type,
+            BankName: Form.BankName.Trim());
 
         var result = await _updateAccountHandler.HandleAsync(command);
 
@@ -519,7 +492,6 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
             await NotificationService.ShowErrorAsync(
                 result.Error.Message,
                 "Atualizar conta");
-
             return;
         }
 
@@ -544,12 +516,9 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
     private async Task DeactivateSelectedAccountAsync()
     {
         if (!CanDeactivateAccount())
-        {
             return;
-        }
 
         var account = SelectedAccount!;
-
         var version = Volatile.Read(ref _contextVersion);
 
         var confirmed =
@@ -558,16 +527,12 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
                 "Confirmar");
 
         if (!confirmed)
-        {
             return;
-        }
 
         if (_isDisposed ||
             version != Volatile.Read(ref _contextVersion) ||
             IsFamilyScope)
-        {
             return;
-        }
 
         await RunSafeAsync(async () =>
         {
@@ -578,9 +543,7 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
                 if (_isDisposed ||
                     version != Volatile.Read(ref _contextVersion) ||
                     IsFamilyScope)
-                {
                     return;
-                }
 
                 var result =
                     await _deactivateAccountHandler.HandleAsync(
@@ -591,7 +554,6 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
                     await NotificationService.ShowErrorAsync(
                         result.Error.Message,
                         "Desativar conta");
-
                     return;
                 }
 
@@ -625,9 +587,7 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
     private async Task CancelEditAsync()
     {
         if (_isDisposed)
-        {
             return;
-        }
 
         await RunSafeAsync(async () =>
         {
@@ -649,7 +609,6 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
         }
 
         var index = Accounts.IndexOf(existing);
-
         Accounts[index] = updatedAccount;
     }
 
@@ -664,25 +623,19 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
     private void OnFinanceContextChanged()
     {
         if (_isDisposed)
-        {
             return;
-        }
 
         Interlocked.Increment(ref _contextVersion);
 
         var dispatcher = Application.Current?.Dispatcher;
 
         if (dispatcher is null || dispatcher.HasShutdownStarted)
-        {
             return;
-        }
 
         _ = dispatcher.InvokeAsync(async () =>
         {
             if (_isDisposed)
-            {
                 return;
-            }
 
             await RefreshForFinanceContextAsync();
         });
@@ -691,9 +644,7 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
     private async Task RefreshForFinanceContextAsync()
     {
         if (_isDisposed)
-        {
             return;
-        }
 
         Accounts = new ObservableCollection<AccountDTO>();
         SelectedAccount = null;
@@ -711,16 +662,12 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
             try
             {
                 if (_isDisposed)
-                {
                     return;
-                }
 
                 await ResetFormAsync(CancellationToken.None);
 
                 if (!TryGetCurrentUserId(out var userId))
-                {
                     return;
-                }
 
                 await LoadAccountsAsync(
                     userId,
@@ -738,14 +685,10 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
     private void RaiseCommandStates()
     {
         if (RefreshCommand is AsyncRelayCommand refreshCommand)
-        {
             refreshCommand.RaiseCanExecuteChanged();
-        }
 
         if (SaveCommand is AsyncRelayCommand saveCommand)
-        {
             saveCommand.RaiseCanExecuteChanged();
-        }
 
         if (DeactivateAccountCommand
             is AsyncRelayCommand deactivateCommand)
@@ -765,15 +708,14 @@ public sealed class AccountViewModel : BaseViewModel, IDisposable
     public void Dispose()
     {
         if (_isDisposed)
-        {
             return;
-        }
 
         _isDisposed = true;
 
+        _form.PropertyChanged -= OnFormPropertyChanged;
         _financeContext.ContextChanged -= OnFinanceContextChanged;
 
-        // Não libertamos o SemaphoreSlim aqui:
-        // pode existir uma operação assíncrona ainda em curso.
+        // O SemaphoreSlim não é libertado aqui porque
+        // pode existir uma operação assíncrona em curso.
     }
 }

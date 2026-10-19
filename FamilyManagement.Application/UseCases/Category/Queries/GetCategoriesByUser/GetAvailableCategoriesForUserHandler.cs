@@ -10,9 +10,11 @@ public sealed class GetAvailableCategoriesForUserHandler
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public GetAvailableCategoriesForUserHandler(IUnitOfWork unitOfWork)
+    public GetAvailableCategoriesForUserHandler(
+        IUnitOfWork unitOfWork)
     {
-        _unitOfWork = unitOfWork;
+        _unitOfWork = unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
     public async Task<Result<IReadOnlyCollection<CategoryDTO>>> HandleAsync(
@@ -25,32 +27,64 @@ public sealed class GetAvailableCategoriesForUserHandler
                 "O identificador do utilizador é obrigatório.");
         }
 
+        if (query.FamilyId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da família é inválido.");
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
         var user = await _unitOfWork.Users
             .GetByIdAsync(query.UserId);
 
-        if (user is null)
+        if (user is null || !user.IsActive)
         {
             return Error.NotFound(
                 "User.NotFound",
-                "Utilizador não encontrado.");
+                "O utilizador não existe ou está inativo.");
         }
 
-        var familyId = user.FamilyId;
+        // Mantém a compatibilidade com chamadas anteriores.
+        // Quando a família é indicada explicitamente,
+        // utilizamos essa família como contexto da consulta.
+        var familyId = query.FamilyId ?? user.FamilyId;
 
-        var categories = await _unitOfWork.Categories.FindAsync(c =>
-            c.IsActive &&
-            (
-                c.UserId == query.UserId ||
-                (familyId.HasValue &&
-                 c.FamilyId == familyId.Value) ||
-                (!c.UserId.HasValue &&
-                 !c.FamilyId.HasValue)
-            ));
+        // Uma família explicitamente indicada deve pertencer
+        // ao contexto autorizado do utilizador.
+        // A verificação abaixo assume o modelo atual de
+        // associação User.FamilyId.
+        if (query.FamilyId.HasValue &&
+            user.FamilyId != query.FamilyId)
+        {
+            return Error.Validation(
+                "O utilizador não está associado à família indicada.");
+        }
+
+        var categories = await _unitOfWork.Categories.FindAsync(
+            category =>
+                category.IsActive &&
+                (
+                    category.UserId == query.UserId ||
+                    (
+                        familyId.HasValue &&
+                        category.FamilyId == familyId.Value
+                    ) ||
+                    (
+                        !category.UserId.HasValue &&
+                        !category.FamilyId.HasValue
+                    )
+                ));
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         var result = categories
-            .Select(c => CategoryMapper.ToDTO(
-                c,
-                includeSubCategories: false))
+            .OrderBy(category => category.Type)
+            .ThenBy(category => category.Name)
+            .Select(category =>
+                CategoryMapper.ToDTO(
+                    category,
+                    includeSubCategories: false))
             .ToList();
 
         return result;

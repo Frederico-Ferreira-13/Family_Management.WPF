@@ -4,90 +4,101 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:navigation="clr-namespace:Family_Management.WPF.Services.Navigation"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     Title="{Binding Title}"
-    Height="800"
-    Width="1280"
-    MinHeight="650"
+    Width="1360"
+    Height="840"
     MinWidth="950"
+    MinHeight="650"
     WindowStartupLocation="CenterScreen"
-    Background="#F5F7FB"
-    FontFamily="Segoe UI">
+    Background="{DynamicResource FM.Background.Brush}"
+    FontFamily="Segoe UI"
+    FontSize="14"
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True">
 
     <Window.Resources>
 
-        <!-- BOTÃO DE NAVEGAÇÃO -->
+        <!-- ==========================================
+             BOTÕES DE NAVEGAÇÃO
+             ========================================== -->
 
-        <Style x:Key="ModernNavButton"
-               TargetType="Button">
+        <Style
+            x:Key="FM.Shell.NavButton"
+            TargetType="{x:Type Button}">
 
-            <Setter Property="Background"
-                    Value="Transparent" />
+            <Setter Property="Height" Value="46" />
+            <Setter Property="Margin" Value="0,3" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="Background" Value="Transparent" />
 
-            <Setter Property="Foreground"
-                    Value="#475569" />
+            <Setter
+                Property="Foreground"
+                Value="{StaticResource FM.SidebarText.Brush}" />
 
-            <Setter Property="BorderThickness"
-                    Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
 
-            <Setter Property="Height"
-                    Value="42" />
+            <Setter
+                Property="HorizontalContentAlignment"
+                Value="Stretch" />
 
-            <Setter Property="Padding"
-                    Value="15,0" />
+            <Setter
+                Property="VerticalContentAlignment"
+                Value="Center" />
 
-            <Setter Property="HorizontalContentAlignment"
-                    Value="Left" />
-
-            <Setter Property="FontSize"
-                    Value="13" />
-
-            <Setter Property="FontWeight"
-                    Value="Medium" />
-
-            <Setter Property="Cursor"
-                    Value="Hand" />
+            <Setter Property="Cursor" Value="Hand" />
 
             <Setter Property="Template">
-
                 <Setter.Value>
 
-                    <ControlTemplate TargetType="Button">
+                    <ControlTemplate TargetType="{x:Type Button}">
 
                         <Border
-                            x:Name="NavBorder"
+                            x:Name="ButtonBorder"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="9"
+                            CornerRadius="10"
+                            BorderBrush="Transparent"
+                            BorderThickness="2"
                             Padding="{TemplateBinding Padding}">
 
                             <ContentPresenter
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Center" />
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Center"
+                                RecognizesAccessKey="True" />
 
                         </Border>
 
                         <ControlTemplate.Triggers>
 
-                            <Trigger Property="IsMouseOver"
-                                     Value="True">
+                            <Trigger
+                                Property="IsMouseOver"
+                                Value="True">
 
                                 <Setter
-                                    TargetName="NavBorder"
+                                    TargetName="ButtonBorder"
                                     Property="Background"
-                                    Value="#EFF6FF" />
-
-                                <Setter
-                                    Property="Foreground"
-                                    Value="#2563EB" />
+                                    Value="{StaticResource FM.SidebarHover.Brush}" />
 
                             </Trigger>
 
-                            <Trigger Property="IsPressed"
-                                     Value="True">
+                            <Trigger
+                                Property="IsKeyboardFocused"
+                                Value="True">
 
                                 <Setter
-                                    TargetName="NavBorder"
-                                    Property="Background"
-                                    Value="#DBEAFE" />
+                                    TargetName="ButtonBorder"
+                                    Property="BorderBrush"
+                                    Value="#93C5FD" />
+
+                            </Trigger>
+
+                            <Trigger
+                                Property="IsEnabled"
+                                Value="False">
+
+                                <Setter
+                                    Property="Opacity"
+                                    Value="0.45" />
 
                             </Trigger>
 
@@ -96,63 +107,201 @@
                     </ControlTemplate>
 
                 </Setter.Value>
-
             </Setter>
+
+            <!-- Página selecionada -->
+            <Style.Triggers>
+
+                <DataTrigger Value="True">
+
+                    <DataTrigger.Binding>
+
+                        <MultiBinding
+                            Converter="{StaticResource SelectedScreenConverter}">
+
+                            <Binding
+                                Path="DataContext.SelectedScreen"
+                                RelativeSource="{RelativeSource AncestorType=Window}" />
+
+                            <Binding
+                                Path="CommandParameter"
+                                RelativeSource="{RelativeSource Self}" />
+
+                        </MultiBinding>
+
+                    </DataTrigger.Binding>
+
+                    <Setter
+                        Property="Background"
+                        Value="#365A8D" />
+
+                    <Setter
+                        Property="Foreground"
+                        Value="White" />
+
+                    <Setter
+                        Property="FontWeight"
+                        Value="SemiBold" />
+
+                </DataTrigger>
+
+            </Style.Triggers>
 
         </Style>
 
-        <!-- BOTÃO DESTAQUE -->
+        <!-- ==========================================
+             TEXTO NO MODO EXPANDIDO
+             ========================================== -->
 
-        <Style x:Key="ModernPrimaryButton"
-               TargetType="Button">
+        <Style
+            x:Key="FM.Shell.NavText"
+            TargetType="{x:Type TextBlock}">
 
-            <Setter Property="Background"
-                    Value="#2563EB" />
+            <Setter Property="Margin" Value="14,0,0,0" />
 
-            <Setter Property="Foreground"
-                    Value="White" />
+            <Setter
+                Property="VerticalAlignment"
+                Value="Center" />
 
-            <Setter Property="BorderThickness"
-                    Value="0" />
+            <Setter
+                Property="TextTrimming"
+                Value="CharacterEllipsis" />
 
-            <Setter Property="Height"
-                    Value="44" />
+            <Style.Triggers>
 
-            <Setter Property="FontSize"
-                    Value="13" />
+                <DataTrigger
+                    Binding="{Binding IsSidebarExpanded}"
+                    Value="False">
 
-            <Setter Property="FontWeight"
-                    Value="SemiBold" />
+                    <Setter
+                        Property="Visibility"
+                        Value="Collapsed" />
 
-            <Setter Property="Cursor"
-                    Value="Hand" />
+                </DataTrigger>
+
+            </Style.Triggers>
+
+        </Style>
+
+        <!-- ==========================================
+             TÍTULOS DAS SECÇÕES
+             ========================================== -->
+
+        <Style
+            x:Key="FM.Shell.SectionLabel"
+            TargetType="{x:Type TextBlock}">
+
+            <Setter
+                Property="Foreground"
+                Value="#AFC4E2" />
+
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="12,20,0,8" />
+
+            <Style.Triggers>
+
+                <DataTrigger
+                    Binding="{Binding IsSidebarExpanded}"
+                    Value="False">
+
+                    <Setter
+                        Property="Visibility"
+                        Value="Collapsed" />
+
+                </DataTrigger>
+
+            </Style.Triggers>
+
+        </Style>
+
+        <!-- ==========================================
+             ELEMENTOS VISÍVEIS APENAS EXPANDIDOS
+             ========================================== -->
+
+        <Style
+            x:Key="FM.Shell.ExpandedOnly"
+            TargetType="{x:Type StackPanel}">
+
+            <Style.Triggers>
+
+                <DataTrigger
+                    Binding="{Binding IsSidebarExpanded}"
+                    Value="False">
+
+                    <Setter
+                        Property="Visibility"
+                        Value="Collapsed" />
+
+                </DataTrigger>
+
+            </Style.Triggers>
+
+        </Style>
+
+        <!-- ==========================================
+             NOVO: BOTÃO DO PERFIL NO CABEÇALHO
+             ========================================== -->
+
+        <Style
+            x:Key="FM.Shell.ProfileButton"
+            TargetType="{x:Type Button}">
+
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="10,7" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
 
             <Setter Property="Template">
-
                 <Setter.Value>
 
-                    <ControlTemplate TargetType="Button">
+                    <ControlTemplate TargetType="{x:Type Button}">
 
                         <Border
-                            x:Name="PrimaryBorder"
+                            x:Name="ProfileBorder"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="9">
+                            CornerRadius="12"
+                            Padding="{TemplateBinding Padding}">
 
                             <ContentPresenter
-                                HorizontalAlignment="Center"
+                                HorizontalAlignment="Stretch"
                                 VerticalAlignment="Center" />
 
                         </Border>
 
                         <ControlTemplate.Triggers>
 
-                            <Trigger Property="IsMouseOver"
-                                     Value="True">
+                            <Trigger
+                                Property="IsMouseOver"
+                                Value="True">
 
                                 <Setter
-                                    TargetName="PrimaryBorder"
+                                    TargetName="ProfileBorder"
                                     Property="Background"
-                                    Value="#1D4ED8" />
+                                    Value="{StaticResource FM.SurfaceAlt.Brush}" />
+
+                            </Trigger>
+
+                            <Trigger
+                                Property="IsKeyboardFocused"
+                                Value="True">
+
+                                <Setter
+                                    TargetName="ProfileBorder"
+                                    Property="Background"
+                                    Value="{StaticResource FM.SurfaceAlt.Brush}" />
+
+                            </Trigger>
+
+                            <Trigger
+                                Property="IsEnabled"
+                                Value="False">
+
+                                <Setter
+                                    Property="Opacity"
+                                    Value="0.5" />
 
                             </Trigger>
 
@@ -161,39 +310,73 @@
                     </ControlTemplate>
 
                 </Setter.Value>
-
             </Setter>
 
         </Style>
 
     </Window.Resources>
 
+    <!-- ==========================================
+         ESTRUTURA PRINCIPAL
+         ========================================== -->
+
     <Grid>
 
         <Grid.ColumnDefinitions>
 
-            <!-- MENU LATERAL -->
-
+            <!-- Sidebar dinâmica -->
             <ColumnDefinition>
 
                 <ColumnDefinition.Style>
 
-                    <Style TargetType="ColumnDefinition">
+                    <Style
+                        TargetType="{x:Type ColumnDefinition}">
 
-                        <Setter Property="Width"
-                                Value="0" />
+                        <Setter Property="Width" Value="0" />
 
                         <Style.Triggers>
 
-                            <DataTrigger
-                                Binding="{Binding IsLoggedIn}"
-                                Value="True">
+                            <!-- Expandida -->
+                            <MultiDataTrigger>
+
+                                <MultiDataTrigger.Conditions>
+
+                                    <Condition
+                                        Binding="{Binding IsLoggedIn}"
+                                        Value="True" />
+
+                                    <Condition
+                                        Binding="{Binding IsSidebarExpanded}"
+                                        Value="True" />
+
+                                </MultiDataTrigger.Conditions>
 
                                 <Setter
                                     Property="Width"
-                                    Value="245" />
+                                    Value="232" />
 
-                            </DataTrigger>
+                            </MultiDataTrigger>
+
+                            <!-- Recolhida -->
+                            <MultiDataTrigger>
+
+                                <MultiDataTrigger.Conditions>
+
+                                    <Condition
+                                        Binding="{Binding IsLoggedIn}"
+                                        Value="True" />
+
+                                    <Condition
+                                        Binding="{Binding IsSidebarExpanded}"
+                                        Value="False" />
+
+                                </MultiDataTrigger.Conditions>
+
+                                <Setter
+                                    Property="Width"
+                                    Value="68" />
+
+                            </MultiDataTrigger>
 
                         </Style.Triggers>
 
@@ -203,19 +386,43 @@
 
             </ColumnDefinition>
 
-            <!-- CONTEÚDO -->
-
             <ColumnDefinition Width="*" />
 
         </Grid.ColumnDefinitions>
 
-        <!-- MENU LATERAL -->
+        <!-- ==========================================
+             SIDEBAR
+             ========================================== -->
 
         <Border
             Grid.Column="0"
-            Background="White"
-            BorderBrush="#E5EAF2"
-            BorderThickness="0,0,1,0">
+            Background="{StaticResource FM.Sidebar.Brush}">
+
+            <Border.Style>
+
+                <Style TargetType="{x:Type Border}">
+
+                    <Setter
+                        Property="Visibility"
+                        Value="Collapsed" />
+
+                    <Style.Triggers>
+
+                        <DataTrigger
+                            Binding="{Binding IsLoggedIn}"
+                            Value="True">
+
+                            <Setter
+                                Property="Visibility"
+                                Value="Visible" />
+
+                        </DataTrigger>
+
+                    </Style.Triggers>
+
+                </Style>
+
+            </Border.Style>
 
             <Grid>
 
@@ -225,175 +432,323 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- IDENTIFICAÇÃO -->
+                <!-- =====================================
+                     IDENTIDADE
+                     ===================================== -->
 
                 <Border
                     Grid.Row="0"
-                    Padding="20,24,20,20"
-                    BorderBrush="#E5EAF2"
+                    Padding="12,20"
+                    BorderBrush="#355071"
                     BorderThickness="0,0,0,1">
 
-                    <StackPanel>
+                    <StackPanel
+                        Orientation="Horizontal"
+                        VerticalAlignment="Center">
 
-                        <TextBlock
-                            Text="GESTÃO FAMILIAR"
-                            FontSize="16"
-                            FontWeight="Bold"
-                            Foreground="#2563EB" />
+                        <Border
+                            Width="44"
+                            Height="44"
+                            Background="{StaticResource FM.Accent.Brush}"
+                            CornerRadius="12">
 
-                        <TextBlock
-                            Text="{Binding CurrentUserName}"
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            Foreground="#172033"
-                            Margin="0,14,0,0"
-                            TextTrimming="CharacterEllipsis" />
+                            <materialDesign:PackIcon
+                                Kind="HomeOutline"
+                                Width="25"
+                                Height="25"
+                                Foreground="White"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
 
-                        <TextBlock
-                            Text="Sessão iniciada"
-                            FontSize="11"
-                            Foreground="#94A3B8"
-                            Margin="0,4,0,0" />
+                        </Border>
+
+                        <StackPanel
+                            Style="{StaticResource FM.Shell.ExpandedOnly}"
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center">
+
+                            <TextBlock
+                                Text="FAMILY"
+                                Foreground="White"
+                                FontSize="15"
+                                FontWeight="Bold" />
+
+                            <TextBlock
+                                Text="MANAGEMENT"
+                                Foreground="#B6CAE4"
+                                FontSize="10" />
+
+                        </StackPanel>
 
                     </StackPanel>
 
                 </Border>
 
-                <!-- NAVEGAÇÃO -->
+                <!-- =====================================
+                     NAVEGAÇÃO PRINCIPAL
+                     ===================================== -->
 
                 <ScrollViewer
                     Grid.Row="1"
                     VerticalScrollBarVisibility="Auto"
-                    HorizontalScrollBarVisibility="Disabled">
+                    HorizontalScrollBarVisibility="Disabled"
+                    Focusable="False">
 
-                    <StackPanel Margin="14,18,14,18">
+                    <StackPanel Margin="8,8,8,16">
 
                         <TextBlock
                             Text="PRINCIPAL"
-                            FontSize="10"
-                            FontWeight="Bold"
-                            Foreground="#94A3B8"
-                            Margin="12,0,0,12" />
+                            Style="{StaticResource FM.Shell.SectionLabel}" />
 
+                        <!-- VISÃO GERAL -->
                         <Button
-                            Content="⌂   Dashboard"
                             Command="{Binding NavigateCommand}"
                             CommandParameter="{x:Static navigation:AppScreen.Dashboard}"
-                            Style="{StaticResource ModernNavButton}"
-                            Margin="0,0,0,5" />
+                            Style="{StaticResource FM.Shell.NavButton}"
+                            ToolTip="Visão Geral">
 
+                            <StackPanel Orientation="Horizontal">
+
+                                <materialDesign:PackIcon
+                                    Kind="ViewDashboardOutline"
+                                    Width="20"
+                                    Height="20" />
+
+                                <TextBlock
+                                    Text="Visão Geral"
+                                    Style="{StaticResource FM.Shell.NavText}" />
+
+                            </StackPanel>
+
+                        </Button>
+
+                        <!-- GESTÃO FINANCEIRA -->
                         <Button
-                            Content="▦   Gestão Financeira"
                             Command="{Binding NavigateCommand}"
                             CommandParameter="{x:Static navigation:AppScreen.UniversalFinance}"
-                            Style="{StaticResource ModernNavButton}"
-                            Margin="0,0,0,5" />
+                            Style="{StaticResource FM.Shell.NavButton}"
+                            ToolTip="Gestão Financeira">
 
-                        <TextBlock
-                            Text="FINANÇAS"
-                            FontSize="10"
-                            FontWeight="Bold"
-                            Foreground="#94A3B8"
-                            Margin="12,20,0,12" />
+                            <StackPanel Orientation="Horizontal">
 
+                                <materialDesign:PackIcon
+                                    Kind="Finance"
+                                    Width="20"
+                                    Height="20" />
+
+                                <TextBlock
+                                    Text="Gestão Financeira"
+                                    Style="{StaticResource FM.Shell.NavText}" />
+
+                            </StackPanel>
+
+                        </Button>
+
+                        <!-- TRANSAÇÕES -->
                         <Button
-                            Content="▣   Contas Bancárias"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="{x:Static navigation:AppScreen.Accounts}"
-                            Style="{StaticResource ModernNavButton}"
-                            Margin="0,0,0,5" />
-
-                        <Button
-                            Content="⇄   Movimentos"
                             Command="{Binding NavigateCommand}"
                             CommandParameter="{x:Static navigation:AppScreen.Transactions}"
-                            Style="{StaticResource ModernNavButton}"
-                            Margin="0,0,0,5" />
+                            Style="{StaticResource FM.Shell.NavButton}"
+                            ToolTip="Transações">
 
+                            <StackPanel Orientation="Horizontal">
+
+                                <materialDesign:PackIcon
+                                    Kind="SwapHorizontal"
+                                    Width="20"
+                                    Height="20" />
+
+                                <TextBlock
+                                    Text="Transações"
+                                    Style="{StaticResource FM.Shell.NavText}" />
+
+                            </StackPanel>
+
+                        </Button>
+
+                        <!-- RECORRÊNCIAS -->
                         <Button
-                            Content="◷   Despesas Fixas"
                             Command="{Binding NavigateCommand}"
                             CommandParameter="{x:Static navigation:AppScreen.RecurringTransaction}"
-                            Style="{StaticResource ModernNavButton}"
-                            Margin="0,0,0,5" />
+                            Style="{StaticResource FM.Shell.NavButton}"
+                            ToolTip="Receitas e Despesas Recorrentes">
 
-                        <Button
-                            Content="▤   Categorias"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="{x:Static navigation:AppScreen.Category}"
-                            Style="{StaticResource ModernNavButton}"
-                            Margin="0,0,0,5" />
+                            <StackPanel Orientation="Horizontal">
 
-                        <Button
-                            Content="◕   Orçamentos"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="{x:Static navigation:AppScreen.Budget}"
-                            Style="{StaticResource ModernNavButton}"
-                            Margin="0,0,0,5" />
+                                <materialDesign:PackIcon
+                                    Kind="CalendarSync"
+                                    Width="20"
+                                    Height="20" />
 
-                        <Button
-                            Content="◎   Objetivos"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="{x:Static navigation:AppScreen.Goal}"
-                            Style="{StaticResource ModernNavButton}"
-                            Margin="0,0,0,5" />
+                                <TextBlock
+                                    Text="Recorrências"
+                                    Style="{StaticResource FM.Shell.NavText}" />
 
+                            </StackPanel>
+
+                        </Button>
+
+                        <!-- INVESTIMENTOS -->
                         <Button
-                            Content="▥   Investimentos"
                             Command="{Binding NavigateCommand}"
                             CommandParameter="{x:Static navigation:AppScreen.Investment}"
-                            Style="{StaticResource ModernNavButton}"
-                            Margin="0,0,0,5" />
+                            Style="{StaticResource FM.Shell.NavButton}"
+                            ToolTip="Investimentos">
 
-                        <TextBlock
-                            Text="FAMÍLIA"
-                            FontSize="10"
-                            FontWeight="Bold"
-                            Foreground="#94A3B8"
-                            Margin="12,20,0,12" />
+                            <StackPanel Orientation="Horizontal">
+
+                                <materialDesign:PackIcon
+                                    Kind="ChartLine"
+                                    Width="20"
+                                    Height="20" />
+
+                                <TextBlock
+                                    Text="Investimentos"
+                                    Style="{StaticResource FM.Shell.NavText}" />
+
+                            </StackPanel>
+
+                        </Button>
+
+                        <!-- =====================================
+                             AÇÕES RÁPIDAS
+                             ===================================== -->
 
                         <Button
-                            Content="♙   Agregado Familiar"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="{x:Static navigation:AppScreen.Family}"
-                            Style="{StaticResource ModernNavButton}"
-                            Margin="0,0,0,5" />
-
-                        <Border
-                            Height="1"
-                            Background="#E5EAF2"
-                            Margin="0,20,0,18" />
-
-                        <Button
-                            Content="+  Adicionar Novo"
                             Command="{Binding OpenAddMenuCommand}"
-                            Style="{StaticResource ModernPrimaryButton}" />
+                            Style="{StaticResource FM.Shell.NavButton}"
+                            Background="#2563EB"
+                            Margin="0,24,0,8"
+                            ToolTip="Adicionar novo registo">
+
+                            <StackPanel Orientation="Horizontal">
+
+                                <materialDesign:PackIcon
+                                    Kind="Plus"
+                                    Width="20"
+                                    Height="20" />
+
+                                <TextBlock
+                                    Text="Adicionar Novo"
+                                    Style="{StaticResource FM.Shell.NavText}" />
+
+                            </StackPanel>
+
+                        </Button>
 
                     </StackPanel>
 
                 </ScrollViewer>
 
-                <!-- RODAPÉ -->
+                <!-- =====================================
+                     UTILIZADOR E SESSÃO
+                     ===================================== -->
 
                 <Border
                     Grid.Row="2"
-                    BorderBrush="#E5EAF2"
-                    BorderThickness="0,1,0,0"
-                    Padding="14,12,14,16">
+                    Padding="8,12"
+                    BorderBrush="#355071"
+                    BorderThickness="0,1,0,0">
 
                     <StackPanel>
 
-                        <Button
-                            Content="Terminar Sessão"
-                            Command="{Binding LogoutCommand}"
-                            Style="{StaticResource ModernNavButton}"
-                            Foreground="#DC2626"
-                            Margin="0,0,0,4" />
+                        <!-- =====================================
+                             NOVO: PERFIL CLICÁVEL NA SIDEBAR
+                             ===================================== -->
 
                         <Button
-                            Content="Sair da Aplicação"
+                            Command="{Binding OpenUserManagementCommand}"
+                            Style="{StaticResource FM.Shell.NavButton}"
+                            Height="58"
+                            Margin="0,0,0,8"
+                            Padding="6,0"
+                            ToolTip="Gerir utilizadores e agregado familiar">
+
+                            <StackPanel
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
+
+                                <Border
+                                    Width="40"
+                                    Height="40"
+                                    CornerRadius="20"
+                                    Background="#30476A">
+
+                                    <materialDesign:PackIcon
+                                        Kind="AccountOutline"
+                                        Width="22"
+                                        Height="22"
+                                        Foreground="White"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center" />
+
+                                </Border>
+
+                                <StackPanel
+                                    Style="{StaticResource FM.Shell.ExpandedOnly}"
+                                    Margin="10,0,0,0"
+                                    VerticalAlignment="Center">
+
+                                    <TextBlock
+                                        Text="{Binding CurrentUserName}"
+                                        Foreground="White"
+                                        FontWeight="SemiBold"
+                                        FontSize="12"
+                                        MaxWidth="145"
+                                        TextTrimming="CharacterEllipsis" />
+
+                                    <TextBlock
+                                        Text="Gerir utilizadores"
+                                        Foreground="#B6CAE4"
+                                        FontSize="10" />
+
+                                </StackPanel>
+
+                            </StackPanel>
+
+                        </Button>
+
+                        <!-- Terminar sessão -->
+                        <Button
+                            Command="{Binding LogoutCommand}"
+                            Style="{StaticResource FM.Shell.NavButton}"
+                            ToolTip="Terminar sessão">
+
+                            <StackPanel Orientation="Horizontal">
+
+                                <materialDesign:PackIcon
+                                    Kind="Logout"
+                                    Width="20"
+                                    Height="20" />
+
+                                <TextBlock
+                                    Text="Terminar Sessão"
+                                    Style="{StaticResource FM.Shell.NavText}" />
+
+                            </StackPanel>
+
+                        </Button>
+
+                        <!-- Sair -->
+                        <Button
                             Command="{Binding ExitCommand}"
-                            Style="{StaticResource ModernNavButton}" />
+                            Style="{StaticResource FM.Shell.NavButton}"
+                            ToolTip="Sair da aplicação">
+
+                            <StackPanel Orientation="Horizontal">
+
+                                <materialDesign:PackIcon
+                                    Kind="Power"
+                                    Width="20"
+                                    Height="20" />
+
+                                <TextBlock
+                                    Text="Sair da Aplicação"
+                                    Style="{StaticResource FM.Shell.NavText}" />
+
+                            </StackPanel>
+
+                        </Button>
 
                     </StackPanel>
 
@@ -403,11 +758,205 @@
 
         </Border>
 
-        <!-- CONTEÚDO PRINCIPAL -->
+        <!-- ==========================================
+             CONTEÚDO PRINCIPAL
+             ========================================== -->
 
-        <ContentPresenter
-            Grid.Column="1"
-            Content="{Binding CurrentChildViewModel}" />
+        <Grid Grid.Column="1">
+
+            <Grid.RowDefinitions>
+
+                <!-- Cabeçalho -->
+                <RowDefinition>
+
+                    <RowDefinition.Style>
+
+                        <Style
+                            TargetType="{x:Type RowDefinition}">
+
+                            <Setter
+                                Property="Height"
+                                Value="0" />
+
+                            <Style.Triggers>
+
+                                <DataTrigger
+                                    Binding="{Binding IsLoggedIn}"
+                                    Value="True">
+
+                                    <Setter
+                                        Property="Height"
+                                        Value="76" />
+
+                                </DataTrigger>
+
+                            </Style.Triggers>
+
+                        </Style>
+
+                    </RowDefinition.Style>
+
+                </RowDefinition>
+
+                <!-- Conteúdo -->
+                <RowDefinition Height="*" />
+
+            </Grid.RowDefinitions>
+
+            <!-- =====================================
+                 CABEÇALHO
+                 ===================================== -->
+
+            <Border
+                Grid.Row="0"
+                Background="{StaticResource FM.Surface.Brush}"
+                BorderBrush="{StaticResource FM.Border.Brush}"
+                BorderThickness="0,0,0,1">
+
+                <Border.Style>
+
+                    <Style TargetType="{x:Type Border}">
+
+                        <Setter
+                            Property="Visibility"
+                            Value="Collapsed" />
+
+                        <Style.Triggers>
+
+                            <DataTrigger
+                                Binding="{Binding IsLoggedIn}"
+                                Value="True">
+
+                                <Setter
+                                    Property="Visibility"
+                                    Value="Visible" />
+
+                            </DataTrigger>
+
+                        </Style.Triggers>
+
+                    </Style>
+
+                </Border.Style>
+
+                <Grid Margin="18,0,26,0">
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Expandir / recolher sidebar -->
+                    <Button
+                        Grid.Column="0"
+                        Command="{Binding ToggleSidebarCommand}"
+                        Width="42"
+                        Height="42"
+                        Margin="0,0,18,0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        ToolTip="Expandir ou recolher o menu"
+                        VerticalAlignment="Center">
+
+                        <materialDesign:PackIcon
+                            Kind="Menu"
+                            Width="24"
+                            Height="24"
+                            Foreground="{StaticResource FM.TextPrimary.Brush}" />
+
+                    </Button>
+
+                    <!-- Título -->
+                    <StackPanel
+                        Grid.Column="1"
+                        VerticalAlignment="Center">
+
+                        <TextBlock
+                            Text="FAMILY MANAGEMENT"
+                            FontSize="10"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource FM.TextMuted.Brush}" />
+
+                        <TextBlock
+                            Text="{Binding CurrentPageTitle}"
+                            FontSize="22"
+                            FontWeight="SemiBold"
+                            TextTrimming="CharacterEllipsis"
+                            Foreground="{StaticResource FM.TextPrimary.Brush}"
+                            Margin="0,3,0,0" />
+
+                    </StackPanel>
+
+                    <!-- =====================================
+                         NOVO: PERFIL CLICÁVEL NO CABEÇALHO
+                         ===================================== -->
+
+                    <Button
+                        Grid.Column="2"
+                        Command="{Binding OpenUserManagementCommand}"
+                        Style="{StaticResource FM.Shell.ProfileButton}"
+                        ToolTip="Abrir gestão de utilizadores">
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+
+                            <TextBlock
+                                Text="{Binding CurrentUserName}"
+                                Foreground="{StaticResource FM.TextSecondary.Brush}"
+                                FontSize="13"
+                                VerticalAlignment="Center"
+                                MaxWidth="180"
+                                TextTrimming="CharacterEllipsis" />
+
+                            <Border
+                                Width="38"
+                                Height="38"
+                                Margin="14,0,0,0"
+                                CornerRadius="19"
+                                Background="{StaticResource FM.SurfaceAlt.Brush}"
+                                BorderBrush="{StaticResource FM.Border.Brush}"
+                                BorderThickness="1">
+
+                                <materialDesign:PackIcon
+                                    Kind="AccountCircleOutline"
+                                    Width="24"
+                                    Height="24"
+                                    Foreground="{StaticResource FM.TextSecondary.Brush}"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+
+                            </Border>
+
+                            <materialDesign:PackIcon
+                                Kind="ChevronDown"
+                                Width="18"
+                                Height="18"
+                                Margin="8,0,0,0"
+                                Foreground="{StaticResource FM.TextSecondary.Brush}"
+                                VerticalAlignment="Center" />
+
+                        </StackPanel>
+
+                    </Button>
+
+                </Grid>
+
+            </Border>
+
+            <!-- =====================================
+                 VIEW ATUAL
+                 ===================================== -->
+
+            <ContentControl
+                Grid.Row="1"
+                Content="{Binding CurrentChildViewModel}"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Stretch" />
+
+        </Grid>
 
     </Grid>
 
