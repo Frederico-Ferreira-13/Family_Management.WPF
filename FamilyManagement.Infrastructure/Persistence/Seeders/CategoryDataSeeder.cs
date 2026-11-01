@@ -34,6 +34,7 @@ public sealed class CategoryDataSeeder
             ("Saúde", CategoryType.Expense),
             ("Educação", CategoryType.Expense),
             ("Lazer", CategoryType.Expense),
+            ("Desporto", CategoryType.Expense),
             ("Seguros", CategoryType.Expense),
             ("Serviços e subscrições", CategoryType.Expense),
             ("Impostos", CategoryType.Expense),

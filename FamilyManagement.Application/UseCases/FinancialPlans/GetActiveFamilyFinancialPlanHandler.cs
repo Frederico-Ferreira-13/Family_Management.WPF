@@ -39,15 +39,11 @@ public sealed class GetActiveFamilyFinancialPlanHandler
                 "O identificador do utilizador é obrigatório.");
         }
 
-        var isCreator =
-            await _families.IsUserCreatorOfFamilyAsync(
-                familyId,
-                userId);
+        var isCreator = await _families
+            .IsUserCreatorOfFamilyAsync(familyId, userId);
 
-        var isMember =
-            await _families.IsUserMemberOfFamilyAsync(
-                familyId,
-                userId);
+        var isMember = await _families
+            .IsUserMemberOfFamilyAsync(familyId, userId);
 
         if (!isCreator && !isMember)
         {
@@ -56,17 +52,16 @@ public sealed class GetActiveFamilyFinancialPlanHandler
                 "Plano financeiro familiar não encontrado.");
         }
 
-        var financialPlan =
-            await _financialPlans.GetActiveByFamilyIdAsync(
-                familyId);
+        var plan = await _financialPlans
+            .GetActiveByFamilyIdAsync(familyId);
 
-        if (financialPlan is null)
+        if (plan is null)
         {
             return Error.NotFound(
-                "FinancialPlan.NotFound",
+                "FinancialPlan.NotConfigured",
                 "A família ainda não possui um plano financeiro ativo.");
         }
 
-        return financialPlan;
+        return plan;
     }
 }

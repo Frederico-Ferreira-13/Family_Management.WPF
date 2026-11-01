@@ -6,6 +6,8 @@ using FamilyManagement.Domain.Errors;
 
 namespace FamilyManagement.Domain.Model;
 
+
+// criar subcategoria para destinguir melhor as categorias pai
 public class Category : BaseEntity
 {
     public string Name { get; private set; } = string.Empty;

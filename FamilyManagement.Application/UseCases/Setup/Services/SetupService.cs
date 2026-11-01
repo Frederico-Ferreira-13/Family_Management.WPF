@@ -18,6 +18,7 @@ public sealed class SetupService : ISetupService
             ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
+    
     public async Task<Result<bool>> IsFamilySetupCompleteAsync(
         Guid familyId,
         Guid userId)
@@ -37,11 +38,20 @@ public sealed class SetupService : ISetupService
         var hasAccounts =
             await _unitOfWork.Accounts.AnyAsync(a =>
                 (a.FamilyId == familyId ||
-                 a.UserId == userId) &&
+                a.UserId == userId) &&
                 a.IsActive);
 
-        return Result<bool>.Success(hasAccounts);
+        var activeFinancialPlan =
+            await _unitOfWork.FinancialPlans
+                .GetActiveByFamilyIdAsync(familyId);
+
+        var hasFinancialPlan =
+            activeFinancialPlan is not null;
+
+        return Result<bool>.Success(
+            hasAccounts && hasFinancialPlan);
     }
+
 
     public async Task<Result<SetupStatusDTO>> GetSetupStatusAsync(
         Guid familyId)

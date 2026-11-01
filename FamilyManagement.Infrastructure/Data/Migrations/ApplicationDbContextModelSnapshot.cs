@@ -390,11 +390,18 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("WorkingCapitalKey")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FamilyId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("WorkingCapitalKey")
+                        .IsUnique();
 
                     b.HasIndex("FamilyId", "IsActive");
 
@@ -548,6 +555,15 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.Property<DateTime>("NextDueDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ScheduleAnchorDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Scope")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1)
+                        .HasColumnName("Scope");
+
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("TEXT");
 
@@ -588,6 +604,9 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("AccountId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("BeneficiaryUserId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("BudgetId")
@@ -638,6 +657,15 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                     b.Property<Guid?>("RecurringTransactionId")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ScheduledDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Scope")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1)
+                        .HasColumnName("Scope");
+
                     b.Property<Guid?>("TargetAccountId")
                         .HasColumnType("TEXT");
 
@@ -652,6 +680,8 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BeneficiaryUserId");
+
                     b.HasIndex("BudgetId");
 
                     b.HasIndex("CategoryId");
@@ -662,6 +692,8 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
 
                     b.HasIndex("RecurringTransactionId");
 
+                    b.HasIndex("Scope");
+
                     b.HasIndex("TargetAccountId");
 
                     b.HasIndex("Type");
@@ -670,11 +702,13 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
 
                     b.HasIndex("AccountId", "Date");
 
-                    b.HasIndex("FamilyId", "Date");
+                    b.HasIndex("BeneficiaryUserId", "Date");
 
                     b.HasIndex("FinancialPlanId", "Date");
 
                     b.HasIndex("UserId", "Date");
+
+                    b.HasIndex("FamilyId", "Scope", "Date");
 
                     b.ToTable("Transactions", (string)null);
                 });
@@ -1281,6 +1315,11 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("FamilyManagement.Domain.Model.User", "BeneficiaryUser")
+                        .WithMany()
+                        .HasForeignKey("BeneficiaryUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("FamilyManagement.Domain.Model.Budget", "Budget")
                         .WithMany()
                         .HasForeignKey("BudgetId")
@@ -1350,6 +1389,8 @@ namespace FamilyManagement.Infrastructure.Data.Migrations
 
                     b.Navigation("Amount")
                         .IsRequired();
+
+                    b.Navigation("BeneficiaryUser");
 
                     b.Navigation("Budget");
 

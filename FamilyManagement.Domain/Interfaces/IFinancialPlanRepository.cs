@@ -1,7 +1,6 @@
-
 using System;
+using System.Threading;
 using System.Threading.Tasks;
-
 using FamilyManagement.Domain.Model;
 
 namespace FamilyManagement.Domain.Interfaces;
@@ -12,4 +11,8 @@ public interface IFinancialPlanRepository
 
     Task<FinancialPlan?> GetActiveByFamilyIdAsync(
         Guid familyId);
+
+    Task AddAsync(
+        FinancialPlan financialPlan,
+        CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,5 @@
-﻿using FamilyManagement.Domain.Model;
+﻿using FamilyManagement.Domain.Enums;
+using FamilyManagement.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -55,6 +56,12 @@ public sealed class RecurringTransactionConfiguration
             .IsRequired(false);
 
         builder.Property(rt => rt.NextDueDate)
+            .IsRequired();
+
+        builder.Property(rt => rt.Scope)
+            .HasConversion<int>()
+            .HasColumnName("Scope")
+            .HasDefaultValue(RecurringTransactionScope.Personal)
             .IsRequired();
 
         // =====================================================
@@ -185,6 +192,6 @@ public sealed class RecurringTransactionConfiguration
 
         builder.Property(rt => rt.IsActive)
             .IsRequired()
-            .HasDefaultValue(true);
+            .HasDefaultValue(true);        
     }    
 }

@@ -8,6 +8,7 @@ using FamilyManagement.Application;
 using FamilyManagement.Infrastructure;
 using FamilyManagement.Infrastructure.Persistence;
 using FamilyManagement.Infrastructure.Persistence.Seeders;
+using Family_Management.WPF.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,21 +68,21 @@ public partial class App : Application
                 .ConfigureAppConfiguration(
                     (context, configuration) =>
                     {
+                        // Usar apenas a configuração que acompanha a aplicação
+                        // e a configuração local criada neste computador.
+                        configuration.Sources.Clear();
+
                         configuration.SetBasePath(
                             AppContext.BaseDirectory);
 
                         configuration.AddJsonFile(
                             "appsettings.json",
                             optional: false,
-                            reloadOnChange: true);
+                            reloadOnChange: false);
 
-                        if (context.HostingEnvironment.IsDevelopment())
-                        {
-                            configuration.AddUserSecrets<App>(
-                                optional: true,
-                                reloadOnChange: false);
-                        }
-                    })
+                        LocalAuthenticationConfiguration.AddTo(
+                            configuration);
+                    })                    
                 .ConfigureServices(
                     (context, services) =>
                     {
@@ -117,7 +118,7 @@ public partial class App : Application
             var dbContext = serviceProvider
                 .GetRequiredService<ApplicationDbContext>();
 
-            await dbContext.Database.MigrateAsync();
+            await LocalDatabaseInitializer.InitializeAsync(dbContext);
 
             // =====================================================
             // 4. INICIALIZAR CATEGORIAS PREDEFINIDAS

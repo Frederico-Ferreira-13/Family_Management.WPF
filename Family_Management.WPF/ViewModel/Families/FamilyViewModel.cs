@@ -1,4 +1,8 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Family_Management.WPF.Commands;
 using Family_Management.WPF.Services.Authentication;
 using Family_Management.WPF.Services.Dialogs;
@@ -12,46 +16,32 @@ using FamilyManagement.Application.UseCases.Families.Commands.RemoveFamilyMember
 using FamilyManagement.Application.UseCases.Families.Commands.RenameFamily;
 using FamilyManagement.Application.UseCases.Families.DTOs;
 using FamilyManagement.Application.UseCases.Families.Queries.GetActiveFamilies;
+using FamilyManagement.Application.UseCases.Families.Queries.GetFamilyById;
 using FamilyManagement.Application.UseCases.Families.Queries.GetFamilyMembers;
+using FamilyManagement.Application.UseCases.FinancialPlans;
 using FamilyManagement.Application.UseCases.Users.DTOs;
 using FamilyManagement.Application.UseCases.Users.Queries.GetUsersWithoutFamily;
-using FamilyManagement.Application.UseCases.Families.Queries.GetFamilyById;
 
 namespace Family_Management.WPF.ViewModel.Families;
 
 public sealed class FamilyViewModel : BaseViewModel
 {
     private readonly CurrentUserService _currentUserService;
+    private readonly GetActiveFamiliesHandler _getActiveFamiliesHandler;
+    private readonly GetFamilyMembersHandler _getFamilyMembersHandler;
+    private readonly GetUsersWithoutFamilyHandler _getUsersWithoutFamilyHandler;
+    private readonly CreateFamilyHandler _createFamilyHandler;
+    private readonly RenameFamilyHandler _renameFamilyHandler;
+    private readonly AddFamilyMemberHandler _addFamilyMemberHandler;
+    private readonly RemoveFamilyMemberHandler _removeFamilyMemberHandler;
+    private readonly DeactivateFamilyHandler _deactivateFamilyHandler;
+    private readonly RegenerateInvitationCodeHandler _regenerateInvitationCodeHandler;
+    private readonly GetFamilyByIdHandler _getFamilyByIdHandler;
+    private readonly GetActiveFamilyFinancialPlanHandler
+        _getActiveFamilyFinancialPlanHandler;
 
-    private readonly GetActiveFamiliesHandler
-        _getActiveFamiliesHandler;
-
-    private readonly GetFamilyMembersHandler
-        _getFamilyMembersHandler;
-
-    private readonly GetUsersWithoutFamilyHandler
-        _getUsersWithoutFamilyHandler;
-
-    private readonly CreateFamilyHandler
-        _createFamilyHandler;
-
-    private readonly RenameFamilyHandler
-        _renameFamilyHandler;
-
-    private readonly AddFamilyMemberHandler
-        _addFamilyMemberHandler;
-
-    private readonly RemoveFamilyMemberHandler
-        _removeFamilyMemberHandler;
-
-    private readonly DeactivateFamilyHandler
-        _deactivateFamilyHandler;
-
-    private readonly RegenerateInvitationCodeHandler
-        _regenerateInvitationCodeHandler;
-
-    private readonly GetFamilyByIdHandler
-    _getFamilyByIdHandler;
+    private readonly CreateFamilyFinancialPlanHandler
+        _createFamilyFinancialPlanHandler;
 
     private string _formTitle = "Criar Nova Família";
     private string _newFamilyName = string.Empty;
@@ -60,6 +50,12 @@ public sealed class FamilyViewModel : BaseViewModel
     private FamilyDTO? _selectedFamily;
     private UserDTO? _selectedUserToAdd;
     private FamilyMemberDTO? _selectedUserToRemove;
+
+    private bool _hasActiveFinancialPlan;
+    private bool _isFinancialPlanStatusLoaded;
+    private bool _isCreatingFinancialPlan;
+
+    private bool _reloadFamilyDetails;
 
     public FamilyViewModel(
         CurrentUserService currentUserService,
@@ -73,112 +69,124 @@ public sealed class FamilyViewModel : BaseViewModel
         DeactivateFamilyHandler deactivateFamilyHandler,
         RegenerateInvitationCodeHandler regenerateInvitationCodeHandler,
         GetFamilyByIdHandler getFamilyByIdHandler,
+        GetActiveFamilyFinancialPlanHandler getActiveFamilyFinancialPlanHandler,
+        CreateFamilyFinancialPlanHandler createFamilyFinancialPlanHandler,
         INavigationService navigationService,
         INotificationService notificationService)
-        : base(
-            navigationService,
-            notificationService)
+        : base(navigationService, notificationService)
     {
         _currentUserService = currentUserService
-            ?? throw new ArgumentNullException(
-                nameof(currentUserService));
+            ?? throw new ArgumentNullException(nameof(currentUserService));
 
         _getActiveFamiliesHandler = getActiveFamiliesHandler
-            ?? throw new ArgumentNullException(
-                nameof(getActiveFamiliesHandler));
+            ?? throw new ArgumentNullException(nameof(getActiveFamiliesHandler));
 
         _getFamilyMembersHandler = getFamilyMembersHandler
-            ?? throw new ArgumentNullException(
-                nameof(getFamilyMembersHandler));
+            ?? throw new ArgumentNullException(nameof(getFamilyMembersHandler));
 
-        _getUsersWithoutFamilyHandler =
-            getUsersWithoutFamilyHandler
-            ?? throw new ArgumentNullException(
-                nameof(getUsersWithoutFamilyHandler));
+        _getUsersWithoutFamilyHandler = getUsersWithoutFamilyHandler
+            ?? throw new ArgumentNullException(nameof(getUsersWithoutFamilyHandler));
 
         _createFamilyHandler = createFamilyHandler
-            ?? throw new ArgumentNullException(
-                nameof(createFamilyHandler));
+            ?? throw new ArgumentNullException(nameof(createFamilyHandler));
 
         _renameFamilyHandler = renameFamilyHandler
-            ?? throw new ArgumentNullException(
-                nameof(renameFamilyHandler));
+            ?? throw new ArgumentNullException(nameof(renameFamilyHandler));
 
         _addFamilyMemberHandler = addFamilyMemberHandler
-            ?? throw new ArgumentNullException(
-                nameof(addFamilyMemberHandler));
+            ?? throw new ArgumentNullException(nameof(addFamilyMemberHandler));
 
         _removeFamilyMemberHandler = removeFamilyMemberHandler
-            ?? throw new ArgumentNullException(
-                nameof(removeFamilyMemberHandler));
+            ?? throw new ArgumentNullException(nameof(removeFamilyMemberHandler));
 
         _deactivateFamilyHandler = deactivateFamilyHandler
-            ?? throw new ArgumentNullException(
-                nameof(deactivateFamilyHandler));
+            ?? throw new ArgumentNullException(nameof(deactivateFamilyHandler));
 
-        _regenerateInvitationCodeHandler =
-            regenerateInvitationCodeHandler
+        _regenerateInvitationCodeHandler = regenerateInvitationCodeHandler
             ?? throw new ArgumentNullException(
                 nameof(regenerateInvitationCodeHandler));
 
         _getFamilyByIdHandler = getFamilyByIdHandler
+            ?? throw new ArgumentNullException(nameof(getFamilyByIdHandler));
+
+        _getActiveFamilyFinancialPlanHandler =
+            getActiveFamilyFinancialPlanHandler
             ?? throw new ArgumentNullException(
-                nameof(getFamilyByIdHandler));
+                nameof(getActiveFamilyFinancialPlanHandler));
+
+        _createFamilyFinancialPlanHandler =
+            createFamilyFinancialPlanHandler
+            ?? throw new ArgumentNullException(
+                nameof(createFamilyFinancialPlanHandler));
 
         Title = "Gestão de Famílias";
 
-        AddFamilyCommand =
-            new AsyncRelayCommand(
-                AddFamilyAsync,
-                CanAddFamily);
+        AddFamilyCommand = new AsyncRelayCommand(
+            AddFamilyAsync,
+            CanAddFamily);
 
-        UpdateFamilyCommand =
-            new AsyncRelayCommand(
-                UpdateFamilyAsync,
-                CanUpdateFamily);
+        UpdateFamilyCommand = new AsyncRelayCommand(
+            UpdateFamilyAsync,
+            CanUpdateFamily);
 
-        AddUserToFamilyCommand =
-            new AsyncRelayCommand(
-                AddUserToFamilyAsync,
-                CanAddUserToFamily);
+        AddUserToFamilyCommand = new AsyncRelayCommand(
+            AddUserToFamilyAsync,
+            CanAddUserToFamily);
 
-        RemoveUserFromFamilyCommand =
-            new AsyncRelayCommand(
-                RemoveUserFromFamilyAsync,
-                CanRemoveUserFromFamily);
+        RemoveUserFromFamilyCommand = new AsyncRelayCommand(
+            RemoveUserFromFamilyAsync,
+            CanRemoveUserFromFamily);
 
-        NewFamilyCommand =
-            new RelayCommand(
-                _ => ExecuteNewFamily());
+        NewFamilyCommand = new RelayCommand(
+            _ => ExecuteNewFamily());
 
-        DeactivateFamilyCommand =
-            new AsyncRelayCommand(
-                DeactivateFamilyAsync,
-                CanDeactivateFamily);
+        DeactivateFamilyCommand = new AsyncRelayCommand(
+            DeactivateFamilyAsync,
+            CanDeactivateFamily);
 
-        RegenerateInvitationCodeCommand =
-            new AsyncRelayCommand(
-                RegenerateInvitationCodeAsync,
-                CanRegenerateInvitationCode);
+        RegenerateInvitationCodeCommand = new AsyncRelayCommand(
+            RegenerateInvitationCodeAsync,
+            CanRegenerateInvitationCode);
+
+        CreateFinancialPlanCommand = new AsyncRelayCommand(
+            CreateFinancialPlanAsync,
+            CanCreateFinancialPlan);
+
+        PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName != nameof(IsBusy))
+            {
+                return;
+            }
+
+            RefreshFamilyCommandsCanExecute();
+
+            if (!IsBusy && _reloadFamilyDetails)
+            {
+                _ = LoadSelectedFamilyDetailsSafeAsync();
+            }
+        };
     }
 
-    public ObservableCollection<FamilyDTO>
-        Families { get; } = new();
+    // =========================================================
+    // COLEÇÕES
+    // =========================================================
 
-    public ObservableCollection<UserDTO>
-        AllAvailableUsers { get; } = new();
+    public ObservableCollection<FamilyDTO> Families { get; } = new();
+
+    public ObservableCollection<UserDTO> AllAvailableUsers { get; } = new();
 
     public ObservableCollection<FamilyMemberDTO>
         SelectedFamilyMembers { get; } = new();
 
+    // =========================================================
+    // PROPRIEDADES
+    // =========================================================
+
     public string FormTitle
     {
         get => _formTitle;
-
-        private set =>
-            SetProperty(
-                ref _formTitle,
-                value);
+        private set => SetProperty(ref _formTitle, value);
     }
 
     public string NewFamilyName
@@ -189,12 +197,9 @@ public sealed class FamilyViewModel : BaseViewModel
         {
             value ??= string.Empty;
 
-            if (SetProperty(
-                    ref _newFamilyName,
-                    value))
+            if (SetProperty(ref _newFamilyName, value))
             {
-                AddFamilyCommand
-                    .RaiseCanExecuteChanged();
+                AddFamilyCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -207,12 +212,9 @@ public sealed class FamilyViewModel : BaseViewModel
         {
             value ??= string.Empty;
 
-            if (SetProperty(
-                    ref _editFamilyName,
-                    value))
+            if (SetProperty(ref _editFamilyName, value))
             {
-                UpdateFamilyCommand
-                    .RaiseCanExecuteChanged();
+                UpdateFamilyCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -223,28 +225,29 @@ public sealed class FamilyViewModel : BaseViewModel
 
         set
         {
-            if (!SetProperty(
-                    ref _selectedFamily,
-                    value))
+            if (!SetProperty(ref _selectedFamily, value))
             {
                 return;
             }
 
-            EditFamilyName =
-                value?.Name ?? string.Empty;
+            EditFamilyName = value?.Name ?? string.Empty;
 
             UpdateFormState();
 
-            OnPropertyChanged(
-                nameof(IsSelectedFamilyActive));
+            OnPropertyChanged(nameof(IsSelectedFamilyActive));
+            OnPropertyChanged(nameof(HasSelectedFamily));
 
-            OnPropertyChanged(
-                nameof(HasSelectedFamily));
-
+            ResetFinancialPlanStatus();
             RefreshFamilyCommandsCanExecute();
 
-            _ = LoadSelectedFamilyMembersSafeAsync();
+            _reloadFamilyDetails = true;
+
+            if (!IsBusy)
+            {
+                _ = LoadSelectedFamilyDetailsSafeAsync();
+            }
         }
+        
     }
 
     public UserDTO? SelectedUserToAdd
@@ -253,12 +256,9 @@ public sealed class FamilyViewModel : BaseViewModel
 
         set
         {
-            if (SetProperty(
-                    ref _selectedUserToAdd,
-                    value))
+            if (SetProperty(ref _selectedUserToAdd, value))
             {
-                AddUserToFamilyCommand
-                    .RaiseCanExecuteChanged();
+                AddUserToFamilyCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -269,12 +269,9 @@ public sealed class FamilyViewModel : BaseViewModel
 
         set
         {
-            if (SetProperty(
-                    ref _selectedUserToRemove,
-                    value))
+            if (SetProperty(ref _selectedUserToRemove, value))
             {
-                RemoveUserFromFamilyCommand
-                    .RaiseCanExecuteChanged();
+                RemoveUserFromFamilyCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -285,19 +282,60 @@ public sealed class FamilyViewModel : BaseViewModel
     public bool HasSelectedFamily =>
         SelectedFamily is not null;
 
+
+
+    // =========================================================
+    // PLANO FINANCEIRO FAMILIAR
+    // =========================================================
+
+    public bool HasActiveFinancialPlan
+    {
+        get => _hasActiveFinancialPlan;
+
+        private set
+        {
+            if (SetProperty(ref _hasActiveFinancialPlan, value))
+            {
+                OnPropertyChanged(nameof(CanShowCreateFinancialPlan));
+                CreateFinancialPlanCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool CanShowCreateFinancialPlan
+    {
+        get
+        {
+            var family = SelectedFamily;
+            var userId = _currentUserService.UserId;
+
+            return family is { IsActive: true } &&
+                   userId.HasValue &&
+                   userId.Value != Guid.Empty &&
+                   family.CreatorUserId == userId.Value &&
+                   _isFinancialPlanStatusLoaded &&
+                   !HasActiveFinancialPlan;
+        }
+    }
+
+    
+
+    // =========================================================
+    // COMANDOS
+    // =========================================================
+
     public AsyncRelayCommand AddFamilyCommand { get; }
-
     public AsyncRelayCommand UpdateFamilyCommand { get; }
-
     public AsyncRelayCommand AddUserToFamilyCommand { get; }
-
     public AsyncRelayCommand RemoveUserFromFamilyCommand { get; }
-
     public RelayCommand NewFamilyCommand { get; }
-
     public AsyncRelayCommand DeactivateFamilyCommand { get; }
-
     public AsyncRelayCommand RegenerateInvitationCodeCommand { get; }
+    public AsyncRelayCommand CreateFinancialPlanCommand { get; }
+
+    // =========================================================
+    // INICIALIZAÇÃO
+    // =========================================================
 
     public override async Task InitializeAsync(
         CancellationToken cancellationToken = default)
@@ -307,8 +345,7 @@ public sealed class FamilyViewModel : BaseViewModel
             return;
         }
 
-        await LoadDataAsync(
-            cancellationToken);
+        await LoadDataAsync(cancellationToken);
 
         IsInitialized = true;
     }
@@ -318,21 +355,17 @@ public sealed class FamilyViewModel : BaseViewModel
     {
         await RunSafeAsync(async () =>
         {
-            await LoadFamiliesAsync(
-                cancellationToken);
-
-            await LoadAvailableUsersAsync(
-                cancellationToken);
+            await LoadFamiliesAsync(cancellationToken);
+            await LoadAvailableUsersAsync(cancellationToken);
         });
     }
 
     private async Task LoadFamiliesAsync(
         CancellationToken cancellationToken)
     {
-        var result =
-            await _getActiveFamiliesHandler.HandleAsync(
-                new GetActiveFamiliesQuery(),
-                cancellationToken);
+        var result = await _getActiveFamiliesHandler.HandleAsync(
+            new GetActiveFamiliesQuery(),
+            cancellationToken);
 
         Families.Clear();
 
@@ -354,10 +387,9 @@ public sealed class FamilyViewModel : BaseViewModel
     private async Task LoadAvailableUsersAsync(
         CancellationToken cancellationToken)
     {
-        var result =
-            await _getUsersWithoutFamilyHandler.HandleAsync(
-                new GetUsersWithoutFamilyQuery(),
-                cancellationToken);
+        var result = await _getUsersWithoutFamilyHandler.HandleAsync(
+            new GetUsersWithoutFamilyQuery(),
+            cancellationToken);
 
         AllAvailableUsers.Clear();
 
@@ -375,6 +407,10 @@ public sealed class FamilyViewModel : BaseViewModel
             AllAvailableUsers.Add(user);
         }
     }
+
+    // =========================================================
+    // MEMBROS DA FAMÍLIA
+    // =========================================================
 
     private async Task LoadSelectedFamilyMembersSafeAsync()
     {
@@ -404,12 +440,10 @@ public sealed class FamilyViewModel : BaseViewModel
 
         var familyId = SelectedFamily.Id;
 
-        var result =
-            await _getFamilyMembersHandler.HandleAsync(
-                new GetFamilyMembersQuery(familyId),
-                cancellationToken);
+        var result = await _getFamilyMembersHandler.HandleAsync(
+            new GetFamilyMembersQuery(familyId),
+            cancellationToken);
 
-        // A seleção pode ter mudado enquanto aguardávamos.
         if (SelectedFamily?.Id != familyId)
         {
             return;
@@ -430,6 +464,10 @@ public sealed class FamilyViewModel : BaseViewModel
         }
     }
 
+    // =========================================================
+    // CRIAR FAMÍLIA
+    // =========================================================
+
     private bool CanAddFamily()
     {
         return !IsBusy &&
@@ -441,11 +479,9 @@ public sealed class FamilyViewModel : BaseViewModel
 
     private async Task AddFamilyAsync()
     {
-        var userId =
-            _currentUserService.UserId;
+        var userId = _currentUserService.UserId;
 
-        if (!userId.HasValue ||
-            userId.Value == Guid.Empty)
+        if (!userId.HasValue || userId.Value == Guid.Empty)
         {
             await NotificationService.ShowWarningAsync(
                 "Não existe um utilizador autenticado.",
@@ -456,11 +492,10 @@ public sealed class FamilyViewModel : BaseViewModel
 
         await RunSafeAsync(async () =>
         {
-            var result =
-                await _createFamilyHandler.HandleAsync(
-                    new CreateFamilyCommand(
-                        NewFamilyName.Trim(),
-                        userId.Value));
+            var result = await _createFamilyHandler.HandleAsync(
+                new CreateFamilyCommand(
+                    NewFamilyName.Trim(),
+                    userId.Value));
 
             if (result.IsFailure)
             {
@@ -473,16 +508,12 @@ public sealed class FamilyViewModel : BaseViewModel
 
             NewFamilyName = string.Empty;
 
-            await LoadFamiliesAsync(
-                CancellationToken.None);
+            await LoadFamiliesAsync(CancellationToken.None);
 
-            SelectedFamily =
-                Families.FirstOrDefault(
-                    family =>
-                        family.Id == result.Value.Id);
+            SelectedFamily = Families.FirstOrDefault(
+                family => family.Id == result.Value.Id);
 
-            await LoadAvailableUsersAsync(
-                CancellationToken.None);
+            await LoadAvailableUsersAsync(CancellationToken.None);
 
             await NotificationService.ShowInformationAsync(
                 "Família criada com sucesso.",
@@ -491,6 +522,10 @@ public sealed class FamilyViewModel : BaseViewModel
 
         RefreshFamilyCommandsCanExecute();
     }
+
+    // =========================================================
+    // EDITAR FAMÍLIA
+    // =========================================================
 
     private bool CanUpdateFamily()
     {
@@ -501,8 +536,7 @@ public sealed class FamilyViewModel : BaseViewModel
             return false;
         }
 
-        var name =
-            EditFamilyName.Trim();
+        var name = EditFamilyName.Trim();
 
         return name.Length >= 3 &&
                !SelectedFamily.Name.Equals(
@@ -517,16 +551,14 @@ public sealed class FamilyViewModel : BaseViewModel
             return;
         }
 
-        var familyId =
-            SelectedFamily.Id;
+        var familyId = SelectedFamily.Id;
 
         await RunSafeAsync(async () =>
         {
-            var result =
-                await _renameFamilyHandler.HandleAsync(
-                    new RenameFamilyCommand(
-                        familyId,
-                        EditFamilyName.Trim()));
+            var result = await _renameFamilyHandler.HandleAsync(
+                new RenameFamilyCommand(
+                    familyId,
+                    EditFamilyName.Trim()));
 
             if (result.IsFailure)
             {
@@ -549,6 +581,10 @@ public sealed class FamilyViewModel : BaseViewModel
         RefreshFamilyCommandsCanExecute();
     }
 
+    // =========================================================
+    // ADICIONAR MEMBRO
+    // =========================================================
+
     private bool CanAddUserToFamily()
     {
         return !IsBusy &&
@@ -565,19 +601,15 @@ public sealed class FamilyViewModel : BaseViewModel
             return;
         }
 
-        var familyId =
-            SelectedFamily.Id;
-
-        var userId =
-            SelectedUserToAdd.Id;
+        var familyId = SelectedFamily.Id;
+        var userId = SelectedUserToAdd.Id;
 
         await RunSafeAsync(async () =>
         {
-            var result =
-                await _addFamilyMemberHandler.HandleAsync(
-                    new AddFamilyMemberCommand(
-                        familyId,
-                        userId));
+            var result = await _addFamilyMemberHandler.HandleAsync(
+                new AddFamilyMemberCommand(
+                    familyId,
+                    userId));
 
             if (result.IsFailure)
             {
@@ -596,8 +628,7 @@ public sealed class FamilyViewModel : BaseViewModel
             await LoadAvailableUsersAsync(
                 CancellationToken.None);
 
-            await RefreshSelectedFamilyAsync(
-                familyId);
+            await RefreshSelectedFamilyAsync(familyId);
 
             await NotificationService.ShowInformationAsync(
                 "Utilizador adicionado à família.",
@@ -606,6 +637,10 @@ public sealed class FamilyViewModel : BaseViewModel
 
         RefreshFamilyCommandsCanExecute();
     }
+
+    // =========================================================
+    // REMOVER MEMBRO
+    // =========================================================
 
     private bool CanRemoveUserFromFamily()
     {
@@ -626,14 +661,10 @@ public sealed class FamilyViewModel : BaseViewModel
             return;
         }
 
-        var familyId =
-            SelectedFamily.Id;
+        var familyId = SelectedFamily.Id;
+        var member = SelectedUserToRemove;
 
-        var member =
-            SelectedUserToRemove;
-
-        if (member.Id ==
-            _currentUserService.UserId)
+        if (member.Id == _currentUserService.UserId)
         {
             await NotificationService.ShowWarningAsync(
                 "Não pode remover o seu próprio acesso à família.",
@@ -642,8 +673,7 @@ public sealed class FamilyViewModel : BaseViewModel
             return;
         }
 
-        if (member.Id ==
-            SelectedFamily.CreatorUserId)
+        if (member.Id == SelectedFamily.CreatorUserId)
         {
             await NotificationService.ShowWarningAsync(
                 "O criador da família não pode ser removido.",
@@ -664,11 +694,10 @@ public sealed class FamilyViewModel : BaseViewModel
 
         await RunSafeAsync(async () =>
         {
-            var result =
-                await _removeFamilyMemberHandler.HandleAsync(
-                    new RemoveFamilyMemberCommand(
-                        familyId,
-                        member.Id));
+            var result = await _removeFamilyMemberHandler.HandleAsync(
+                new RemoveFamilyMemberCommand(
+                    familyId,
+                    member.Id));
 
             if (result.IsFailure)
             {
@@ -687,8 +716,7 @@ public sealed class FamilyViewModel : BaseViewModel
             await LoadAvailableUsersAsync(
                 CancellationToken.None);
 
-            await RefreshSelectedFamilyAsync(
-                familyId);
+            await RefreshSelectedFamilyAsync(familyId);
 
             await NotificationService.ShowInformationAsync(
                 "Membro removido da família.",
@@ -697,6 +725,10 @@ public sealed class FamilyViewModel : BaseViewModel
 
         RefreshFamilyCommandsCanExecute();
     }
+
+    // =========================================================
+    // DESATIVAR FAMÍLIA
+    // =========================================================
 
     private bool CanDeactivateFamily()
     {
@@ -712,8 +744,7 @@ public sealed class FamilyViewModel : BaseViewModel
             return;
         }
 
-        var family =
-            SelectedFamily;
+        var family = SelectedFamily;
 
         var confirmed =
             await NotificationService.ShowConfirmationAsync(
@@ -728,10 +759,8 @@ public sealed class FamilyViewModel : BaseViewModel
 
         await RunSafeAsync(async () =>
         {
-            var result =
-                await _deactivateFamilyHandler.HandleAsync(
-                    new DeactivateFamilyCommand(
-                        family.Id));
+            var result = await _deactivateFamilyHandler.HandleAsync(
+                new DeactivateFamilyCommand(family.Id));
 
             if (result.IsFailure)
             {
@@ -744,11 +773,8 @@ public sealed class FamilyViewModel : BaseViewModel
 
             SelectedFamily = null;
 
-            await LoadFamiliesAsync(
-                CancellationToken.None);
-
-            await LoadAvailableUsersAsync(
-                CancellationToken.None);
+            await LoadFamiliesAsync(CancellationToken.None);
+            await LoadAvailableUsersAsync(CancellationToken.None);
 
             await NotificationService.ShowInformationAsync(
                 "Família desativada com sucesso.",
@@ -757,6 +783,10 @@ public sealed class FamilyViewModel : BaseViewModel
 
         RefreshFamilyCommandsCanExecute();
     }
+
+    // =========================================================
+    // CÓDIGO DE CONVITE
+    // =========================================================
 
     private bool CanRegenerateInvitationCode()
     {
@@ -772,8 +802,7 @@ public sealed class FamilyViewModel : BaseViewModel
             return;
         }
 
-        var familyId =
-            SelectedFamily.Id;
+        var familyId = SelectedFamily.Id;
 
         var confirmed =
             await NotificationService.ShowConfirmationAsync(
@@ -789,10 +818,8 @@ public sealed class FamilyViewModel : BaseViewModel
         await RunSafeAsync(async () =>
         {
             var result =
-                await _regenerateInvitationCodeHandler
-                    .HandleAsync(
-                        new RegenerateInvitationCodeCommand(
-                            familyId));
+                await _regenerateInvitationCodeHandler.HandleAsync(
+                    new RegenerateInvitationCodeCommand(familyId));
 
             if (result.IsFailure)
             {
@@ -803,8 +830,7 @@ public sealed class FamilyViewModel : BaseViewModel
                 return;
             }
 
-            await RefreshSelectedFamilyAsync(
-                familyId);
+            await RefreshSelectedFamilyAsync(familyId);
 
             await NotificationService.ShowInformationAsync(
                 $"Novo código de convite: {result.Value}",
@@ -812,13 +838,180 @@ public sealed class FamilyViewModel : BaseViewModel
         });
     }
 
-    private async Task RefreshSelectedFamilyAsync(
-    Guid familyId)
+    // =========================================================
+    // CONSULTAR PLANO FINANCEIRO
+    // =========================================================
+
+    private void ResetFinancialPlanStatus()
     {
-        var result =
-            await _getFamilyByIdHandler.HandleAsync(
-                new GetFamilyByIdQuery(familyId),
-                CancellationToken.None);
+        _isFinancialPlanStatusLoaded = false;
+
+        HasActiveFinancialPlan = false;
+
+        OnPropertyChanged(nameof(CanShowCreateFinancialPlan));
+
+        CreateFinancialPlanCommand.RaiseCanExecuteChanged();
+    }
+
+    private async Task LoadFinancialPlanStatusSafeAsync(
+        Guid familyId)
+    {
+        try
+        {
+            await LoadFinancialPlanStatusAsync(familyId);
+        }
+        catch (Exception ex)
+        {
+            if (SelectedFamily?.Id != familyId)
+            {
+                return;
+            }
+
+            ResetFinancialPlanStatus();
+
+            await NotificationService.ShowErrorAsync(
+                ex.Message,
+                "Não foi possível consultar o plano financeiro");
+        }
+    }
+
+    private async Task LoadFinancialPlanStatusAsync(Guid familyId)
+    {
+        if (SelectedFamily?.Id != familyId)
+        {
+            return;
+        }
+
+        ResetFinancialPlanStatus();
+
+        var userId = _currentUserService.UserId;
+
+        if (!userId.HasValue || userId.Value == Guid.Empty)
+        {
+            return;
+        }
+
+        var result = await _getActiveFamilyFinancialPlanHandler
+            .HandleAsync(familyId, userId.Value);
+
+        if (SelectedFamily?.Id != familyId)
+        {
+            return;
+        }
+
+        if (result.IsSuccess)
+        {
+            HasActiveFinancialPlan = true;
+            _isFinancialPlanStatusLoaded = true;
+        }
+        else if (
+            result.Error.Code == "FinancialPlan.NotConfigured" &&
+            SelectedFamily.CreatorUserId == userId.Value)
+        {
+            HasActiveFinancialPlan = false;
+            _isFinancialPlanStatusLoaded = true;
+        }
+        else
+        {
+            ResetFinancialPlanStatus();
+
+            await NotificationService.ShowErrorAsync(
+                result.Error.Message,
+                "Plano financeiro");
+        }
+
+        OnPropertyChanged(nameof(CanShowCreateFinancialPlan));
+
+        CreateFinancialPlanCommand.RaiseCanExecuteChanged();
+    }
+
+    // =========================================================
+    // CRIAR PLANO FINANCEIRO
+    // =========================================================
+
+    private bool CanCreateFinancialPlan()
+    {
+        return !IsBusy &&
+               !_isCreatingFinancialPlan &&
+               CanShowCreateFinancialPlan;
+    }
+
+    private async Task CreateFinancialPlanAsync()
+    {
+        if (!CanCreateFinancialPlan() ||
+            SelectedFamily is null)
+        {
+            return;
+        }
+
+        var family = SelectedFamily;
+        var userId = _currentUserService.UserId;
+
+        if (!userId.HasValue || userId.Value == Guid.Empty)
+        {
+            return;
+        }
+
+        _isCreatingFinancialPlan = true;
+        CreateFinancialPlanCommand.RaiseCanExecuteChanged();
+
+        try
+        {
+            await RunSafeAsync(async () =>
+            {
+                var result =
+                    await _createFamilyFinancialPlanHandler.HandleAsync(
+                        new CreateFamilyFinancialPlanCommand(
+                            FamilyId: family.Id,
+                            CreatedByUserId: userId.Value,
+                            Name: $"Plano Financeiro - {family.Name}",
+                            CurrencyCode: "EUR",
+                            Description: "Plano financeiro familiar."));
+
+                if (result.IsFailure)
+                {
+                    await NotificationService.ShowErrorAsync(
+                        result.Error.Message,
+                        "Não foi possível criar o plano financeiro");
+
+                    return;
+                }
+
+                if (SelectedFamily?.Id == family.Id)
+                {
+                    // O plano foi criado. Atualizar imediatamente
+                    // o estado e voltar a confirmar pela consulta.
+                    HasActiveFinancialPlan = true;
+                    _isFinancialPlanStatusLoaded = true;
+
+                    OnPropertyChanged(
+                        nameof(CanShowCreateFinancialPlan));
+
+                    await LoadFinancialPlanStatusAsync(family.Id);
+                }
+
+                await NotificationService.ShowInformationAsync(
+                    "Plano financeiro familiar criado com sucesso.",
+                    "Plano financeiro");
+            });
+        }
+        finally
+        {
+            _isCreatingFinancialPlan = false;
+            CreateFinancialPlanCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    // =========================================================
+    // ATUALIZAR FAMÍLIA SELECIONADA
+    // =========================================================
+
+    private async Task RefreshSelectedFamilyAsync(
+        Guid familyId)
+    {
+        var result = await _getFamilyByIdHandler.HandleAsync(
+            new GetFamilyByIdQuery(familyId),
+            CancellationToken.None);
 
         if (result.IsFailure)
         {
@@ -829,6 +1022,10 @@ public sealed class FamilyViewModel : BaseViewModel
 
         SelectedFamily = result.Value;
     }
+
+    // =========================================================
+    // NOVA FAMÍLIA
+    // =========================================================
 
     private void ExecuteNewFamily()
     {
@@ -842,38 +1039,46 @@ public sealed class FamilyViewModel : BaseViewModel
 
         SelectedFamilyMembers.Clear();
 
+        ResetFinancialPlanStatus();
+
         UpdateFormState();
 
         RefreshFamilyCommandsCanExecute();
     }
 
-    private void ReplaceFamily(
-        FamilyDTO updatedFamily)
+    // =========================================================
+    // ATUALIZAR COLEÇÃO
+    // =========================================================
+
+    private void ReplaceFamily(FamilyDTO updatedFamily)
     {
-        var existing =
-            Families.FirstOrDefault(
-                family =>
-                    family.Id == updatedFamily.Id);
+        var existing = Families.FirstOrDefault(
+            family => family.Id == updatedFamily.Id);
 
         if (existing is null)
         {
             return;
         }
 
-        var index =
-            Families.IndexOf(existing);
+        var index = Families.IndexOf(existing);
 
-        Families[index] =
-            updatedFamily;
+        Families[index] = updatedFamily;
     }
+
+    // =========================================================
+    // ESTADO DO FORMULÁRIO
+    // =========================================================
 
     private void UpdateFormState()
     {
-        FormTitle =
-            SelectedFamily is null
-                ? "Criar Nova Família"
-                : $"Editar Família: {SelectedFamily.Name}";
+        FormTitle = SelectedFamily is null
+            ? "Criar Nova Família"
+            : $"Editar Família: {SelectedFamily.Name}";
     }
+
+    // =========================================================
+    // ATUALIZAR COMANDOS
+    // =========================================================
 
     private void RefreshFamilyCommandsCanExecute()
     {
@@ -882,7 +1087,27 @@ public sealed class FamilyViewModel : BaseViewModel
         AddUserToFamilyCommand.RaiseCanExecuteChanged();
         RemoveUserFromFamilyCommand.RaiseCanExecuteChanged();
         DeactivateFamilyCommand.RaiseCanExecuteChanged();
-        RegenerateInvitationCodeCommand
-            .RaiseCanExecuteChanged();
+        RegenerateInvitationCodeCommand.RaiseCanExecuteChanged();
+        CreateFinancialPlanCommand.RaiseCanExecuteChanged();
+    }
+
+    private Task LoadSelectedFamilyDetailsSafeAsync()
+    {
+        return RunSafeAsync(async () =>
+        {
+            _reloadFamilyDetails = false;
+
+            var familyId = SelectedFamily?.Id;
+
+            await LoadSelectedFamilyMembersSafeAsync();
+
+            if (familyId.HasValue &&
+                SelectedFamily?.Id == familyId &&
+                SelectedFamily.IsActive)
+            {
+                await LoadFinancialPlanStatusSafeAsync(
+                    familyId.Value);
+            }
+        });
     }
 }

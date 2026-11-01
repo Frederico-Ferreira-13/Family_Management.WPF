@@ -82,3 +82,17 @@ logs/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# ==========================================
+# Local deployment and generated installers
+# ==========================================
+
+**/Installer/Output/
+**/Backups/
+**/Security/
+*.pubxml.user
+
+# SQLite auxiliary files
+*.db-journal
+*.sqlite-journal
+*.sqlite3-journal

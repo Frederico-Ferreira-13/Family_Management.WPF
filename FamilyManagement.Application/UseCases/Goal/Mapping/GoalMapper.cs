@@ -24,6 +24,7 @@ public static class GoalMapper
             UserName: goal.User?.UserName,
             IsActive: goal.IsActive,
             CreatedAt: goal.CreatedAt,
-            UpdatedAt: goal.UpdatedAt);
+            UpdatedAt: goal.UpdatedAt,
+            IsWorkingCapitalFund: goal.IsWorkingCapitalFund);
     }
 }

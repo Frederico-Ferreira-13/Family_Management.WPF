@@ -1,3 +1,4 @@
+using System;
 using FamilyManagement.Application.UseCases.Accounts.DTOs;
 using FamilyManagement.Application.UseCases.Categories.DTOs;
 
@@ -44,8 +45,7 @@ public sealed class RecurringTransactionValidator : ValidatorBase
         if (endDate.HasValue &&
             endDate.Value.Date < startDate.Date)
         {
-            error =
-                "A data de fim não pode ser anterior à data de início.";
+            error = "A data de fim não pode ser anterior à data de início.";
         }
 
         SetError(propertyName, error);
@@ -53,11 +53,12 @@ public sealed class RecurringTransactionValidator : ValidatorBase
 
     public void ValidateAccount(
         string propertyName,
-        AccountDTO? account)
+        AccountDTO? account,
+        bool isRequired = true)
     {
         SetError(
             propertyName,
-            account is null
+            isRequired && account is null
                 ? "A conta é obrigatória."
                 : null);
     }

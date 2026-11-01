@@ -6,7 +6,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Family_Management.WPF.Commands;
 using Family_Management.WPF.Services.Authentication;
 using Family_Management.WPF.Services.Dialogs;
@@ -14,7 +13,6 @@ using Family_Management.WPF.Services.Finance;
 using Family_Management.WPF.Services.Navigation;
 using Family_Management.WPF.Validation;
 using Family_Management.WPF.ViewModel.Common;
-
 using FamilyManagement.Application.UseCases.Accounts.DTOs;
 using FamilyManagement.Application.UseCases.Accounts.Queries.GetAccountsByUser;
 using FamilyManagement.Application.UseCases.Budgets.DTOs;
@@ -30,11 +28,8 @@ using FamilyManagement.Application.UseCases.Transactions.Commands.CreateTransfer
 using FamilyManagement.Application.UseCases.Transactions.Commands.UpdateTransaction;
 using FamilyManagement.Application.UseCases.Transactions.DTOs;
 using FamilyManagement.Application.UseCases.Transactions.Queries.GetTransactionById;
-
-// BENEFICIÁRIOS
 using FamilyManagement.Application.UseCases.Users.DTOs;
 using FamilyManagement.Application.UseCases.Users.Queries.GetUsersByFamily;
-
 using FamilyManagement.Domain.Enums;
 
 namespace Family_Management.WPF.ViewModel.Transactions;
@@ -107,6 +102,8 @@ public sealed class TransactionFormViewModel :
 
     private TransactionType _type = TransactionType.Expense;
     private bool _isConfirmed = true;
+
+    private bool _editingHasFinancialPlan;
 
     // ============================================================
     // RECURRENCE FIELDS
@@ -1114,7 +1111,11 @@ public sealed class TransactionFormViewModel :
     private void ApplyTransaction(
         TransactionDTO transaction)
     {
-        _date = transaction.Date;
+        _editingHasFinancialPlan = transaction.FinancialPlanId.HasValue;
+
+        _date = transaction.Date.Kind == DateTimeKind.Utc
+            ? transaction.Date.ToLocalTime().Date
+            : transaction.Date.Date;
         _amount = transaction.Amount;
         _description = transaction.Description;
         _notes = transaction.Notes;
@@ -1204,9 +1205,14 @@ public sealed class TransactionFormViewModel :
 
         if (IsEditMode)
         {
-            // O handler atual de edição exige uma conta.
-            return SelectedAccount is not null &&
-                   (IsTransfer || SelectedCategory is not null);
+            var hasValidAccount =
+                SelectedAccount is not null ||
+                (!IsTransfer && _editingHasFinancialPlan);
+
+            return hasValidAccount &&
+                (IsTransfer || SelectedCategory is not null) &&
+                Date != default &&
+                (!IsConfirmed || Date.Date <= DateTime.Today);
         }
 
         // ========================================================
@@ -1514,8 +1520,7 @@ public sealed class TransactionFormViewModel :
 
     private async Task UpdateTransactionAsync()
     {
-        if (!_transactionId.HasValue ||
-            SelectedAccount is null)
+        if (!_transactionId.HasValue)
         {
             return;
         }
@@ -1535,13 +1540,13 @@ public sealed class TransactionFormViewModel :
             TransactionId: _transactionId.Value,
             Description: Description.Trim(),
             Notes: NormalizeNotes(Notes),
-            CategoryId:
-                IsTransfer
-                    ? null
-                    : SelectedCategory?.Id,
+            CategoryId: IsTransfer
+                ? null
+                : SelectedCategory?.Id,
             Amount: Amount,
-            AccountId: SelectedAccount.Id,
-            UserId: userId.Value);
+            AccountId: SelectedAccount?.Id,
+            UserId: userId.Value,
+            Date: Date);
 
         var result =
             await _updateTransactionHandler.HandleAsync(command);

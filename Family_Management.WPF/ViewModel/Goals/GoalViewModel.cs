@@ -53,7 +53,7 @@ public sealed class GoalViewModel : BaseViewModel
         _goalFormViewModel = goalFormViewModel
             ?? throw new ArgumentNullException(nameof(goalFormViewModel));
 
-        Title = "Gestão de Metas Financeiras";
+        Title = "Objetivos financeiros";
 
         LoadDataCommand = new AsyncRelayCommand(LoadDataAsync);
 
@@ -104,6 +104,7 @@ public sealed class GoalViewModel : BaseViewModel
             OnPropertyChanged(nameof(FormTitle));
             OnPropertyChanged(nameof(CanEditOrAddProgress));
             OnPropertyChanged(nameof(CanWithdrawFromGoal));
+            OnPropertyChanged(nameof(CanEditSelectedGoal));
 
             RefreshCommands();
         }
@@ -131,10 +132,15 @@ public sealed class GoalViewModel : BaseViewModel
         SelectedGoal.IsActive &&
         SelectedGoal.CurrentAmount > 0;
 
+    public bool CanEditSelectedGoal =>
+        SelectedGoal?.IsWorkingCapitalFund != true;
+
     public string FormTitle =>
         SelectedGoal is null
-            ? "Nova Meta de Poupança"
-            : $"Editar: {SelectedGoal.Name}";
+            ? "Novo objetivo"
+            : SelectedGoal.IsWorkingCapitalFund
+                ? "Fundo de maneio — reserva automática de 10%"
+                : $"Editar: {SelectedGoal.Name}";
 
     public AsyncRelayCommand LoadDataCommand { get; }
 
@@ -149,13 +155,12 @@ public sealed class GoalViewModel : BaseViewModel
     public override async Task InitializeAsync(
         CancellationToken cancellationToken = default)
     {
-        if (IsInitialized)
+        if (!IsInitialized)
         {
-            return;
+            await GoalForm.InitializeAsync(cancellationToken);
         }
 
-        await GoalForm.InitializeAsync(cancellationToken);
-
+        // Atualiza ao regressar ao ecrã depois de confirmar uma receita.
         await LoadGoalsAsync(cancellationToken);
 
         IsInitialized = true;
@@ -255,8 +260,9 @@ public sealed class GoalViewModel : BaseViewModel
     private bool CanDeactivateGoal()
     {
         return !IsBusy &&
-               SelectedGoal is not null &&
-               SelectedGoal.IsActive;
+            SelectedGoal is not null &&
+            SelectedGoal.IsActive &&
+            !SelectedGoal.IsWorkingCapitalFund;
     }
 
     private async Task DeactivateGoalAsync()

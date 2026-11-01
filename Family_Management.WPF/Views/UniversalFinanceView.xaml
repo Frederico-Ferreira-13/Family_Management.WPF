@@ -886,7 +886,7 @@
                         </Border>
 
                         <TextBlock
-                            Text="Transações"
+                            Text="Movimentos"
                             FontSize="18"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource FinanceDark}" />

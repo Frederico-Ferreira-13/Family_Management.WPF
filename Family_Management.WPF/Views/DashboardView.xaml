@@ -1,60 +1,54 @@
-﻿
-<UserControl
+﻿<UserControl
     x:Class="Family_Management.WPF.Views.DashboardView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Dashboard"
+    xmlns:controls="clr-namespace:Family_Management.WPF.Controls"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    Language="pt-PT"
     mc:Ignorable="d"
     d:DesignHeight="800"
     d:DesignWidth="1100"
     d:DataContext="{d:DesignInstance Type=viewmodels:DashboardViewModel}">
 
     <UserControl.Resources>
-
-        <!-- Cartões principais -->
         <Style x:Key="DashboardMetricCard"
                TargetType="{x:Type Border}"
                BasedOn="{StaticResource FM.Card}">
-            <Setter Property="Margin" Value="0,0,16,16" />
-            <Setter Property="MinHeight" Value="132" />
-            <Setter Property="Padding" Value="20" />
+            <Setter Property="Margin" Value="0,0,16,16"/>
+            <Setter Property="MinHeight" Value="132"/>
+            <Setter Property="Padding" Value="20"/>
         </Style>
 
-        <!-- Etiquetas financeiras -->
         <Style x:Key="DashboardMetricLabel"
                TargetType="{x:Type TextBlock}">
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Medium"/>
             <Setter Property="Foreground"
-                    Value="{StaticResource FM.TextSecondary.Brush}" />
-            <Setter Property="TextWrapping" Value="Wrap" />
-            <Setter Property="Margin" Value="0,0,0,12" />
+                    Value="{StaticResource FM.TextSecondary.Brush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
 
-        <!-- Valores financeiros -->
         <Style x:Key="DashboardMetricValue"
                TargetType="{x:Type TextBlock}">
-            <Setter Property="FontSize" Value="26" />
-            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="26"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground"
-                    Value="{StaticResource FM.TextPrimary.Brush}" />
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                    Value="{StaticResource FM.TextPrimary.Brush}"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
 
-        <!-- Títulos de secções -->
         <Style x:Key="DashboardSectionTitle"
                TargetType="{x:Type TextBlock}"
                BasedOn="{StaticResource FM.SectionTitle}">
-            <Setter Property="Margin" Value="0,0,0,18" />
+            <Setter Property="Margin" Value="0,0,0,18"/>
         </Style>
-
     </UserControl.Resources>
 
     <Grid Background="{StaticResource FM.Background.Brush}">
-
         <ScrollViewer
             VerticalScrollBarVisibility="Auto"
             HorizontalScrollBarVisibility="Disabled"
@@ -62,253 +56,295 @@
 
             <StackPanel Margin="28,28,12,32">
 
-                <!-- ======================================
-                     CABEÇALHO DO DASHBOARD
-                     ====================================== -->
-
+                <!-- Cabeçalho -->
                 <Grid Margin="0,0,16,26">
-
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0"
-                                Margin="0,0,20,0">
-
+                    <StackPanel Grid.Column="0" Margin="0,0,20,0">
                         <TextBlock
                             Text="Visão geral das suas finanças"
-                            Style="{StaticResource FM.PageTitle}" />
+                            Style="{StaticResource FM.PageTitle}"/>
 
                         <TextBlock
                             Text="{Binding WelcomeMessage}"
                             Style="{StaticResource FM.BodyText}"
-                            Margin="0,8,0,0" />
-
+                            Margin="0,8,0,0"/>
                     </StackPanel>
 
-                    <StackPanel
-                        Grid.Column="1"
-                        Orientation="Horizontal"
-                        VerticalAlignment="Center">
-
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
                         <Button
                             Command="{Binding ExportCommand}"
                             Style="{StaticResource FM.SecondaryButton}"
                             ToolTip="Exportar os dados para CSV"
                             Margin="0,0,10,0">
-
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon
                                     Kind="FileExportOutline"
-                                    Width="18"
-                                    Height="18" />
-
-                                <TextBlock
-                                    Text="Exportar CSV"
-                                    Margin="8,0,0,0"
-                                    VerticalAlignment="Center" />
+                                    Width="18" Height="18"/>
+                                <TextBlock Text="Exportar CSV"
+                                           Margin="8,0,0,0"
+                                           VerticalAlignment="Center"/>
                             </StackPanel>
-
                         </Button>
 
                         <Button
                             Command="{Binding RefreshCommand}"
                             Style="{StaticResource FM.PrimaryButton}"
                             ToolTip="Atualizar os dados financeiros">
-
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon
                                     Kind="Refresh"
-                                    Width="18"
-                                    Height="18" />
-
-                                <TextBlock
-                                    Text="Atualizar"
-                                    Margin="8,0,0,0"
-                                    VerticalAlignment="Center" />
+                                    Width="18" Height="18"/>
+                                <TextBlock Text="Atualizar"
+                                           Margin="8,0,0,0"
+                                           VerticalAlignment="Center"/>
                             </StackPanel>
-
                         </Button>
-
                     </StackPanel>
-
                 </Grid>
 
-                <!-- ======================================
-                     AVISO DE CONFIGURAÇÃO
-                     ====================================== -->
-
-                <Border
-                    Margin="0,0,16,24"
-                    Padding="18"
-                    CornerRadius="12"
-                    Background="#FFF8E6"
-                    BorderBrush="#F3D58B"
-                    BorderThickness="1">
-
+                <!-- Configuração -->
+                <Border Margin="0,0,16,24"
+                        Padding="18"
+                        CornerRadius="12"
+                        Background="#FFF8E6"
+                        BorderBrush="#F3D58B"
+                        BorderThickness="1">
                     <Border.Style>
                         <Style TargetType="{x:Type Border}">
-                            <Setter Property="Visibility"
-                                    Value="Collapsed" />
-
+                            <Setter Property="Visibility" Value="Collapsed"/>
                             <Style.Triggers>
-                                <DataTrigger
-                                    Binding="{Binding IsSetupRequired}"
-                                    Value="True">
-                                    <Setter Property="Visibility"
-                                            Value="Visible" />
+                                <DataTrigger Binding="{Binding IsSetupRequired}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </Border.Style>
 
                     <StackPanel Orientation="Horizontal">
-
                         <materialDesign:PackIcon
                             Kind="AlertCircleOutline"
-                            Width="23"
-                            Height="23"
+                            Width="23" Height="23"
                             Foreground="#92400E"
-                            Margin="0,1,14,0" />
+                            Margin="0,1,14,0"/>
 
                         <StackPanel>
-
-                            <TextBlock
-                                Text="Configuração incompleta"
-                                FontSize="14"
-                                FontWeight="SemiBold"
-                                Foreground="#78350F" />
+                            <TextBlock Text="Configuração incompleta"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Foreground="#78350F"/>
 
                             <TextBlock
                                 Text="Existem elementos essenciais da gestão financeira que ainda precisam de ser configurados."
                                 FontSize="13"
                                 TextWrapping="Wrap"
                                 Foreground="#92400E"
-                                Margin="0,5,0,0" />
-
+                                Margin="0,5,0,0"/>
                         </StackPanel>
-
                     </StackPanel>
-
                 </Border>
 
-                <!-- ======================================
-                     RESUMO FINANCEIRO
-                     ====================================== -->
+                                <!-- Aviso de pagamentos do próximo mês -->
+                <Border
+                    Style="{StaticResource FM.Card}"
+                    Margin="0,0,16,24"
+                    Padding="20">
 
-                <TextBlock
-                    Text="Resumo financeiro"
-                    Style="{StaticResource DashboardSectionTitle}" />
+                    <StackPanel>
 
-                <UniformGrid Columns="3">
-
-                    <!-- SALDO TOTAL -->
-                    <Border Style="{StaticResource DashboardMetricCard}">
-                        <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
 
                             <materialDesign:PackIcon
-                                Kind="WalletOutline"
-                                Width="22"
-                                Height="22"
-                                Foreground="{StaticResource FM.Accent.Brush}"
-                                Margin="0,0,0,12" />
+                                Grid.Column="0"
+                                Kind="AlertCircleOutline"
+                                Width="24"
+                                Height="24"
+                                Foreground="#B7791F"
+                                VerticalAlignment="Top"
+                                Margin="0,0,12,0" />
 
-                            <TextBlock
-                                Text="Saldo total"
-                                Style="{StaticResource DashboardMetricLabel}" />
+                            <StackPanel Grid.Column="1">
 
-                            <TextBlock
-                                Style="{StaticResource DashboardMetricValue}">
-                                <Run Text="{Binding TotalBalance,
-                                            Mode=OneWay,
-                                            StringFormat={}{0:N2}}" />
-                                <Run Text="{Binding DefaultCurrencySymbol,
-                                            Mode=OneWay}" />
-                            </TextBlock>
+                                <TextBlock
+                                    Text="{Binding UpcomingPaymentsTitle}"
+                                    Style="{StaticResource DashboardSectionTitle}"
+                                    TextWrapping="Wrap"
+                                    Margin="0,0,0,6" />
 
-                        </StackPanel>
-                    </Border>
+                                <TextBlock
+                                    Text="{Binding UpcomingPaymentsSummary}"
+                                    Style="{StaticResource FM.BodyText}"
+                                    TextWrapping="Wrap" />
 
-                    <!-- RECEITAS -->
+                            </StackPanel>
+                        </Grid>
+
+                        <ItemsControl
+                            ItemsSource="{Binding UpcomingPayments}"
+                            Margin="0,12,0,0">
+
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+
+                                    <Border
+                                        Padding="0,10"
+                                        BorderBrush="#E5E7EB"
+                                        BorderThickness="0,1,0,0">
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="145" />
+                                                <ColumnDefinition Width="110" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Data do pagamento -->
+                                            <TextBlock
+                                                Grid.Column="0"
+                                                Text="{Binding Date,
+                                                            StringFormat={}{0:dd/MM/yyyy}}"
+                                                Style="{StaticResource FM.BodyText}"
+                                                VerticalAlignment="Center" />
+
+                                            <!-- Descrição e frequência -->
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Margin="10,0,15,0">
+
+                                                <TextBlock
+                                                    Text="{Binding Description}"
+                                                    Style="{StaticResource FM.BodyText}"
+                                                    FontWeight="SemiBold"
+                                                    TextWrapping="Wrap" />
+
+                                                <TextBlock
+                                                    Text="{Binding FrequencyDisplay}"
+                                                    Style="{StaticResource FM.Caption}"
+                                                    Margin="0,3,0,0" />
+
+                                            </StackPanel>
+
+                                            <!-- Valor e moeda -->
+                                            <TextBlock
+                                                Grid.Column="2"
+                                                Text="{Binding AmountDisplay}"
+                                                Style="{StaticResource FM.BodyText}"
+                                                FontWeight="SemiBold"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                Margin="0,0,16,0" />
+
+                                            <!-- Previsto, por pagar ou confirmado -->
+                                            <TextBlock
+                                                Grid.Column="3"
+                                                Text="{Binding StatusDisplay}"
+                                                Style="{StaticResource FM.Caption}"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center" />
+
+                                        </Grid>
+                                    </Border>
+
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Text="Resumo financeiro"
+                           Style="{StaticResource DashboardSectionTitle}"/>
+
+                <!-- Primeira linha: receitas, despesas e saldo -->
+                <UniformGrid Columns="3">
                     <Border Style="{StaticResource DashboardMetricCard}">
                         <StackPanel>
-
                             <materialDesign:PackIcon
                                 Kind="TrendingUp"
-                                Width="22"
-                                Height="22"
+                                Width="22" Height="22"
                                 Foreground="{StaticResource FM.Success.Brush}"
-                                Margin="0,0,0,12" />
+                                Margin="0,0,0,12"/>
 
-                            <TextBlock
-                                Text="Receitas do mês"
-                                Style="{StaticResource DashboardMetricLabel}" />
+                            <TextBlock Text="Receitas do mês"
+                                       Style="{StaticResource DashboardMetricLabel}"/>
 
-                            <TextBlock
-                                Style="{StaticResource DashboardMetricValue}"
-                                Foreground="{StaticResource FM.Success.Brush}">
-                                <Run Text="{Binding TotalIncome,
-                                            Mode=OneWay,
-                                            StringFormat={}{0:N2}}" />
-                                <Run Text="{Binding DefaultCurrencySymbol,
-                                            Mode=OneWay}" />
+                            <TextBlock Style="{StaticResource DashboardMetricValue}"
+                                       Foreground="{StaticResource FM.Success.Brush}">
+                                <Run Text="{Binding TotalIncome, Mode=OneWay, StringFormat={}{0:N2}}"/>
+                                <Run Text="{Binding DefaultCurrencySymbol, Mode=OneWay}"/>
                             </TextBlock>
-
                         </StackPanel>
                     </Border>
 
-                    <!-- DESPESAS -->
                     <Border Style="{StaticResource DashboardMetricCard}">
                         <StackPanel>
-
                             <materialDesign:PackIcon
                                 Kind="TrendingDown"
-                                Width="22"
-                                Height="22"
+                                Width="22" Height="22"
                                 Foreground="{StaticResource FM.Danger.Brush}"
-                                Margin="0,0,0,12" />
+                                Margin="0,0,0,12"/>
 
-                            <TextBlock
-                                Text="Despesas do mês"
-                                Style="{StaticResource DashboardMetricLabel}" />
+                            <TextBlock Text="Despesas do mês"
+                                       Style="{StaticResource DashboardMetricLabel}"/>
 
-                            <TextBlock
-                                Style="{StaticResource DashboardMetricValue}"
-                                Foreground="{StaticResource FM.Danger.Brush}">
-                                <Run Text="{Binding TotalExpenses,
-                                            Mode=OneWay,
-                                            StringFormat={}{0:N2}}" />
-                                <Run Text="{Binding DefaultCurrencySymbol,
-                                            Mode=OneWay}" />
+                            <TextBlock Style="{StaticResource DashboardMetricValue}"
+                                       Foreground="{StaticResource FM.Danger.Brush}">
+                                <Run Text="{Binding TotalExpenses, Mode=OneWay, StringFormat={}{0:N2}}"/>
+                                <Run Text="{Binding DefaultCurrencySymbol, Mode=OneWay}"/>
                             </TextBlock>
-
                         </StackPanel>
                     </Border>
 
-                    <!-- MOVIMENTOS -->
                     <Border Style="{StaticResource DashboardMetricCard}">
                         <StackPanel>
-
                             <materialDesign:PackIcon
-                                Kind="SwapHorizontal"
-                                Width="22"
-                                Height="22"
+                                Kind="WalletOutline"
+                                Width="22" Height="22"
                                 Foreground="{StaticResource FM.Accent.Brush}"
-                                Margin="0,0,0,12" />
+                                Margin="0,0,0,12"/>
 
-                            <TextBlock
-                                Text="Movimentos do mês"
-                                Style="{StaticResource DashboardMetricLabel}" />
+                            <TextBlock Text="Saldo total"
+                                       Style="{StaticResource DashboardMetricLabel}"/>
 
-                            <TextBlock
-                                Text="{Binding TransactionsThisMonth, Mode=OneWay}"
-                                Style="{StaticResource DashboardMetricValue}" />
+                            <TextBlock Style="{StaticResource DashboardMetricValue}">
+                                <Run Text="{Binding TotalBalance, Mode=OneWay, StringFormat={}{0:N2}}"/>
+                                <Run Text="{Binding DefaultCurrencySymbol, Mode=OneWay}"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
 
+                <!-- Segunda linha: poupança e objetivos -->
+                <UniformGrid Columns="2">
+                    <Border Style="{StaticResource DashboardMetricCard}">
+                        <StackPanel>
+                            <materialDesign:PackIcon
+                                Kind="PiggyBankOutline"
+                                Width="22" Height="22"
+                                Foreground="{StaticResource FM.Accent.Brush}"
+                                Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Disponível para poupar"
+                                       Style="{StaticResource DashboardMetricLabel}"/>
+
+                            <TextBlock Style="{StaticResource DashboardMetricValue}"
+                                       Foreground="{StaticResource FM.Accent.Brush}">
+                                <Run Text="{Binding AvailableToSave, Mode=OneWay, StringFormat={}{0:N2}}"/>
+                                <Run Text="{Binding DefaultCurrencySymbol, Mode=OneWay}"/>
+                            </TextBlock>
                         </StackPanel>
                     </Border>
 
-                    <!-- DISPONÍVEL PARA POUPAR -->
                     <Border Style="{StaticResource DashboardMetricCard}">
                         <StackPanel>
 
@@ -320,120 +356,137 @@
                                 Margin="0,0,0,12" />
 
                             <TextBlock
-                                Text="Disponível para poupar"
+                                Text="Fundo de maneio"
                                 Style="{StaticResource DashboardMetricLabel}" />
 
+                            <TextBlock Style="{StaticResource DashboardMetricValue}">
+                                <Run
+                                    Text="{Binding WorkingCapitalBalance,
+                                                Mode=OneWay,
+                                                StringFormat={}{0:N2}}" />
+                                <Run Text=" " />
+                                <Run
+                                    Text="{Binding DefaultCurrencySymbol,
+                                                Mode=OneWay}" />
+                            </TextBlock>
+
                             <TextBlock
-                                Style="{StaticResource DashboardMetricValue}"
-                                Foreground="{StaticResource FM.Accent.Brush}">
-                                <Run Text="{Binding AvailableToSave,
-                                            Mode=OneWay,
-                                            StringFormat={}{0:N2}}" />
-                                <Run Text="{Binding DefaultCurrencySymbol,
-                                            Mode=OneWay}" />
+                                Style="{StaticResource FM.Caption}"
+                                TextWrapping="Wrap"
+                                Margin="0,8,0,0">
+
+                                <Run Text="Reservado este mês: " />
+
+                                <Run
+                                    Text="{Binding WorkingCapitalReservedThisMonth,
+                                                Mode=OneWay,
+                                                StringFormat={}{0:N2}}" />
+
+                                <Run Text=" " />
+
+                                <Run
+                                    Text="{Binding DefaultCurrencySymbol,
+                                                Mode=OneWay}" />
+                            </TextBlock>
+
+                            <TextBlock
+                                Text="10% das receitas familiares confirmadas."
+                                Style="{StaticResource FM.Caption}"
+                                TextWrapping="Wrap"
+                                Margin="0,4,0,0" />
+
+                            <Separator Margin="0,12,0,8" />
+
+                            <TextBlock
+                                Style="{StaticResource FM.Caption}"
+                                TextWrapping="Wrap">
+
+                                <Run Text="Outros objetivos: " />
+
+                                <Run
+                                    Text="{Binding GoalsSaved,
+                                                Mode=OneWay,
+                                                StringFormat={}{0:N2}}" />
+
+                                <Run Text=" / " />
+
+                                <Run
+                                    Text="{Binding GoalsTarget,
+                                                Mode=OneWay,
+                                                StringFormat={}{0:N2}}" />
+
+                                <Run Text=" " />
+
+                                <Run
+                                    Text="{Binding DefaultCurrencySymbol,
+                                                Mode=OneWay}" />
                             </TextBlock>
 
                         </StackPanel>
                     </Border>
-
                 </UniformGrid>
 
-                <!-- ======================================
-                     ANÁLISE DAS DESPESAS
-                     ====================================== -->
-
-                <TextBlock
-                    Text="Análise das despesas"
-                    Style="{StaticResource DashboardSectionTitle}"
-                    Margin="0,10,0,18" />
+                <!-- Despesas fixas e variáveis -->
+                <TextBlock Text="Análise das despesas"
+                           Style="{StaticResource DashboardSectionTitle}"
+                           Margin="0,10,0,18"/>
 
                 <UniformGrid Columns="2">
-
-                    <!-- DESPESAS FIXAS -->
                     <Border Style="{StaticResource DashboardMetricCard}">
                         <StackPanel>
+                            <TextBlock Text="Despesas fixas do mês"
+                                       Style="{StaticResource DashboardMetricLabel}"/>
 
-                            <TextBlock
-                                Text="Despesas fixas do mês"
-                                Style="{StaticResource DashboardMetricLabel}" />
-
-                            <TextBlock
-                                Style="{StaticResource DashboardMetricValue}"
-                                Foreground="{StaticResource FM.Danger.Brush}">
-                                <Run Text="{Binding FixedExpenses,
-                                            Mode=OneWay,
-                                            StringFormat={}{0:N2}}" />
-                                <Run Text="{Binding DefaultCurrencySymbol,
-                                            Mode=OneWay}" />
+                            <TextBlock Style="{StaticResource DashboardMetricValue}"
+                                       Foreground="{StaticResource FM.Danger.Brush}">
+                                <Run Text="{Binding FixedExpenses, Mode=OneWay, StringFormat={}{0:N2}}"/>
+                                <Run Text="{Binding DefaultCurrencySymbol, Mode=OneWay}"/>
                             </TextBlock>
-
                         </StackPanel>
                     </Border>
 
-                    <!-- DESPESAS VARIÁVEIS -->
                     <Border Style="{StaticResource DashboardMetricCard}">
                         <StackPanel>
+                            <TextBlock Text="Despesas variáveis do mês"
+                                       Style="{StaticResource DashboardMetricLabel}"/>
 
-                            <TextBlock
-                                Text="Despesas variáveis do mês"
-                                Style="{StaticResource DashboardMetricLabel}" />
-
-                            <TextBlock
-                                Style="{StaticResource DashboardMetricValue}"
-                                Foreground="{StaticResource FM.Danger.Brush}">
-                                <Run Text="{Binding VariableExpenses,
-                                            Mode=OneWay,
-                                            StringFormat={}{0:N2}}" />
-                                <Run Text="{Binding DefaultCurrencySymbol,
-                                            Mode=OneWay}" />
+                            <TextBlock Style="{StaticResource DashboardMetricValue}"
+                                       Foreground="{StaticResource FM.Danger.Brush}">
+                                <Run Text="{Binding VariableExpenses, Mode=OneWay, StringFormat={}{0:N2}}"/>
+                                <Run Text="{Binding DefaultCurrencySymbol, Mode=OneWay}"/>
                             </TextBlock>
-
                         </StackPanel>
                     </Border>
-
                 </UniformGrid>
 
-                <!-- ======================================
-                     HISTÓRICO E MAIORES DESPESAS
-                     ====================================== -->
-
+                <!-- Histórico e gráfico -->
                 <Grid Margin="0,14,16,0">
-
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="2*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- HISTÓRICO MENSAL -->
-                    <Border
-                        Grid.Column="0"
-                        Style="{StaticResource FM.Card}"
-                        Margin="0,0,10,0"
-                        MinHeight="300">
-
+                    <Border Grid.Column="0"
+                            Style="{StaticResource FM.Card}"
+                            Margin="0,0,10,0"
+                            MinHeight="300">
                         <StackPanel>
+                            <TextBlock Text="Resultado mensal"
+                                       Style="{StaticResource DashboardSectionTitle}"/>
 
-                            <TextBlock
-                                Text="Resultado mensal"
-                                Style="{StaticResource DashboardSectionTitle}" />
+                            <TextBlock Text="Últimos 6 meses"
+                                       Style="{StaticResource FM.Caption}"
+                                       Margin="0,-10,0,20"/>
 
-                            <TextBlock
-                                Text="Últimos 6 meses"
-                                Style="{StaticResource FM.Caption}"
-                                Margin="0,-10,0,20" />
-
-                            <ItemsControl
-                                ItemsSource="{Binding MonthlyBalanceData}">
-
+                            <ItemsControl ItemsSource="{Binding MonthlyBalanceData}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <UniformGrid Columns="3" />
+                                        <UniformGrid Columns="3"/>
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
 
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-
                                         <Border
                                             Background="{StaticResource FM.SurfaceAlt.Brush}"
                                             BorderBrush="{StaticResource FM.Border.Brush}"
@@ -441,164 +494,84 @@
                                             CornerRadius="9"
                                             Margin="4"
                                             Padding="12">
-
                                             <StackPanel>
-
                                                 <TextBlock
                                                     Text="{Binding Month}"
                                                     HorizontalAlignment="Center"
                                                     Foreground="{StaticResource FM.TextMuted.Brush}"
                                                     FontSize="12"
                                                     FontWeight="SemiBold"
-                                                    Margin="0,0,0,10" />
+                                                    Margin="0,0,0,10"/>
 
                                                 <TextBlock
                                                     HorizontalAlignment="Center"
                                                     FontSize="17"
                                                     FontWeight="SemiBold"
                                                     TextTrimming="CharacterEllipsis">
-
                                                     <TextBlock.Style>
                                                         <Style TargetType="{x:Type TextBlock}">
-
                                                             <Setter
                                                                 Property="Foreground"
-                                                                Value="{StaticResource FM.Success.Brush}" />
-
+                                                                Value="{StaticResource FM.Success.Brush}"/>
                                                             <Style.Triggers>
-                                                                <DataTrigger
-                                                                    Binding="{Binding Balance}"
-                                                                    Value="0">
+                                                                <DataTrigger Binding="{Binding Balance}" Value="0">
                                                                     <Setter
                                                                         Property="Foreground"
-                                                                        Value="{StaticResource FM.TextMuted.Brush}" />
+                                                                        Value="{StaticResource FM.TextMuted.Brush}"/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
-
                                                         </Style>
                                                     </TextBlock.Style>
 
-                                                    <Run Text="{Binding Balance,
-                                                                Mode=OneWay,
-                                                                StringFormat={}{0:N2}}" />
-
-                                                    <Run Text="{Binding DataContext.DefaultCurrencySymbol,
-                                                                RelativeSource={RelativeSource AncestorType=UserControl},
-                                                                Mode=OneWay}" />
-
+                                                    <Run Text="{Binding Balance, Mode=OneWay, StringFormat={}{0:N2}}"/>
+                                                    <Run Text="{Binding DataContext.DefaultCurrencySymbol, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"/>
                                                 </TextBlock>
-
                                             </StackPanel>
-
                                         </Border>
-
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
-
                             </ItemsControl>
 
                             <TextBlock
                                 Text="O resultado mensal corresponde à diferença entre receitas e despesas confirmadas."
                                 Style="{StaticResource FM.Caption}"
                                 TextWrapping="Wrap"
-                                Margin="4,18,4,0" />
-
+                                Margin="4,18,4,0"/>
                         </StackPanel>
-
                     </Border>
 
-                    <!-- MAIORES DESPESAS -->
-                    <Border
-                        Grid.Column="1"
-                        Style="{StaticResource FM.Card}"
-                        Margin="10,0,0,0"
-                        MinHeight="300">
-
-                        <DockPanel>
+                    <Border Grid.Column="1"
+                            Style="{StaticResource FM.Card}"
+                            Margin="10,0,0,0"
+                            MinHeight="300">
+                        <StackPanel>
+                            <TextBlock
+                                Text="Maiores despesas do mês"
+                                Style="{StaticResource DashboardSectionTitle}"/>
 
                             <TextBlock
-                                DockPanel.Dock="Top"
-                                Text="Maiores despesas do mês"
-                                Style="{StaticResource DashboardSectionTitle}" />
+                                Text="Top 3 categorias · inclui valores previstos"
+                                Style="{StaticResource FM.Caption}"
+                                TextWrapping="Wrap"
+                                Margin="0,-8,0,8"/>
 
-                            <ScrollViewer
-                                VerticalScrollBarVisibility="Auto"
-                                HorizontalScrollBarVisibility="Disabled">
+                            <controls:ExpensePieChart
+                                ItemsSource="{Binding TopExpenses}"
+                                CurrencySymbol="{Binding DefaultCurrencySymbol}"
+                                TextBrush="{StaticResource FM.TextPrimary.Brush}"
+                                Height="300"
+                                HorizontalAlignment="Stretch"/>
 
-                                <ItemsControl
-                                    ItemsSource="{Binding TopExpenses}">
-
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-
-                                            <Border
-                                                Padding="0,14"
-                                                BorderBrush="{StaticResource FM.Border.Brush}"
-                                                BorderThickness="0,0,0,1">
-
-                                                <Grid>
-
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <StackPanel
-                                                        Grid.Column="0"
-                                                        Margin="0,0,12,0">
-
-                                                        <TextBlock
-                                                            Text="{Binding CategoryName}"
-                                                            FontWeight="SemiBold"
-                                                            Foreground="{StaticResource FM.TextPrimary.Brush}"
-                                                            TextTrimming="CharacterEllipsis" />
-
-                                                        <TextBlock
-                                                            Text="Categoria"
-                                                            Style="{StaticResource FM.Caption}"
-                                                            Margin="0,4,0,0" />
-
-                                                    </StackPanel>
-
-                                                    <TextBlock
-                                                        Grid.Column="1"
-                                                        VerticalAlignment="Center"
-                                                        FontWeight="SemiBold"
-                                                        Foreground="{StaticResource FM.Danger.Brush}">
-
-                                                        <Run Text="- " />
-
-                                                        <Run Text="{Binding Amount,
-                                                                    Mode=OneWay,
-                                                                    StringFormat={}{0:N2}}" />
-
-                                                        <Run Text="{Binding DataContext.DefaultCurrencySymbol,
-                                                                    RelativeSource={RelativeSource AncestorType=UserControl},
-                                                                    Mode=OneWay}" />
-
-                                                    </TextBlock>
-
-                                                </Grid>
-
-                                            </Border>
-
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-
-                                </ItemsControl>
-
-                            </ScrollViewer>
-
-                        </DockPanel>
-
+                            <TextBlock
+                                Text="As percentagens referem-se à soma destas três categorias."
+                                Style="{StaticResource FM.Caption}"
+                                TextWrapping="Wrap"
+                                Margin="0,8,0,0"/>
+                        </StackPanel>
                     </Border>
-
                 </Grid>
 
             </StackPanel>
-
         </ScrollViewer>
-
     </Grid>
-
 </UserControl>

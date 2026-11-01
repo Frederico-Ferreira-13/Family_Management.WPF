@@ -1,5 +1,4 @@
-﻿
-using FamilyManagement.Domain.Interfaces;
+﻿using FamilyManagement.Domain.Interfaces;
 using FamilyManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

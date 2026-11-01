@@ -1,4 +1,5 @@
 ﻿
+using FamilyManagement.Domain.Enums;
 using FamilyManagement.Domain.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -14,7 +15,10 @@ public sealed class TransactionConfiguration
 
         builder.HasKey(t => t.Id);
 
-        // Valor monetário
+        // =====================================================
+        // VALOR MONETÁRIO
+        // =====================================================
+
         builder.OwnsOne(t => t.Amount, money =>
         {
             money.Property(m => m.Amount)
@@ -27,6 +31,10 @@ public sealed class TransactionConfiguration
                 .HasMaxLength(3)
                 .IsRequired();
         });
+
+        // =====================================================
+        // DADOS DO MOVIMENTO
+        // =====================================================
 
         builder.Property(t => t.Description)
             .IsRequired()
@@ -50,19 +58,36 @@ public sealed class TransactionConfiguration
             .IsRequired()
             .HasDefaultValue(false);
 
-        // Utilizador responsável pelo movimento
+        // =====================================================
+        // RESPONSÁVEL
+        // =====================================================
+
         builder.Property(t => t.UserId)
             .IsRequired();
 
-        // Âmbito financeiro:
-        // null = movimento pessoal
-        // valor = movimento familiar
+        // =====================================================
+        // CLASSIFICAÇÃO FINANCEIRA
+        // =====================================================
+
+        builder.Property(t => t.Scope)
+            .HasConversion<int>()
+            .HasColumnName("Scope")
+            .HasDefaultValue(RecurringTransactionScope.Personal)
+            .IsRequired();
+
         builder.Property(t => t.FamilyId)
             .IsRequired(false);
 
-        // Conta bancária opcional para receitas e despesas.
-        // As transferências continuam a exigir contas
-        // de origem e destino, por regra de domínio.
+        builder.Property(t => t.BeneficiaryUserId)
+            .IsRequired(false);
+
+        builder.Property(t => t.FinancialPlanId)
+            .IsRequired(false);
+
+        // =====================================================
+        // CONTAS E ASSOCIAÇÕES
+        // =====================================================
+
         builder.Property(t => t.AccountId)
             .IsRequired(false);
 
@@ -81,105 +106,132 @@ public sealed class TransactionConfiguration
         builder.Property(t => t.GoalId)
             .IsRequired(false);
 
-        // Plano financeiro opcional para compatibilidade
-        // com os movimentos anteriores à sua introdução.
-        builder.Property(t => t.FinancialPlanId)
-            .IsRequired(false);
+        // =====================================================
+        // RELAÇÕES
+        // =====================================================
 
-        // Utilizador -> Movimentos
+        // Utilizador responsável pelo movimento.
         builder.HasOne(t => t.User)
             .WithMany(u => u.Transactions)
             .HasForeignKey(t => t.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Família -> Movimentos
+        // Família associada ao âmbito financeiro.
         builder.HasOne(t => t.Family)
             .WithMany()
             .HasForeignKey(t => t.FamilyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Plano financeiro -> Movimentos
+        // Beneficiário de receitas familiares.
+        builder.HasOne(t => t.BeneficiaryUser)
+            .WithMany()
+            .HasForeignKey(t => t.BeneficiaryUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Plano financeiro.
         builder.HasOne(t => t.FinancialPlan)
             .WithMany()
             .HasForeignKey(t => t.FinancialPlanId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Conta bancária -> Movimentos
-        // A relação é opcional, mas impede a eliminação
-        // física de uma conta com histórico associado.
+        // Conta bancária de origem.
         builder.HasOne(t => t.Account)
             .WithMany(a => a.Transactions)
             .HasForeignKey(t => t.AccountId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Conta de destino das transferências
+        // Conta de destino das transferências.
         builder.HasOne(t => t.TargetAccount)
             .WithMany()
             .HasForeignKey(t => t.TargetAccountId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Categoria -> Movimentos
+        // Categoria.
         builder.HasOne(t => t.Category)
             .WithMany(c => c.Transactions)
             .HasForeignKey(t => t.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Orçamento -> Movimentos
+        // Orçamento.
         builder.HasOne(t => t.Budget)
             .WithMany()
             .HasForeignKey(t => t.BudgetId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // Objetivo -> Contribuições
+        // Objetivo.
         builder.HasOne(t => t.Goal)
             .WithMany(g => g.Contributions)
             .HasForeignKey(t => t.GoalId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // Recorrência -> Movimentos gerados
+        // Recorrência que originou o movimento.
         builder.HasOne(t => t.RecurringTransaction)
             .WithMany(rt => rt.GeneratedTransactions)
             .HasForeignKey(t => t.RecurringTransactionId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // Índices de pesquisa
+        // =====================================================
+        // ÍNDICES
+        // =====================================================
+
         builder.HasIndex(t => t.Date);
+
         builder.HasIndex(t => t.UserId);
+
         builder.HasIndex(t => t.CategoryId);
+
         builder.HasIndex(t => t.BudgetId);
+
         builder.HasIndex(t => t.GoalId);
+
         builder.HasIndex(t => t.RecurringTransactionId);
+
         builder.HasIndex(t => t.Type);
 
-        // Extrato bancário
+        builder.HasIndex(t => t.Scope);
+
+        builder.HasIndex(t => t.BeneficiaryUserId);
+
+        // Extrato bancário.
         builder.HasIndex(t => new
         {
             t.AccountId,
             t.Date
         });
 
-        // Histórico pessoal
+        // Histórico pessoal por utilizador.
         builder.HasIndex(t => new
         {
             t.UserId,
             t.Date
         });
 
-        // Histórico familiar
+        // Histórico familiar.
         builder.HasIndex(t => new
         {
             t.FamilyId,
+            t.Scope,
             t.Date
         });
 
-        // Histórico do plano financeiro
+        // Histórico por beneficiário.
+        builder.HasIndex(t => new
+        {
+            t.BeneficiaryUserId,
+            t.Date
+        });
+
+        // Histórico do plano financeiro.
         builder.HasIndex(t => new
         {
             t.FinancialPlanId,
             t.Date
         });
 
-        // Propriedades comuns
+        // =====================================================
+        // PROPRIEDADES COMUNS
+        // =====================================================
+
         builder.Property(t => t.CreatedAt)
             .IsRequired();
 

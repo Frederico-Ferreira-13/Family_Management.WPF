@@ -12,5 +12,9 @@ public sealed record UpdateRecurringTransactionCommand(
     Guid CategoryId,
     Guid? AccountId,
     DateTime? EndDate,
-    Guid? BeneficiaryUserId = null
+    Guid? BeneficiaryUserId = null,
+    Guid? FamilyId = null,
+    Guid? FinancialPlanId = null,
+    RecurringTransactionScope Scope = RecurringTransactionScope.Personal,
+    DateTime? ScheduleDate = null
 );

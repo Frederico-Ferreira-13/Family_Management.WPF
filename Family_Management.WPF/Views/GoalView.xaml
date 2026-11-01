@@ -10,25 +10,15 @@
              d:DataContext="{d:DesignInstance Type=viewmodels:GoalViewModel}">
 
     <UserControl.Resources>
-
         <ResourceDictionary>
-
             <ResourceDictionary.MergedDictionaries>
-
                 <ResourceDictionary Source="/Family_Management.WPF;component/Styles/DesignResources.xaml" />
-
                 <ResourceDictionary Source="/Family_Management.WPF;component/Styles/Styles.ButtonsAndValidation.xaml" />
-
                 <ResourceDictionary Source="/Family_Management.WPF;component/Styles/Styles.TextAndValidation.xaml" />
-
                 <ResourceDictionary Source="/Family_Management.WPF;component/Styles/Styles.InteractiveControls.xaml" />
-
                 <ResourceDictionary Source="/Family_Management.WPF;component/Styles/converters.xaml" />
-
             </ResourceDictionary.MergedDictionaries>
-
         </ResourceDictionary>
-
     </UserControl.Resources>
 
     <Grid Background="{StaticResource GrayBackground}">
@@ -49,7 +39,6 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel>
-
                 <TextBlock Text="{Binding Title}"
                            FontSize="28"
                            FontWeight="Bold"
@@ -57,12 +46,12 @@
 
                 <TextBlock Text="Defina objetivos financeiros e acompanhe o progresso das suas poupanças."
                            Foreground="#7F8C8D"
-                           Margin="0,5,0,0" />
-
+                           TextWrapping="Wrap"
+                           Margin="0,5,15,0" />
             </StackPanel>
 
             <Button Grid.Column="1"
-                    Content="Nova Meta"
+                    Content="Novo objetivo"
                     Command="{Binding NewGoalCommand}"
                     Style="{StaticResource PrimaryButton}"
                     VerticalAlignment="Center"
@@ -81,7 +70,7 @@
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
 
-            <!-- LISTA DE METAS -->
+            <!-- LISTA DE OBJETIVOS -->
 
             <Border Grid.Column="0"
                     Style="{StaticResource CardBorderStyle}"
@@ -90,80 +79,48 @@
                 <DockPanel>
 
                     <TextBlock DockPanel.Dock="Top"
-                               Text="Metas Ativas"
+                               Text="Objetivos ativos"
                                Style="{StaticResource TitleStyle}"
                                Margin="0,0,0,15" />
 
                     <DataGrid ItemsSource="{Binding Goals}"
-                              SelectedItem="{Binding SelectedGoal,
-                                                     Mode=TwoWay}"
+                              SelectedItem="{Binding SelectedGoal, Mode=TwoWay}"
                               AutoGenerateColumns="False"
                               IsReadOnly="True"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
                               SelectionMode="Single"
                               SelectionUnit="FullRow"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
                               Style="{StaticResource CustomDataGridStyle}">
 
                         <DataGrid.Columns>
 
                             <DataGridTextColumn Header="Nome"
                                                 Binding="{Binding Name}"
-                                                Width="*" />
+                                                Width="*"
+                                                MinWidth="150" />
 
                             <DataGridTextColumn Header="Alvo"
-                                                Binding="{Binding TargetAmount,
-                                                                  StringFormat={}{0:N2}}"
-                                                Width="90" />
+                                                Binding="{Binding TargetAmountDisplay}"
+                                                Width="100" />
 
                             <DataGridTextColumn Header="Atual"
-                                                Binding="{Binding CurrentAmount,
-                                                                  StringFormat={}{0:N2}}"
-                                                Width="90" />
+                                                Binding="{Binding CurrentAmount, StringFormat={}{0:N2}}"
+                                                Width="100" />
 
                             <DataGridTextColumn Header="Moeda"
                                                 Binding="{Binding Currency}"
                                                 Width="65" />
 
-                            <DataGridTemplateColumn Header="Progresso"
-                                                    Width="150">
+                            <DataGridTextColumn Header="Progresso"
+                                                Binding="{Binding ProgressDisplay}"
+                                                Width="150" />
 
-                                <DataGridTemplateColumn.CellTemplate>
-
-                                    <DataTemplate>
-
-                                        <Grid Margin="5">
-
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="45" />
-                                            </Grid.ColumnDefinitions>
-
-                                            <ProgressBar Value="{Binding ProgressPercentage}"
-                                                         Minimum="0"
-                                                         Maximum="100"
-                                                         Height="14"
-                                                         VerticalAlignment="Center"
-                                                         Background="#EAECEE"
-                                                         Foreground="{StaticResource SecondaryColorBrush}" />
-
-                                            <TextBlock Grid.Column="1"
-                                                       Text="{Binding ProgressPercentage,
-                                                                      StringFormat={}{0:F0}%}"
-                                                       HorizontalAlignment="Right"
-                                                       VerticalAlignment="Center"
-                                                       FontSize="11" />
-
-                                        </Grid>
-
-                                    </DataTemplate>
-
-                                </DataGridTemplateColumn.CellTemplate>
-
-                            </DataGridTemplateColumn>
-
-                            <DataGridTextColumn Header="Data Alvo"
-                                                Binding="{Binding TargetDate,
-                                                                  StringFormat={}{0:dd/MM/yyyy}}"
-                                                Width="95" />
+                            <DataGridTextColumn Header="Data alvo"
+                                                Binding="{Binding TargetDate, StringFormat={}{0:dd/MM/yyyy}}"
+                                                Width="100" />
 
                         </DataGrid.Columns>
 
@@ -187,82 +144,107 @@
                         <TextBlock Text="{Binding FormTitle}"
                                    Style="{StaticResource TitleStyle}"
                                    Foreground="{StaticResource PrimaryColorBrush}"
+                                   TextWrapping="Wrap"
                                    Margin="0,0,0,20" />
 
-                        <!-- NOME -->
+                        <!-- FORMULÁRIO DOS OBJETIVOS NORMAIS -->
 
-                        <TextBlock Text="Nome da Meta"
-                                    Style="{StaticResource FieldTextBlockStyle}" />
+                        <StackPanel Visibility="{Binding CanEditSelectedGoal, Converter={StaticResource BoolToVis}}">
 
-                        <TextBox Text="{Binding GoalForm.GoalName,
-                                               Mode=TwoWay,
-                                               UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource DefaultTextBoxStyle}"
-                                 MaxLength="100" />
+                            <!-- NOME -->
 
-                        <!-- VALOR -->
+                            <TextBlock Text="Nome do objetivo"
+                                       Style="{StaticResource FieldTextBlockStyle}" />
 
-                        <TextBlock Text="Valor Alvo"
-                                    Style="{StaticResource FieldTextBlockStyle}"
-                                    Margin="0,15,0,5" />
+                            <TextBox Text="{Binding GoalForm.GoalName,
+                                                    Mode=TwoWay,
+                                                    UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource DefaultTextBoxStyle}"
+                                     MaxLength="100" />
 
-                        <TextBox Text="{Binding GoalForm.GoalTargetAmount,
-                                               Mode=TwoWay,
-                                               UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource DefaultTextBoxStyle}" />
+                            <!-- VALOR -->
 
-                        <!-- DATA -->
+                            <TextBlock Text="Valor-alvo"
+                                       Style="{StaticResource FieldTextBlockStyle}"
+                                       Margin="0,15,0,5" />
 
-                        <TextBlock Text="Data Alvo"
-                                    Style="{StaticResource FieldTextBlockStyle}"
-                                    Margin="0,15,0,5" />
+                            <TextBox Text="{Binding GoalForm.GoalTargetAmount,
+                                                    Mode=TwoWay,
+                                                    UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource DefaultTextBoxStyle}" />
 
-                        <DatePicker SelectedDate="{Binding GoalForm.GoalTargetDate,
-                                                          Mode=TwoWay,
-                                                          UpdateSourceTrigger=PropertyChanged}"
-                                    Style="{StaticResource DefaultDatePickerStyle}" />
+                            <!-- DATA -->
 
-                        <TextBlock Text="Opcional. A data alvo não pode estar no passado."
-                                   Foreground="#7F8C8D"
-                                   FontSize="11"
-                                   Margin="2,5,0,0" />
+                            <TextBlock Text="Data alvo"
+                                       Style="{StaticResource FieldTextBlockStyle}"
+                                       Margin="0,15,0,5" />
 
-                        <!-- MOEDA -->
+                            <DatePicker SelectedDate="{Binding GoalForm.GoalTargetDate,
+                                                               Mode=TwoWay,
+                                                               UpdateSourceTrigger=PropertyChanged}"
+                                        Style="{StaticResource DefaultDatePickerStyle}"
+                                        Language="pt-PT"
+                                        SelectedDateFormat="Short"
+                                        Height="Auto"
+                                        MinHeight="40"
+                                        Padding="2" />
 
-                        <TextBlock Text="Moeda"
-                                    Style="{StaticResource FieldTextBlockStyle}"
-                                    Margin="0,15,0,5" />
+                            <TextBlock Text="Opcional. A data alvo não pode estar no passado."
+                                       Foreground="#7F8C8D"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       Margin="2,5,0,0" />
 
-                        <ComboBox ItemsSource="{Binding GoalForm.Currencies}"
-                                  SelectedItem="{Binding GoalForm.GoalSelectedCurrency,
-                                                         Mode=TwoWay}"
-                                  DisplayMemberPath="Code"
-                                  IsEnabled="{Binding GoalForm.CanChangeCurrency}"
-                                  Style="{StaticResource DefaultComboBoxStyle}" />
+                            <!-- MOEDA -->
 
-                        <TextBlock Text="A moeda não pode ser alterada depois de a meta ser criada."
-                                   Foreground="#7F8C8D"
-                                   FontSize="11"
-                                   TextWrapping="Wrap"
-                                   Margin="2,5,0,0" />
+                            <TextBlock Text="Moeda"
+                                       Style="{StaticResource FieldTextBlockStyle}"
+                                       Margin="0,15,0,5" />
 
-                        <!-- GUARDAR -->
+                            <ComboBox ItemsSource="{Binding GoalForm.Currencies}"
+                                      SelectedItem="{Binding GoalForm.GoalSelectedCurrency, Mode=TwoWay}"
+                                      DisplayMemberPath="Code"
+                                      IsEnabled="{Binding GoalForm.CanChangeCurrency}"
+                                      Style="{StaticResource DefaultComboBoxStyle}" />
 
-                        <Button Content="{Binding GoalForm.SaveButtonText}"
-                                Command="{Binding GoalForm.SaveGoalCommand}"
-                                Style="{StaticResource PrimaryButton}"
-                                HorizontalAlignment="Stretch"
-                                Margin="0,20,0,0"
-                                Padding="15,8" />
+                            <TextBlock Text="A moeda não pode ser alterada depois de o objetivo ser criado."
+                                       Foreground="#7F8C8D"
+                                       FontSize="11"
+                                       TextWrapping="Wrap"
+                                       Margin="2,5,0,0" />
 
-                        <!-- DETALHES DA META -->
+                            <!-- GUARDAR -->
 
-                        <StackPanel Visibility="{Binding CanEditOrAddProgress,
-                                                        Converter={StaticResource BoolToVis}}">
+                            <Button Content="{Binding GoalForm.SaveButtonText}"
+                                    Command="{Binding GoalForm.SaveGoalCommand}"
+                                    Style="{StaticResource PrimaryButton}"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,20,0,0"
+                                    Padding="15,8" />
+
+                        </StackPanel>
+
+                        <!-- AVISO DO FUNDO DE MANEIO -->
+
+                        <Border Visibility="{Binding SelectedGoal.IsWorkingCapitalFund, Converter={StaticResource BoolToVis}}"
+                                Background="#EEF5FC"
+                                CornerRadius="6"
+                                Padding="15"
+                                Margin="0,0,0,10">
+
+                            <TextBlock Text="Este fundo recebe automaticamente 10% das receitas familiares confirmadas. É uma reserva contínua, sem valor-alvo nem data de conclusão. O valor reservado mantém-se na conta bancária."
+                                       Foreground="{StaticResource TextDarkBrush}"
+                                       TextWrapping="Wrap" />
+
+                        </Border>
+
+                        <!-- DETALHES DO OBJETIVO SELECIONADO -->
+
+                        <StackPanel Visibility="{Binding CanEditOrAddProgress, Converter={StaticResource BoolToVis}}">
 
                             <Separator Margin="0,25,0,20" />
 
-                            <TextBlock Text="Resumo da Meta"
+                            <TextBlock Text="Resumo do objetivo"
                                        Style="{StaticResource TitleStyle}"
                                        Margin="0,0,0,12" />
 
@@ -281,6 +263,7 @@
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0"
+                                           Grid.Column="0"
                                            Text="Poupado:"
                                            FontWeight="SemiBold"
                                            Margin="0,3,15,3" />
@@ -289,71 +272,63 @@
                                            Grid.Column="1"
                                            Margin="0,3">
 
-                                    <Run Text="{Binding SelectedGoal.CurrentAmount,
-                                                        StringFormat={}{0:N2}}" />
-
+                                    <Run Text="{Binding SelectedGoal.CurrentAmount, StringFormat={}{0:N2}}" />
                                     <Run Text=" " />
-
                                     <Run Text="{Binding SelectedGoal.Currency}" />
 
                                 </TextBlock>
 
                                 <TextBlock Grid.Row="1"
+                                           Grid.Column="0"
                                            Text="Em falta:"
                                            FontWeight="SemiBold"
                                            Margin="0,3,15,3" />
 
                                 <TextBlock Grid.Row="1"
                                            Grid.Column="1"
-                                           Margin="0,3">
-
-                                    <Run Text="{Binding SelectedGoal.RemainingAmount,
-                                                        StringFormat={}{0:N2}}" />
-
-                                    <Run Text=" " />
-
-                                    <Run Text="{Binding SelectedGoal.Currency}" />
-
-                                </TextBlock>
+                                           Text="{Binding SelectedGoal.RemainingAmountDisplay}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,3" />
 
                                 <TextBlock Grid.Row="2"
+                                           Grid.Column="0"
                                            Text="Progresso:"
                                            FontWeight="SemiBold"
                                            Margin="0,3,15,3" />
 
                                 <TextBlock Grid.Row="2"
                                            Grid.Column="1"
-                                           Text="{Binding SelectedGoal.ProgressPercentage,
-                                                          StringFormat={}{0:F1}%}"
+                                           Text="{Binding SelectedGoal.ProgressDisplay}"
+                                           TextWrapping="Wrap"
                                            Margin="0,3" />
 
                                 <TextBlock Grid.Row="3"
+                                           Grid.Column="0"
                                            Text="Início:"
                                            FontWeight="SemiBold"
                                            Margin="0,3,15,3" />
 
                                 <TextBlock Grid.Row="3"
                                            Grid.Column="1"
-                                           Text="{Binding SelectedGoal.StartDate,
-                                                          StringFormat={}{0:dd/MM/yyyy}}"
+                                           Text="{Binding SelectedGoal.StartDate, StringFormat={}{0:dd/MM/yyyy}}"
                                            Margin="0,3" />
 
                             </Grid>
 
-                            <!-- PROGRESSO -->
+                            <!-- GERIR PROGRESSO -->
 
                             <Separator Margin="0,20" />
 
-                            <TextBlock Text="Gerir Progresso"
+                            <TextBlock Text="Gerir progresso"
                                        Style="{StaticResource TitleStyle}"
                                        Margin="0,0,0,10" />
 
                             <TextBlock Text="Valor"
-                                        Style="{StaticResource FieldTextBlockStyle}" />
+                                       Style="{StaticResource FieldTextBlockStyle}" />
 
                             <TextBox Text="{Binding ProgressAmount,
-                                                   Mode=TwoWay,
-                                                   UpdateSourceTrigger=PropertyChanged}"
+                                                    Mode=TwoWay,
+                                                    UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource DefaultTextBoxStyle}" />
 
                             <Grid Margin="0,12,0,0">
@@ -378,35 +353,39 @@
 
                             </Grid>
 
-                            <!-- DESATIVAR -->
+                            <!-- DESATIVAR APENAS OBJETIVOS NORMAIS -->
 
-                            <Separator Margin="0,25,0,20" />
+                            <StackPanel Visibility="{Binding CanEditSelectedGoal, Converter={StaticResource BoolToVis}}">
 
-                            <Border Background="#FFF5F5"
-                                    BorderBrush="{StaticResource DangerColorBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="6"
-                                    Padding="15">
+                                <Separator Margin="0,25,0,20" />
 
-                                <StackPanel>
+                                <Border Background="#FFF5F5"
+                                        BorderBrush="{StaticResource DangerColorBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="15">
 
-                                    <TextBlock Text="Zona de Perigo"
-                                               FontWeight="Bold"
-                                               Foreground="{StaticResource DangerColorBrush}" />
+                                    <StackPanel>
 
-                                    <TextBlock Text="A meta deixará de aparecer na lista de metas ativas."
-                                               Foreground="#7F8C8D"
-                                               TextWrapping="Wrap"
-                                               Margin="0,5,0,12" />
+                                        <TextBlock Text="Desativar objetivo"
+                                                   FontWeight="Bold"
+                                                   Foreground="{StaticResource DangerColorBrush}" />
 
-                                    <Button Content="Desativar Meta"
-                                            Command="{Binding DeleteGoalCommand}"
-                                            Style="{StaticResource DangerButton}"
-                                            HorizontalAlignment="Stretch" />
+                                        <TextBlock Text="O objetivo deixará de aparecer na lista de objetivos ativos."
+                                                   Foreground="#7F8C8D"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,5,0,12" />
 
-                                </StackPanel>
+                                        <Button Content="Desativar objetivo"
+                                                Command="{Binding DeleteGoalCommand}"
+                                                Style="{StaticResource DangerButton}"
+                                                HorizontalAlignment="Stretch" />
 
-                            </Border>
+                                    </StackPanel>
+
+                                </Border>
+
+                            </StackPanel>
 
                         </StackPanel>
 

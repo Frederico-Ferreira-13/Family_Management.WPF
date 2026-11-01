@@ -42,6 +42,13 @@ public sealed class DeactivateGoalHandler
             return Result.Success();
         }
 
+        if (goal.IsWorkingCapitalFund)
+        {
+            return Error.BusinessRule(
+                "WorkingCapital.CannotDeactivate",
+                "O fundo de maneio automático não pode ser desativado.");
+        }
+
         goal.Deactivate();
 
         _unitOfWork.Goals.Update(goal);

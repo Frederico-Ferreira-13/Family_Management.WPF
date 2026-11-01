@@ -36,19 +36,8 @@ public static class DependencyInjection
         IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString =
-            configuration.GetConnectionString("DefaultConnection");
-
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            throw new InvalidOperationException(
-                "A connection string 'DefaultConnection' não está configurada.");
-        }
-
         var normalizedConnectionString =
-            SqliteConnectionHelper.Normalize(
-                connectionString,
-                AppContext.BaseDirectory);
+            LocalDatabasePaths.GetConnectionString();
 
         var diagnosticDirectory = Path.Combine(
             Path.GetTempPath(),

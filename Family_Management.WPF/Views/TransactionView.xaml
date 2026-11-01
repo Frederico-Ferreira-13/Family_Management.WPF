@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Transactions"
+             xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Transactions"            
              mc:Ignorable="d"
              d:DesignHeight="700"
              d:DesignWidth="1100"
@@ -31,7 +31,7 @@
 
             <StackPanel>
 
-                <TextBlock Text="Transações"
+                <TextBlock Text="Movimentos"
                            Style="{StaticResource TitleStyle}" />
 
                 <TextBlock Text="Consulte e faça a gestão dos seus movimentos financeiros."

@@ -7,6 +7,9 @@ using Family_Management.WPF.Services.Dialogs;
 using Family_Management.WPF.Services.Navigation;
 using Family_Management.WPF.Validation;
 using Family_Management.WPF.ViewModel.Common;
+using Family_Management.WPF.Services.Authentication;
+using Family_Management.WPF.ViewModel.Authentication;
+using Family_Management.WPF.Views;
 using FamilyManagement.Application.UseCases.Families.DTOs;
 using FamilyManagement.Application.UseCases.Families.Queries.GetActiveFamilies;
 using FamilyManagement.Application.UseCases.Users.Commands.AssignUserToFamily;
@@ -43,6 +46,9 @@ public sealed class UserEditViewModel :
     private string _userName = string.Empty;
     private string _email = string.Empty;
     private FamilyDTO? _selectedFamily;
+    
+    private readonly CurrentUserService _currentUserService;
+    private readonly ChangePasswordViewModel _changePasswordViewModel;
 
     public UserEditViewModel(
         UpdateUserHandler updateUserHandler,
@@ -50,6 +56,8 @@ public sealed class UserEditViewModel :
         RemoveUserFromFamilyHandler removeUserFromFamilyHandler,
         ChangeUserFamilyHandler changeUserFamilyHandler,
         GetActiveFamiliesHandler getActiveFamiliesHandler,
+        CurrentUserService currentUserService,
+        ChangePasswordViewModel changePasswordViewModel,
         INavigationService navigationService,
         INotificationService notificationService)
         : base(
@@ -76,8 +84,15 @@ public sealed class UserEditViewModel :
             ?? throw new ArgumentNullException(
                 nameof(getActiveFamiliesHandler));
 
-        _validator.ErrorsChanged +=
-            OnValidatorErrorsChanged;
+        _currentUserService = currentUserService
+            ?? throw new ArgumentNullException(
+                nameof(currentUserService));
+
+        _changePasswordViewModel = changePasswordViewModel
+            ?? throw new ArgumentNullException(
+                nameof(changePasswordViewModel));
+
+        _validator.ErrorsChanged += OnValidatorErrorsChanged;
 
         Title = "Editar utilizador";
 
@@ -87,6 +102,10 @@ public sealed class UserEditViewModel :
 
         CancelCommand = new RelayCommand(
             ExecuteCancel);
+
+        OpenChangePasswordCommand = new AsyncRelayCommand(
+            ExecuteChangePasswordAsync,
+            () => !IsBusy && CanChangeOwnPassword);
     }
 
     public event EventHandler<DataErrorsChangedEventArgs>?
@@ -170,6 +189,52 @@ public sealed class UserEditViewModel :
 
     public ICommand CancelCommand { get; }
 
+    public ICommand OpenChangePasswordCommand { get; }
+
+    public bool CanChangeOwnPassword =>
+        _originalUser is not null
+        && _originalUser.IsActive
+        && _currentUserService.IsAuthenticated
+        && _currentUserService.UserId == _originalUser.Id;
+
+    private async Task ExecuteChangePasswordAsync()
+    {
+        if (!CanChangeOwnPassword || IsBusy)
+        {
+            return;
+        }
+
+        await RunSafeAsync(() =>
+        {
+            _changePasswordViewModel.CurrentPassword = string.Empty;
+            _changePasswordViewModel.NewPassword = string.Empty;
+            _changePasswordViewModel.ConfirmNewPassword = string.Empty;
+
+            var window = new ChangePasswordWindow
+            {
+                DataContext = _changePasswordViewModel,
+                Owner = System.Windows.Application.Current.MainWindow
+            };
+
+            try
+            {
+                window.ShowDialog();
+            }
+            finally
+            {
+                // Limpar também quando a janela é fechada pelo X.
+                _changePasswordViewModel.CurrentPassword = string.Empty;
+                _changePasswordViewModel.NewPassword = string.Empty;
+                _changePasswordViewModel.ConfirmNewPassword = string.Empty;
+
+                window.DataContext = null;
+            }
+
+            return Task.CompletedTask;
+        });
+    }
+
+
     public IEnumerable GetErrors(
         string? propertyName)
     {
@@ -177,8 +242,7 @@ public sealed class UserEditViewModel :
             propertyName);
     }
 
-    public void ReceiveParameter(
-        UserDTO parameter)
+    public void ReceiveParameter(UserDTO parameter)
     {
         ArgumentNullException.ThrowIfNull(parameter);
 
@@ -192,11 +256,17 @@ public sealed class UserEditViewModel :
             nameof(CreatedAt),
             nameof(IsActive),
             nameof(UserName),
-            nameof(Email));
+            nameof(Email),
+            nameof(CanChangeOwnPassword));
 
         Title = $"Editar utilizador - {parameter.UserName}";
 
         RaiseSaveCanExecuteChanged();
+
+        if (OpenChangePasswordCommand is AsyncRelayCommand command)
+        {
+            command.RaiseCanExecuteChanged();
+        }
     }
 
     public override async Task InitializeAsync(

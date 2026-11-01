@@ -41,4 +41,14 @@ public sealed class FinancialPlanRepository
                 financialPlan.FamilyId == familyId &&
                 financialPlan.IsActive);
     }
+
+    public async Task AddAsync(
+        FinancialPlan financialPlan,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(financialPlan);
+
+        await _context.Set<FinancialPlan>()
+            .AddAsync(financialPlan, cancellationToken);
+    }
 }

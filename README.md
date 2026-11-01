@@ -1,140 +1,286 @@
-**FamilyManagement**
+# Family Management
 
-A desktop application for personal and family financial management, built with C# and WPF.
-Status: Work in progress. The core architecture and several modules are implemented, but integration, functional validation, testing, security improvements, and dependency-injection refinements are ongoing. This is not yet a production-ready release.
+A Windows desktop application for personal and household financial management, built with C#, .NET 10 and WPF.
 
-About the Project
-FamilyManagement started with the goal of bringing personal and household finances together in one application: accounts, transactions, budgets, financial goals, and an overview of financial assets.
+Family Management brings income, expenses, recurring payments, accounts, budgets, goals and investments together in a local application.
 
-It is a learning-driven project that has evolved over approximately one year of development, with a strong focus on separation of concerns, business rules, and data persistence. Over time, the work has grown from implementing individual features into designing a layered solution, reviewing contracts, 
-improving dependency management, and addressing sensitive financial workflows such as the impact of transactions on account balances.
+**Status:** A locally installable version is available and is undergoing functional testing with users. Development continues through feedback, bug fixes and improvements to usability and financial workflows.
 
-**Goals:**
+## About the Project
 
-- Centralize the management of financial accounts and transactions.
-- Organize financial information by user and family.
-- Support financial planning through budgets, categories, and goals.
-- Track investments and recurring transactions.
-- Preserve financial consistency through domain rules and transactional operations.
-- Build a modular, testable codebase that can evolve over time.
+I created Family Management to help organize personal and family finances while developing my practical skills in C# and the .NET ecosystem.
 
-Technology Stack
-Area	Technology / Approach
-Language	C#
-Platform	.NET 10, Windows
-User interface	WPF and XAML
-Presentation pattern	MVVM (Model–View–ViewModel)
-Data access	Entity Framework Core
-Database	SQLite
-Database evolution	EF Core Migrations
-Application composition	Microsoft.Extensions.Hosting and Dependency Injection
-Configuration	appsettings.json, environment variables, and .NET User Secrets
-Authentication	Authentication services and JWT configuration
-Version control	Git and GitHub
+The project has evolved from individual features into a layered application with domain rules, application use cases, persistent storage and a Windows installer.
 
+A family financial plan provides an overview of household finances. Bank accounts are separate concepts and can be associated with financial operations where applicable.
 
-**Architecture**
+Income and expenses can be associated with family members, supporting both individual attribution and a consolidated household view.
 
-The solution is organized into four main projects:
-Family_Management.WPF/
-├── FamilyManagement.Domain/
-├── FamilyManagement.Application/
-├── FamilyManagement.Infrastructure/
-├── Family_Management.WPF/
-├── Family_Management.WPF.slnx
-└── .gitignore
+## Features
 
-**Domain**
-Contains the core business concepts and rules without depending on the graphical interface or database implementation details.
-It includes entities such as Account, Transaction, Budget, Category, Goal, Investment, Family, and User; value objects such as Money; enumerations; domain errors; and repository and IUnitOfWork contracts.
-For example, account operations validate amounts, currencies, account status, and available funds before changing balances.
+### Users and Families
 
-**Application**
-Coordinates use cases through commands, handlers, DTOs, and application services.
-It includes workflows for creating, confirming, updating, and reversing transactions. ITransactionImpactService centralizes the application and reversal of financial effects, while ISetupService supports initial setup checks.
-Consistency across transactions, accounts, budgets, and goals remains an active area of review and testing.
+- User registration and sign-in.
+- Profile management and password changes.
+- Family and household member management.
+- Family financial plans.
+- Association of financial movements with family members.
 
-**Infrastructure**
+### Financial Movements
 
-Implements data-access contracts and technical services.
-It includes ApplicationDbContext, EF Core configurations, repositories, UnitOfWork, SQLite migrations, and authentication services. Database connection settings are supplied through configuration, and the local SQLite database file is not tracked in version control.
+- Income, expenses and account transfers.
+- Separate workflows for occasional and recurring transactions.
+- Creation and editing of recurring income and expenses.
+- Transaction confirmation and management of financial effects.
+- Editable transaction dates.
+- Category-based classification.
+- Monetary values represented with `decimal` through the `Money` value object.
 
-**WPF — Presentation**
+### Dashboard
 
-Provides the desktop experience through XAML Views, ViewModels, navigation, user-session management, commands, and UI services.
-The application uses the .NET Generic Host to configure dependencies and launch the main window. Service registration and dependency lifetimes are still being stabilized.
+- Monthly income and expenses.
+- Balance overview.
+- Top-three monthly expenses chart.
+- Monthly financial history.
+- Financial goals overview.
+- Upcoming quarterly and semiannual payments for the following month.
 
-**Project Modules**
+### Goals and Planning
 
-- Authentication and users: sign-in, registration, password changes, and user management.
-- Families: family management and initial setup.
-- Accounts: account creation, management, and balances.
-- Transactions: income, expenses, transfers, and transaction confirmation.
-- Categories: classification of financial transactions.
-- Budgets: expense planning and tracking.
-- Financial goals: goals and associated contributions.
-- Investments: investment recording and tracking.
-- Recurring transactions: defining and processing recurring financial activity.
-- Dashboard: financial information display and CSV export integration.
-- Currencies: currency identification and management.
+- Financial goals and contribution tracking.
+- A working capital fund ("Fundo de maneio").
+- A 10% contribution mechanism for eligible confirmed family income.
+- Budget management.
+- Investment recording and tracking.
 
-The presence of modules, entities, and screens does not mean every feature is complete or fully validated end to end.
+The working capital fund represents an allocation within the application. It does not execute a bank transfer.
 
-**Technical Decisions and Challenges**
+### Local Installation
 
-**Separation of Concerns**
+- Windows desktop installation through Inno Setup.
+- Self-contained publishing for Windows x64.
+- SQLite storage outside the application installation directory.
+- Locally generated authentication signing key.
+- Database migrations during application startup.
+- Backup of an existing database before pending migrations are applied.
 
-Moving toward a layered architecture keeps financial rules in the Domain layer, coordinates operations in Application, isolates EF Core in Infrastructure, and leaves presentation responsibilities to WPF.
-Financial Transactions and Consistency
+## Local-Only Operation
 
-Income, expenses, and transfers may affect multiple entities. The project uses domain operations and database transactions to coordinate those effects. Intermediate failures, reversals, insufficient funds, and changes tracked by DbContext are still under review.
-Persistence and Migrations
+The application runs locally and does not require a hosted API or a central database.
 
-The relational model is managed with EF Core and SQLite. Development work includes entity configuration, relationship mapping, migrations, and investigating mapping issues.
-Dependency Injection and WPF Startup
+Each Windows user profile has its own application data directory. Independent installations on different computers do not synchronize or share financial data.
 
-Integrating the .NET Generic Host with MVVM navigation requires careful management of Singleton, Scoped, and Transient lifetimes. This is one of the areas currently being refined.
-Configuration Security
+People using the same Windows account use the same local database. Application users and family membership organize access within that installation.
 
-The JWT signing key must not be stored in the repository. During development, it should be provided through .NET User Secrets. Local database files, build artifacts, and private secrets are excluded from Git.
+Program files and user data are stored separately:
 
-**Development Requirements**
-- Windows with WPF support.
+| Purpose | Default location |
+| --- | --- |
+| Installed application | `%LocalAppData%\Programs\FamilyManagement` |
+| SQLite database | `%LocalAppData%\FamilyManagement\Data\FamilyManagement.db` |
+| Local authentication key | `%LocalAppData%\FamilyManagement\Security` |
+| Backups before database migrations | `%LocalAppData%\FamilyManagement\Backups` |
+
+The local authentication key is not database encryption.
+
+Development builds and the installed application use the same database location when run under the same Windows account. Testing can therefore affect existing local data.
+
+## Technology Stack
+
+| Area | Technology |
+| --- | --- |
+| Language | C# |
+| Framework | .NET 10 |
+| Desktop interface | WPF and XAML |
+| Presentation pattern | MVVM |
+| Data access | Entity Framework Core |
+| Database | SQLite |
+| Schema evolution | EF Core Migrations |
+| Application startup | .NET Generic Host |
+| Dependency management | Dependency Injection |
+| Packaging | Inno Setup |
+| Version control | Git and GitHub |
+
+## Solution Structure
+
+| Project | Responsibility |
+| --- | --- |
+| `FamilyManagement.Domain` | Entities, value objects, business rules and repository contracts |
+| `FamilyManagement.Application` | Use cases, commands, handlers, DTOs and application services |
+| `FamilyManagement.Infrastructure` | EF Core, repositories, persistence, migrations and technical services |
+| `Family_Management.WPF` | Views, ViewModels, navigation, styles and desktop startup |
+| `FamilyManagement.Tests` | Automated tests |
+| `SqliteDiagnostic` | SQLite diagnostic utility |
+
+### Domain
+
+Contains the core financial concepts and their rules.
+
+Examples include users, families, accounts, transactions, recurring transactions, budgets, categories, goals and investments.
+
+Value objects such as `Money` and `EmailAddress` centralize validation and representation rules.
+
+### Application
+
+Coordinates operations through use cases, handlers and application services.
+
+Financial impact services coordinate the application and reversal of transaction effects. Dashboard use cases provide information for the household overview.
+
+### Infrastructure
+
+Implements persistence and technical services.
+
+It includes `ApplicationDbContext`, entity configurations, repositories, Unit of Work, SQLite migrations and local database path management.
+
+Migrations are stored in:
+
+`FamilyManagement.Infrastructure/Data/Migrations`
+
+### WPF
+
+Provides the desktop interface through XAML Views and ViewModels.
+
+It also contains application startup configuration, local authentication configuration, database initialization, publishing profiles and the installer script.
+
+## Development Requirements
+
+- Windows capable of running .NET 10 WPF applications.
 - .NET 10 SDK.
-- Visual Studio or VS Code with C#/.NET tooling.
+- Visual Studio with desktop .NET tooling, or VS Code with C# tooling.
 - Git.
-  
-**Getting Started**
-1. Clone the repository and open the solution directory.
-2. Restore dependencies and build:
-   dotnet restore
-   dotnet build
-3. Ensure Family_Management.WPF/appsettings.json contains a valid ConnectionStrings:DefaultConnection value and the non-secret JwtSettings parameters, without an embedded signing key.
-4. Configure JwtSettings:SecurityKey using .NET User Secrets for the WPF project (generate your own strong private key; do not reuse someone else's):
-   dotnet user-secrets init --project .\Family_Management.WPF\Family_Management.WPF.csproj
-   # Set JwtSettings:SecurityKey to a strong, private value.
-5. Set the development environment in your PowerShell session:
-   $env:DOTNET_ENVIRONMENT = "Development"
-6. Run the application:
-   dotnet run --project .\Family_Management.WPF\Family_Management.WPF.csproj
-   
-**Note:** Startup may still expose unresolved navigation dependencies. These steps describe environment setup; they do not guarantee that the current version works in every scenario.
+- Inno Setup, when building the installer.
 
-**Current Status and Roadmap**
-- [x] Initial layered solution structure.
-- [x] Core domain entities, contracts, and business rules.
-- [x] EF Core infrastructure with SQLite and migrations.
-- [x] Structure for Views, ViewModels, and application use cases.
-- [x] Git repository preparation and exclusion of local data.
-- [ ] Resolve navigation lifetimes and WPF startup issues.
-- [ ] Validate the consistency of financial operations and reversals.
-- [ ] Add automated tests for domain logic, application workflows, and persistence.
-- [ ] Review authentication, permissions, and isolation of family data.
-- [ ] Complete end-to-end functional testing and prepare a first stable release.
+The self-contained published application does not require the recipient to install the .NET SDK.
 
-**Development Journey**
-This repository marks a milestone in approximately one year of development. Beyond its financial features, the project has been an opportunity to deepen practical knowledge of C#, WPF, MVVM, layered architecture, Entity Framework Core, dependency injection, domain modeling, and version-control practices.
-The goal is to keep improving code quality and turn this foundation into a reliable, understandable, and maintainable family financial management application.
+## Running from Source
 
-**License**
-No distribution license has been selected yet. Until one is added, do not assume the code is released under an open-source license.
+Run these commands from the solution root.
+
+Restore dependencies:
+
+```powershell
+dotnet restore
+```
+
+Build the solution:
+
+```powershell
+dotnet build
+```
+
+Run the desktop application:
+
+```powershell
+dotnet run --project .\Family_Management.WPF\Family_Management.WPF.csproj
+```
+
+The local startup configuration creates the authentication signing key when needed and uses the persistent database directory under `%LocalAppData%`.
+
+Manually configuring a JWT signing key through .NET User Secrets is not required for this local startup workflow.
+
+## Tests
+
+Run the automated test project:
+
+```powershell
+dotnet test .\FamilyManagement.Tests\FamilyManagement.Tests.csproj
+```
+
+Automated tests complement manual testing. They do not establish that every financial or interface workflow has been validated.
+
+Current manual testing includes:
+
+- Creating and editing recurring income and expenses.
+- Assigning movements to family members.
+- Correcting transaction dates.
+- Checking dashboard totals.
+- Reviewing upcoming payment notices.
+- Validating goal contributions and reversals.
+- Changing passwords.
+- Installing updates while preserving local data.
+
+## Publishing for Windows
+
+Create a self-contained Windows x64 build:
+
+```powershell
+dotnet publish .\Family_Management.WPF\Family_Management.WPF.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:PublishTrimmed=false -o .\Family_Management.WPF\bin\Publish\WindowsLocal
+```
+
+The published application is generated in:
+
+`Family_Management.WPF/bin/Publish/WindowsLocal`
+
+This is a folder-based deployment. The application executable depends on the other published files.
+
+## Building the Installer
+
+The Inno Setup script is located at:
+
+`Family_Management.WPF/Installer/FamilyManagement.iss`
+
+To generate an installer:
+
+1. Publish the application.
+2. Open the `.iss` script in Inno Setup.
+3. Check that `PublishSource` points to the published output on your machine.
+4. Set the intended application version.
+5. Keep the existing `AppId` for updates to the same application.
+6. Compile the installer.
+
+Distribute the generated setup executable. Do not include personal databases, authentication keys or backups.
+
+The installer keeps application files separate from persistent user data.
+
+## Data and Repository Hygiene
+
+The repository should contain source code, migrations, shared configuration, publishing profiles and the installer script.
+
+The following should remain outside version control:
+
+- Personal SQLite databases and their auxiliary files.
+- Local authentication keys and private configuration.
+- Database backups.
+- Build and publish output.
+- Generated installers.
+- Logs and temporary files.
+
+Backups created before schema migrations are not a replacement for a regular backup strategy.
+
+## Planned Improvements
+
+The following items are planned and should not be interpreted as implemented features:
+
+- Review and simplify the default categories.
+- Add subcategories.
+- Allow users to create categories and subcategories within the application.
+- Allow new subcategories under existing default categories.
+- Define permissions for category management within a household.
+- Preserve historical movements when categories are renamed or deactivated.
+- Improve support for variable salary components, bonuses and additional income.
+- Support flexible recording of holiday and Christmas allowances.
+- Add credit card tracking with configurable conditions for each card.
+- Distinguish credit card purchases from later repayments without duplicating expenses.
+- Track outstanding card balances, repayments, interest and charges.
+- Improve table sizing, date controls and overall interface consistency.
+- Expand automated tests and continue collecting user feedback.
+- Continue documenting classes and methods, including the reasoning behind design decisions.
+
+Credit card functionality must support different users and contractual conditions rather than assume a fixed rate or a single repayment model.
+
+## Development Approach
+
+This is a learning-driven project with a focus on:
+
+- Separation of concerns.
+- Explicit business rules.
+- Understandable application workflows.
+- Consistent financial effects and reversals.
+- Persistent local data.
+- Incremental improvements guided by testing and feedback.
+
+The application is being tested by a small group of users before the next feature iteration.
+
+## License
+
+No distribution license has been selected yet. Until a license is added, do not assume the source code is available under an open-source license.

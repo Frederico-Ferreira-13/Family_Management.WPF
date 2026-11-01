@@ -1,3 +1,4 @@
+using System;
 
 namespace FamilyManagement.Application.UseCases.Transactions.Commands.UpdateTransaction;
 
@@ -8,4 +9,6 @@ public sealed record UpdateTransactionCommand(
     Guid? CategoryId,
     decimal? Amount,
     Guid? AccountId,
-    Guid UserId);
+    Guid UserId,
+    DateTime? Date = null
+);

@@ -28,5 +28,7 @@ public sealed record RecurringTransactionDTO(
     Guid? FamilyId = null,
     Guid? FinancialPlanId = null,
     Guid? BeneficiaryUserId = null,
-    string? BeneficiaryUserName = null
+    string? BeneficiaryUserName = null,
+    RecurringTransactionScope Scope = RecurringTransactionScope.Personal,
+    DateTime? ScheduleAnchorDate = null
 );

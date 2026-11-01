@@ -1,4 +1,3 @@
-
 using FamilyManagement.Domain.Enums;
 
 namespace FamilyManagement.Application.UseCases.Transactions.DTOs;
@@ -28,5 +27,9 @@ public sealed record TransactionDTO(
     Guid? GoalId,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
-    Guid? FamilyId = null
+    Guid? FamilyId = null,
+    RecurringTransactionScope Scope = RecurringTransactionScope.Personal,
+    Guid? FinancialPlanId = null,
+    Guid? BeneficiaryUserId = null,
+    DateTime? ScheduledDate = null
 );

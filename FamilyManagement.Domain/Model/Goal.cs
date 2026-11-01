@@ -32,6 +32,11 @@ public class Goal : BaseEntity
     // valor = meta familiar
     public Guid? FamilyId { get; private set; }
 
+    public string? WorkingCapitalKey { get; private set; }
+
+    public bool IsWorkingCapitalFund =>
+        WorkingCapitalKey is not null;
+
     public virtual Family? Family { get; private set; }
 
     public bool IsFamilyGoal => FamilyId.HasValue;
@@ -131,6 +136,14 @@ public class Goal : BaseEntity
         Money targetAmount,
         DateTime? targetDate)
     {
+        if (IsWorkingCapitalFund)
+        {
+            return Error.BusinessRule(
+                "goal.working_capital_managed",
+                "O fundo de maneio é uma reserva automática. "
+                + "O nome, o valor-alvo e a data não são editáveis.");
+        }
+
         if (!IsActive)
         {
             return Error.Conflict(
@@ -375,6 +388,54 @@ public class Goal : BaseEntity
     private void UpdateStatus()
     {
         IsAchieved =
+            !IsWorkingCapitalFund &&
             CurrentAmount.Amount >= TargetAmount.Amount;
+    }
+
+    public static string GetWorkingCapitalKey(
+    Guid familyId,
+    string currency)
+{
+    return familyId.ToString("N")
+        + ":"
+        + currency.Trim().ToUpperInvariant();
+}
+
+    public static Result<Goal> CreateWorkingCapitalFund(
+        Guid familyId,
+        Guid userId,
+        string currency)
+    {
+        if (familyId == Guid.Empty)
+        {
+            return Error.Validation(
+                "A família é obrigatória para criar o fundo de maneio.");
+        }
+
+        if (userId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O utilizador é obrigatório.");
+        }
+
+        var moneyResult = Money.TryCreate(0m, currency);
+
+        if (moneyResult.IsFailure)
+            return moneyResult.Error;
+
+        // Um fundo contínuo não tem um montante-alvo.
+        // Esta criação é específica do fundo de maneio.
+        var goal = new Goal(
+            name: "Fundo de maneio",
+            targetAmount: moneyResult.Value,
+            userId: userId,
+            targetDate: null,
+            familyId: familyId);
+
+        goal.WorkingCapitalKey = GetWorkingCapitalKey(
+            familyId,
+            moneyResult.Value.Currency);
+
+        return goal;
     }
 }

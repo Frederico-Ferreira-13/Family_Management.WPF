@@ -110,6 +110,7 @@ public sealed class RecurringTransactionRepository
         return DbSet
             .AsNoTracking()
             .Include(rt => rt.User)
+            .Include(rt => rt.BeneficiaryUser)
             .Include(rt => rt.Account)
             .Include(rt => rt.Category)
             .FirstOrDefaultAsync(rt =>
@@ -120,10 +121,11 @@ public sealed class RecurringTransactionRepository
         GetRecurringTransactionsByUserIdWithDetailsAsync(
             Guid userId)
     {
-        return await DbSet
+         return await DbSet
             .AsNoTracking()
             .Where(rt => rt.UserId == userId)
             .Include(rt => rt.User)
+            .Include(rt => rt.BeneficiaryUser)
             .Include(rt => rt.Account)
             .Include(rt => rt.Category)
             .OrderBy(rt => rt.NextDueDate)
@@ -138,6 +140,7 @@ public sealed class RecurringTransactionRepository
             .AsNoTracking()
             .Where(rt => rt.AccountId == accountId)
             .Include(rt => rt.User)
+            .Include(rt => rt.BeneficiaryUser)
             .Include(rt => rt.Account)
             .Include(rt => rt.Category)
             .OrderBy(rt => rt.NextDueDate)
@@ -169,6 +172,7 @@ public sealed class RecurringTransactionRepository
             .AsNoTracking()
             .Where(predicate)
             .Include(rt => rt.User)
+            .Include(rt => rt.BeneficiaryUser)
             .Include(rt => rt.Account)
             .Include(rt => rt.Category)
             .OrderBy(rt => rt.NextDueDate)

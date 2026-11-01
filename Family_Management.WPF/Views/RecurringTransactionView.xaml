@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.RecurringTransactions"
+    xmlns:moneyControls="clr-namespace:Family_Management.WPF.Controls"
     mc:Ignorable="d"
     d:DesignHeight="800"
     d:DesignWidth="1200"
@@ -18,7 +19,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- CABEÇALHO -->
+        <!-- Cabeçalho -->
 
         <Grid Grid.Row="0" Margin="0,0,0,20">
 
@@ -28,9 +29,8 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0">
-
                 <TextBlock
-                    Text="Receitas e Despesas Recorrentes"
+                    Text="Movimentos recorrentes"
                     Style="{StaticResource TitleStyle}" />
 
                 <TextBlock
@@ -38,7 +38,6 @@
                     Foreground="#666"
                     FontSize="13"
                     Margin="0,5,0,0" />
-
             </StackPanel>
 
             <StackPanel
@@ -60,22 +59,20 @@
                     Style="{StaticResource PrimaryButton}"
                     MinWidth="150"
                     Height="38" />
-
             </StackPanel>
-
         </Grid>
 
-        <!-- CONTEÚDO -->
+            <!-- Conteúdo -->
 
         <Grid Grid.Row="1">
 
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="340" />
-                <ColumnDefinition Width="15" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="2*" MinWidth="390" MaxWidth="520" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="3*" />
             </Grid.ColumnDefinitions>
 
-            <!-- CRIAR RECORRÊNCIA -->
+            <!-- Criar recorrência -->
 
             <Border
                 Grid.Column="0"
@@ -89,7 +86,7 @@
                     <StackPanel>
 
                         <TextBlock
-                            Text="Nova recorrência"
+                            Text="Novo movimento recorrente"
                             FontSize="20"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextDarkBrush}"
@@ -102,7 +99,79 @@
                             TextWrapping="Wrap"
                             Margin="0,0,0,20" />
 
-                        <!-- TIPO -->
+                        <!-- Estado do plano -->
+
+                        <StackPanel Margin="0,5,0,12">
+
+                            <TextBlock
+                                Text="{Binding ActiveFamilyFinancialPlanName}"
+                                Foreground="#2563EB"
+                                FontWeight="SemiBold"
+                                TextWrapping="Wrap" />
+
+                            <TextBlock
+                                Text="{Binding FamilyPlanStatus}"
+                                TextWrapping="Wrap"
+                                Margin="0,8,0,0" />
+
+                            <Button
+                                Content="Gerir família e plano"
+                                Command="{Binding OpenFamilyCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Margin="0,10,0,0" />
+                        </StackPanel>
+
+                        <!-- Âmbito -->
+
+                        <TextBlock
+                            Text="Âmbito financeiro"
+                            Style="{StaticResource FieldTextBlockStyle}"
+                            Margin="0,0,0,5" />
+
+                        <Border
+                            Background="#F8FAFC"
+                            BorderBrush="#E2E8F0"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="12"
+                            Margin="0,0,0,12">
+
+                            <StackPanel>
+
+                                <CheckBox
+                                    Content="Associar ao plano familiar"
+                                    IsChecked="{Binding NewIsFamily, Mode=TwoWay}"
+                                    IsEnabled="{Binding CanChooseFamilyScope}"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource TextDarkBrush}" />
+
+                                <TextBlock
+                                    Text="Quando desmarcado, o movimento é pessoal."
+                                    FontSize="11"
+                                    Foreground="#777"
+                                    TextWrapping="Wrap"
+                                    Margin="0,6,0,0" />
+
+                                <StackPanel
+                                    Margin="0,12,0,0"
+                                    Visibility="{Binding NewIsFamily,
+                                                         Converter={StaticResource BoolToVis}}">
+
+                                    <TextBlock
+                                        Text="Plano financeiro ativo"
+                                        Style="{StaticResource FieldTextBlockStyle}"
+                                        Margin="0,0,0,5" />
+
+                                    <TextBlock
+                                        Text="{Binding ActiveFamilyFinancialPlanName}"
+                                        FontWeight="SemiBold"
+                                        Foreground="#2563EB"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Tipo e categoria -->
 
                         <TextBlock
                             Text="Tipo de movimento"
@@ -113,8 +182,6 @@
                             SelectedItem="{Binding NewType, Mode=TwoWay}"
                             Style="{StaticResource DefaultComboBoxStyle}" />
 
-                        <!-- CATEGORIA -->
-
                         <TextBlock
                             Text="Categoria"
                             Style="{StaticResource FieldTextBlockStyle}"
@@ -124,12 +191,12 @@
                             ItemsSource="{Binding Categories}"
                             SelectedItem="{Binding NewSelectedCategory,
                                                    Mode=TwoWay,
-                                                   ValidatesOnDataErrors=True,
+                                                   ValidatesOnNotifyDataErrors=True,
                                                    NotifyOnValidationError=True}"
                             DisplayMemberPath="Name"
                             Style="{StaticResource ErrorComboBoxStyle}" />
 
-                        <!-- DESCRIÇÃO -->
+                        <!-- Descrição e valor -->
 
                         <TextBlock
                             Text="Descrição"
@@ -140,33 +207,30 @@
                             Text="{Binding NewDescription,
                                            Mode=TwoWay,
                                            UpdateSourceTrigger=PropertyChanged,
-                                           ValidatesOnDataErrors=True,
+                                           ValidatesOnNotifyDataErrors=True,
                                            NotifyOnValidationError=True}"
                             Style="{StaticResource ErrorTextBoxStyle}" />
 
                         <TextBlock
-                            Text="A descrição poderá ser preenchida automaticamente a partir da categoria."
+                            Text="Identifica o rendimento ou a despesa, por exemplo: Salário."
                             FontSize="11"
                             Foreground="#777"
                             TextWrapping="Wrap"
                             Margin="0,4,0,0" />
-
-                        <!-- VALOR -->
 
                         <TextBlock
                             Text="Valor"
                             Style="{StaticResource FieldTextBlockStyle}"
                             Margin="0,12,0,5" />
 
-                        <TextBox
-                            Text="{Binding NewAmount,
-                                           Mode=TwoWay,
-                                           UpdateSourceTrigger=PropertyChanged,
-                                           ValidatesOnDataErrors=True,
-                                           NotifyOnValidationError=True}"
-                            Style="{StaticResource ErrorTextBoxStyle}" />
-
-                        <!-- FREQUÊNCIA -->
+                        <moneyControls:MoneyTextBox
+                            Value="{Binding NewAmount,
+                                            Mode=TwoWay,
+                                            UpdateSourceTrigger=PropertyChanged,
+                                            ValidatesOnNotifyDataErrors=True,
+                                            NotifyOnValidationError=True}"
+                            Style="{StaticResource ErrorTextBoxStyle}"
+                            ToolTip="Introduz um valor com até duas casas decimais. Exemplo: 27,50." />
 
                         <TextBlock
                             Text="Frequência"
@@ -178,7 +242,7 @@
                             SelectedItem="{Binding NewFrequency, Mode=TwoWay}"
                             Style="{StaticResource DefaultComboBoxStyle}" />
 
-                        <!-- CONTA -->
+                        <!-- Conta opcional no âmbito familiar -->
 
                         <TextBlock
                             Text="Conta bancária"
@@ -189,12 +253,50 @@
                             ItemsSource="{Binding Accounts}"
                             SelectedItem="{Binding NewSelectedAccount,
                                                    Mode=TwoWay,
-                                                   ValidatesOnDataErrors=True,
+                                                   ValidatesOnNotifyDataErrors=True,
                                                    NotifyOnValidationError=True}"
                             DisplayMemberPath="Name"
                             Style="{StaticResource ErrorComboBoxStyle}" />
 
-                        <!-- DATAS -->
+                        <Button
+                            Content="Sem conta bancária"
+                            Command="{Binding ClearNewAccountCommand}"
+                            Visibility="{Binding NewIsFamily,
+                                                 Converter={StaticResource BoolToVis}}"
+                            Style="{StaticResource SecondaryButton}"
+                            Margin="0,6,0,0" />
+
+                        <!-- Beneficiário -->
+
+                        <StackPanel
+                            Margin="0,12,0,0"
+                            Visibility="{Binding ShowNewBeneficiary,
+                                                 Converter={StaticResource BoolToVis}}">
+
+                            <TextBlock
+                                Text="Beneficiário"
+                                Style="{StaticResource FieldTextBlockStyle}"
+                                Margin="0,0,0,5" />
+
+                            <ComboBox
+                                ItemsSource="{Binding FamilyMembers}"
+                                SelectedItem="{Binding NewSelectedBeneficiary,
+                                                       Mode=TwoWay,
+                                                       UpdateSourceTrigger=PropertyChanged,
+                                                       ValidatesOnNotifyDataErrors=True,
+                                                       NotifyOnValidationError=True}"
+                                DisplayMemberPath="UserName"
+                                Style="{StaticResource ErrorComboBoxStyle}" />
+
+                            <TextBlock
+                                Text="Seleciona o membro da família que recebe este rendimento."
+                                FontSize="11"
+                                Foreground="#777"
+                                TextWrapping="Wrap"
+                                Margin="0,5,0,0" />
+                        </StackPanel>
+
+                        <!-- Datas -->
 
                         <TextBlock
                             Text="Data de início"
@@ -213,11 +315,9 @@
                         <DatePicker
                             SelectedDate="{Binding NewEndDate,
                                                    Mode=TwoWay,
-                                                   ValidatesOnDataErrors=True,
+                                                   ValidatesOnNotifyDataErrors=True,
                                                    NotifyOnValidationError=True}"
                             Style="{StaticResource ErrorDatePickerStyle}" />
-
-                        <!-- ADICIONAR -->
 
                         <Button
                             Content="Adicionar recorrência"
@@ -225,14 +325,11 @@
                             Style="{StaticResource PrimaryButton}"
                             Height="42"
                             Margin="0,25,0,0" />
-
                     </StackPanel>
-
                 </ScrollViewer>
-
             </Border>
 
-            <!-- LISTA E EDIÇÃO -->
+            <!-- Lista e edição -->
 
             <Grid Grid.Column="2">
 
@@ -242,7 +339,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- LISTA -->
+                <!-- Lista -->
 
                 <Border
                     Grid.Row="0"
@@ -277,15 +374,12 @@
                                     FontSize="12"
                                     Margin="0,4,0,0" />
 
-                                <!-- FILTRO DE ESTADO -->
-
                                 <CheckBox
                                     Content="Mostrar recorrências inativas"
                                     IsChecked="{Binding ShowInactiveRecurringTransactions,
                                                         Mode=TwoWay}"
                                     Margin="0,12,0,0"
                                     VerticalAlignment="Center" />
-
                             </StackPanel>
 
                             <TextBlock
@@ -294,7 +388,6 @@
                                                StringFormat='{}{0} registo(s)'}"
                                 Foreground="#777"
                                 VerticalAlignment="Center" />
-
                         </Grid>
 
                         <DataGrid
@@ -312,9 +405,13 @@
                             <DataGrid.Columns>
 
                                 <DataGridTextColumn
+                                    Header="Âmbito"
+                                    Binding="{Binding Scope}"
+                                    Width="90" />
+
+                                <DataGridTextColumn
                                     Header="Categoria"
-                                    Binding="{Binding CategoryName,
-                                                      TargetNullValue='—'}"
+                                    Binding="{Binding CategoryName, TargetNullValue='—'}"
                                     Width="140" />
 
                                 <DataGridTextColumn
@@ -345,40 +442,32 @@
 
                                 <DataGridTextColumn
                                     Header="Próxima"
-                                    Binding="{Binding NextDueDate,
-                                                      StringFormat=dd/MM/yyyy}"
+                                    Binding="{Binding NextDueDate, StringFormat=dd/MM/yyyy}"
                                     Width="105" />
 
                                 <DataGridTextColumn
                                     Header="Conta"
-                                    Binding="{Binding AccountName,
-                                                      TargetNullValue='Sem conta'}"
+                                    Binding="{Binding AccountName, TargetNullValue='Sem conta'}"
                                     Width="140" />
 
                                 <DataGridTextColumn
                                     Header="Descrição"
                                     Binding="{Binding Description}"
                                     Width="160" />
-
                             </DataGrid.Columns>
-
                         </DataGrid>
-
                     </Grid>
-
                 </Border>
 
-                <!-- EDIÇÃO -->
+                <!-- Edição -->
 
                 <Border
                     Grid.Row="2"
                     Style="{StaticResource CardBorderStyle}"
                     Padding="20"
-                    MaxHeight="430">
+                    MaxHeight="520">
 
                     <Grid>
-
-                        <!-- SEM SELEÇÃO -->
 
                         <StackPanel
                             HorizontalAlignment="Center"
@@ -399,10 +488,7 @@
                                 Foreground="#777"
                                 TextAlignment="Center"
                                 Margin="0,6,0,0" />
-
                         </StackPanel>
-
-                        <!-- COM SELEÇÃO -->
 
                         <ScrollViewer
                             VerticalScrollBarVisibility="Auto"
@@ -422,7 +508,7 @@
                                     <StackPanel Grid.Column="0">
 
                                         <TextBlock
-                                            Text="Editar recorrência"
+                                            Text="Editar movimento recorrente"
                                             FontSize="20"
                                             FontWeight="SemiBold"
                                             Foreground="{StaticResource TextDarkBrush}" />
@@ -432,7 +518,6 @@
                                             Foreground="#777"
                                             FontSize="12"
                                             Margin="0,3,0,0" />
-
                                     </StackPanel>
 
                                     <StackPanel
@@ -453,12 +538,10 @@
                                             Foreground="{StaticResource DangerColorBrush}"
                                             Visibility="{Binding IsSelectedRecurringTransactionInactive,
                                                                  Converter={StaticResource BoolToVis}}" />
-
                                     </StackPanel>
-
                                 </Grid>
 
-                                <!-- DADOS DO BENEFICIÁRIO ATUAL -->
+                                <!-- Beneficiário atual -->
 
                                 <StackPanel Margin="0,0,0,15">
 
@@ -472,8 +555,100 @@
                                         FontWeight="SemiBold"
                                         Foreground="{StaticResource TextDarkBrush}"
                                         Margin="0,5,0,0" />
-
                                 </StackPanel>
+
+                                <!-- Alterar beneficiário familiar -->
+
+                                <StackPanel
+                                    Margin="0,0,0,15"
+                                    Visibility="{Binding ShowEditBeneficiary,
+                                                         Converter={StaticResource BoolToVis}}">
+
+                                    <TextBlock
+                                        Text="Alterar beneficiário"
+                                        Style="{StaticResource FieldTextBlockStyle}"
+                                        Margin="0,0,0,5" />
+
+                                    <ComboBox
+                                        ItemsSource="{Binding FamilyMembers}"
+                                        SelectedItem="{Binding EditSelectedBeneficiary,
+                                                               Mode=TwoWay,
+                                                               UpdateSourceTrigger=PropertyChanged,
+                                                               ValidatesOnNotifyDataErrors=True,
+                                                               NotifyOnValidationError=True}"
+                                        DisplayMemberPath="UserName"
+                                        Style="{StaticResource ErrorComboBoxStyle}" />
+
+                                    <TextBlock
+                                        Text="A alteração será aplicada quando guardares a recorrência."
+                                        FontSize="11"
+                                        Foreground="#777"
+                                        TextWrapping="Wrap"
+                                        Margin="0,5,0,0" />
+                                </StackPanel>
+
+                                <!-- Associar receita pessoal -->
+
+                                <Border
+                                    Background="#EFF6FF"
+                                    BorderBrush="#BFDBFE"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="15"
+                                    Margin="0,0,0,20"
+                                    Visibility="{Binding ShowFamilyAssociation,
+                                                         Converter={StaticResource BoolToVis}}">
+
+                                    <StackPanel>
+
+                                        <TextBlock
+                                            Text="Associar ao plano financeiro familiar"
+                                            FontSize="15"
+                                            FontWeight="SemiBold"
+                                            Foreground="#1D4ED8"
+                                            Margin="0,0,0,8" />
+
+                                        <TextBlock
+                                            Text="Esta receita é atualmente pessoal. Podes associá-la ao plano familiar sem alterar a conta bancária."
+                                            FontSize="12"
+                                            Foreground="#475569"
+                                            TextWrapping="Wrap"
+                                            Margin="0,0,0,15" />
+
+                                        <TextBlock
+                                            Text="Plano financeiro ativo"
+                                            Style="{StaticResource FieldTextBlockStyle}"
+                                            Margin="0,0,0,5" />
+
+                                        <TextBlock
+                                            Text="{Binding ActiveFamilyFinancialPlanName}"
+                                            FontWeight="SemiBold"
+                                            Foreground="{StaticResource TextDarkBrush}"
+                                            Margin="0,0,0,15" />
+
+                                        <TextBlock
+                                            Text="Beneficiário da receita"
+                                            Style="{StaticResource FieldTextBlockStyle}"
+                                            Margin="0,0,0,5" />
+
+                                        <ComboBox
+                                            ItemsSource="{Binding FamilyMembers}"
+                                            SelectedItem="{Binding SelectedFamilyBeneficiary, Mode=TwoWay}"
+                                            DisplayMemberPath="UserName"
+                                            Style="{StaticResource DefaultComboBoxStyle}"
+                                            Margin="0,0,0,15" />
+
+                                        <Button
+                                            Content="Associar ao plano familiar"
+                                            Command="{Binding AssociateRecurringTransactionWithFamilyCommand}"
+                                            Style="{StaticResource PrimaryButton}"
+                                            HorizontalAlignment="Left"
+                                            MinWidth="200"
+                                            Height="38" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Campos de edição -->
 
                                 <Grid>
 
@@ -482,8 +657,6 @@
                                         <ColumnDefinition Width="15" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-
-                                    <!-- COLUNA ESQUERDA -->
 
                                     <StackPanel Grid.Column="0">
 
@@ -495,7 +668,7 @@
                                             ItemsSource="{Binding Categories}"
                                             SelectedItem="{Binding EditSelectedCategory,
                                                                    Mode=TwoWay,
-                                                                   ValidatesOnDataErrors=True,
+                                                                   ValidatesOnNotifyDataErrors=True,
                                                                    NotifyOnValidationError=True}"
                                             DisplayMemberPath="Name"
                                             Style="{StaticResource ErrorComboBoxStyle}" />
@@ -509,7 +682,7 @@
                                             Text="{Binding EditDescription,
                                                            Mode=TwoWay,
                                                            UpdateSourceTrigger=PropertyChanged,
-                                                           ValidatesOnDataErrors=True,
+                                                           ValidatesOnNotifyDataErrors=True,
                                                            NotifyOnValidationError=True}"
                                             Style="{StaticResource ErrorTextBoxStyle}" />
 
@@ -518,13 +691,14 @@
                                             Style="{StaticResource FieldTextBlockStyle}"
                                             Margin="0,10,0,5" />
 
-                                        <TextBox
-                                            Text="{Binding EditAmount,
-                                                           Mode=TwoWay,
-                                                           UpdateSourceTrigger=PropertyChanged,
-                                                           ValidatesOnDataErrors=True,
-                                                           NotifyOnValidationError=True}"
-                                            Style="{StaticResource ErrorTextBoxStyle}" />
+                                        <moneyControls:MoneyTextBox
+                                            Value="{Binding EditAmount,
+                                                            Mode=TwoWay,
+                                                            UpdateSourceTrigger=PropertyChanged,
+                                                            ValidatesOnNotifyDataErrors=True,
+                                                            NotifyOnValidationError=True}"
+                                            Style="{StaticResource ErrorTextBoxStyle}"
+                                            ToolTip="Introduz um valor com até duas casas decimais. Exemplo: 27,50." />
 
                                         <TextBlock
                                             Text="Tipo"
@@ -545,10 +719,7 @@
                                             ItemsSource="{Binding Frequencies}"
                                             SelectedItem="{Binding EditFrequency, Mode=TwoWay}"
                                             Style="{StaticResource DefaultComboBoxStyle}" />
-
                                     </StackPanel>
-
-                                    <!-- COLUNA DIREITA -->
 
                                     <StackPanel Grid.Column="2">
 
@@ -560,22 +731,37 @@
                                             ItemsSource="{Binding Accounts}"
                                             SelectedItem="{Binding EditSelectedAccount,
                                                                    Mode=TwoWay,
-                                                                   ValidatesOnDataErrors=True,
+                                                                   ValidatesOnNotifyDataErrors=True,
                                                                    NotifyOnValidationError=True}"
                                             DisplayMemberPath="Name"
                                             Style="{StaticResource ErrorComboBoxStyle}" />
 
+                                        <Button
+                                            Content="Remover conta bancária"
+                                            Command="{Binding ClearEditAccountCommand}"
+                                            Style="{StaticResource SecondaryButton}"
+                                            Margin="0,6,0,0" />
+
                                         <TextBlock
-                                            Text="Data de início"
+                                            Text="{Binding EditScheduleDateLabel}"
                                             Style="{StaticResource FieldTextBlockStyle}"
                                             Margin="0,10,0,5" />
 
-                                        <TextBox
-                                            Text="{Binding EditStartDate,
-                                                           Mode=OneWay,
-                                                           StringFormat={}{0:dd/MM/yyyy}}"
-                                            IsReadOnly="True"
-                                            Style="{StaticResource DefaultTextBoxStyle}" />
+                                        <DatePicker
+                                            SelectedDate="{Binding EditStartDate,
+                                                                Mode=TwoWay,
+                                                                UpdateSourceTrigger=PropertyChanged,
+                                                                ValidatesOnExceptions=True,
+                                                                ValidatesOnNotifyDataErrors=True}"
+                                            Style="{StaticResource ErrorDatePickerStyle}"
+                                            Language="pt-PT" />
+
+                                        <TextBlock
+                                            Text="{Binding EditScheduleDateHelp}"
+                                            TextWrapping="Wrap"
+                                            FontSize="12"
+                                            Opacity="0.75"
+                                            Margin="0,5,0,8" />
 
                                         <TextBlock
                                             Text="Data de fim (opcional)"
@@ -585,15 +771,13 @@
                                         <DatePicker
                                             SelectedDate="{Binding EditEndDate,
                                                                    Mode=TwoWay,
-                                                                   ValidatesOnDataErrors=True,
+                                                                   ValidatesOnNotifyDataErrors=True,
                                                                    NotifyOnValidationError=True}"
                                             Style="{StaticResource ErrorDatePickerStyle}" />
-
                                     </StackPanel>
-
                                 </Grid>
 
-                                <!-- AÇÕES -->
+                                <!-- Ações -->
 
                                 <Grid Margin="0,20,0,0">
 
@@ -622,7 +806,6 @@
                                             MinWidth="100"
                                             Visibility="{Binding IsSelectedRecurringTransactionInactive,
                                                                  Converter={StaticResource BoolToVis}}" />
-
                                     </StackPanel>
 
                                     <Button
@@ -632,21 +815,12 @@
                                         Style="{StaticResource PrimaryButton}"
                                         MinWidth="150"
                                         Height="38" />
-
                                 </Grid>
-
                             </StackPanel>
-
                         </ScrollViewer>
-
                     </Grid>
-
                 </Border>
-
             </Grid>
-
         </Grid>
-
     </Grid>
-
 </UserControl>

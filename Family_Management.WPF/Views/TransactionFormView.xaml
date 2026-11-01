@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Transactions"
+             xmlns:moneyControls="clr-namespace:Family_Management.WPF.Controls"
              mc:Ignorable="d"
              d:DesignHeight="900"
              d:DesignWidth="1100"
@@ -364,7 +365,7 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled">
 
-        <Grid MaxWidth="1050"
+        <Grid MaxWidth="1200"
               Margin="32,28,32,40"
               HorizontalAlignment="Center">
 
@@ -553,13 +554,14 @@
                                 Text="Valor"
                                 Style="{StaticResource FieldTextBlockStyle}" />
 
-                            <TextBox
-                                Text="{Binding Amount,
-                                               Mode=TwoWay,
-                                               UpdateSourceTrigger=PropertyChanged,
-                                               ValidatesOnNotifyDataErrors=True,
-                                               NotifyOnValidationError=True}"
-                                Style="{StaticResource ErrorTextBoxStyle}" />
+                           <moneyControls:MoneyTextBox
+                                Value="{Binding Amount,
+                                                Mode=TwoWay,
+                                                UpdateSourceTrigger=PropertyChanged,
+                                                ValidatesOnNotifyDataErrors=True,
+                                                NotifyOnValidationError=True}"
+                                Style="{StaticResource ErrorTextBoxStyle}"
+                                ToolTip="Introduz um valor com até duas casas decimais. Exemplo: 27,50." />
 
                         </StackPanel>
 
@@ -608,10 +610,10 @@
 
                         <DatePicker
                             SelectedDate="{Binding Date,
-                                                   Mode=TwoWay,
-                                                   UpdateSourceTrigger=PropertyChanged,
-                                                   ValidatesOnNotifyDataErrors=True}"
-                            IsEnabled="{Binding CanEditTransactionStructure}"
+                                                Mode=TwoWay,
+                                                UpdateSourceTrigger=PropertyChanged,
+                                                ValidatesOnExceptions=True,
+                                                ValidatesOnNotifyDataErrors=True}"
                             Style="{StaticResource ErrorDatePickerStyle}"
                             Language="pt-PT" />
 

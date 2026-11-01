@@ -16,4 +16,6 @@ public sealed record CreateRecurringTransactionCommand(
     Guid UserId,
     Guid? FamilyId = null,
     Guid? FinancialPlanId = null,
-    Guid? BeneficiaryUserId = null);
+    Guid? BeneficiaryUserId = null,
+    RecurringTransactionScope Scope = RecurringTransactionScope.Personal
+);

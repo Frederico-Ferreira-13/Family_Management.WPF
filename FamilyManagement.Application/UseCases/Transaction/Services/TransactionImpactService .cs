@@ -14,10 +14,15 @@ public sealed class TransactionImpactService : ITransactionImpactService
 {
     private readonly IUnitOfWork _unitOfWork;
 
+    private readonly WorkingCapitalContributionService _workingCapital;
+
     public TransactionImpactService(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork
             ?? throw new ArgumentNullException(nameof(unitOfWork));
+        
+        _workingCapital =
+            new WorkingCapitalContributionService(_unitOfWork);
     }
 
     public async Task<Result> ApplyAsync(Transaction transaction)
@@ -70,7 +75,7 @@ public sealed class TransactionImpactService : ITransactionImpactService
         return transaction.Type switch
         {
             TransactionType.Income =>
-                ApplyIncome(transaction, account),
+                await ApplyIncomeAsync(transaction, account),
 
             TransactionType.Expense =>
                 await ApplyExpenseAsync(transaction, account),
@@ -132,7 +137,7 @@ public sealed class TransactionImpactService : ITransactionImpactService
         return transaction.Type switch
         {
             TransactionType.Income =>
-                RevertIncome(transaction, account),
+                await RevertIncomeAsync(transaction, account),
 
             TransactionType.Expense =>
                 await RevertExpenseAsync(transaction, account),
@@ -153,26 +158,36 @@ public sealed class TransactionImpactService : ITransactionImpactService
     // RECEITAS
     // --------------------------------------------------
 
-    private static Result ApplyIncome(
+    private async Task<Result> ApplyIncomeAsync(
         Transaction transaction,
         Account? account)
     {
-        // Uma receita sem conta bancária pertence ao plano
-        // financeiro, mas não altera qualquer saldo bancário.
-        if (account is null)
-            return Result.Success();
+        var contributionResult =
+            await _workingCapital.ApplyAsync(transaction);
 
-        return account.Deposit(transaction.Amount);
+        if (contributionResult.IsFailure)
+            return contributionResult;
+
+        // A conta recebe a receita completa.
+        // O fundo representa a parcela reservada desse dinheiro.
+        return account is null
+            ? Result.Success()
+            : account.Deposit(transaction.Amount);
     }
 
-    private static Result RevertIncome(
+    private async Task<Result> RevertIncomeAsync(
         Transaction transaction,
         Account? account)
     {
-        if (account is null)
-            return Result.Success();
+        var contributionResult =
+            await _workingCapital.RevertAsync(transaction);
 
-        return account.Withdraw(transaction.Amount);
+        if (contributionResult.IsFailure)
+            return contributionResult;
+
+        return account is null
+            ? Result.Success()
+            : account.Withdraw(transaction.Amount);
     }
 
     // --------------------------------------------------
@@ -515,21 +530,50 @@ public sealed class TransactionImpactService : ITransactionImpactService
         Transaction transaction,
         Account account)
     {
-        if (transaction.FamilyId.HasValue)
+        if (transaction.Scope == RecurringTransactionScope.Family)
         {
-            if (account.FamilyId != transaction.FamilyId)
+            if (!transaction.FamilyId.HasValue)
+            {
+                return Error.BusinessRule(
+                    "Transaction.InvalidFamilyScope",
+                    "A transação familiar não possui uma família associada.");
+            }
+
+            var isFamilyAccount =
+                account.FamilyId == transaction.FamilyId;
+
+            var isOwnPersonalAccount =
+                !account.FamilyId.HasValue &&
+                account.UserId == transaction.UserId;
+
+            if (!isFamilyAccount && !isOwnPersonalAccount)
             {
                 return Error.BusinessRule(
                     "Transaction.AccountScopeMismatch",
-                    "A conta não pertence à família da transação.");
+                    "A conta não pertence à família nem ao responsável pela transação.");
             }
         }
-        else if (account.FamilyId.HasValue ||
-                 account.UserId != transaction.UserId)
+        else if (transaction.Scope == RecurringTransactionScope.Personal)
         {
-            return Error.BusinessRule(
-                "Transaction.AccountScopeMismatch",
-                "A conta não pertence ao proprietário da transação.");
+            if (transaction.FamilyId.HasValue)
+            {
+                return Error.BusinessRule(
+                    "Transaction.InvalidPersonalScope",
+                    "Uma transação pessoal não pode estar associada a uma família.");
+            }
+
+            if (account.FamilyId.HasValue ||
+                account.UserId != transaction.UserId)
+            {
+                return Error.BusinessRule(
+                    "Transaction.AccountScopeMismatch",
+                    "A conta pessoal não pertence ao responsável pela transação.");
+            }
+        }
+        else
+        {
+            return Error.Validation(
+                "O âmbito financeiro da transação é inválido.");
         }
 
         return Result.Success();

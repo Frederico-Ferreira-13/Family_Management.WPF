@@ -1,5 +1,10 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
 using FamilyManagement.Application.UseCases.Families.DTOs;
 using FamilyManagement.Application.UseCases.Families.Mapping;
+
 using FamilyManagement.Domain.Common;
 using FamilyManagement.Domain.Errors;
 using FamilyManagement.Domain.Interfaces;
@@ -46,9 +51,8 @@ public sealed class CreateFamilyHandler
         }
 
         var creator =
-            await _unitOfWork.Users
-                .GetByIdAsync(
-                    command.CreatorUserId);
+            await _unitOfWork.Users.GetByIdAsync(
+                command.CreatorUserId);
 
         if (creator is null)
         {
@@ -84,58 +88,73 @@ public sealed class CreateFamilyHandler
 
         var adminRole =
             await _unitOfWork.UserRoles
-                .GetByNameAsync(
-                    UserRole.AdminName);
+                .GetByNameAsync(UserRole.AdminName);
 
-        if (adminRole is null ||
-            !adminRole.IsActive)
+        if (adminRole is null || !adminRole.IsActive)
         {
             return Error.NotFound(
                 "UserRole.AdminNotFound",
                 "O papel de administrador não está configurado ou está inativo.");
         }
 
-        var familyResult =
-            Family.Create(
-                name: name,
-                creatorUserId:
-                    command.CreatorUserId);
+        // 1. Criar a família.
+        var familyResult = Family.Create(
+            name: name,
+            creatorUserId: command.CreatorUserId);
 
         if (familyResult.IsFailure)
         {
             return familyResult.Error;
         }
 
-        var family =
-            familyResult.Value;
+        var family = familyResult.Value;
 
+        // 2. Criar o plano financeiro inicial.
+        var financialPlanResult = FinancialPlan.Create(
+            name: $"Plano Financeiro - {family.Name}",
+            currencyCode: "EUR",
+            familyId: family.Id,
+            createdByUserId: command.CreatorUserId,
+            description: "Plano financeiro familiar inicial.");
+
+        if (financialPlanResult.IsFailure)
+        {
+            return financialPlanResult.Error;
+        }
+
+        var financialPlan = financialPlanResult.Value;
+
+        // 3. Associar o criador à família.
         var assignFamilyResult =
-            creator.AssignToFamily(
-                family.Id);
+            creator.AssignToFamily(family.Id);
 
         if (assignFamilyResult.IsFailure)
         {
             return assignFamilyResult.Error;
         }
 
+        // 4. Atribuir o papel de administrador.
         var assignRoleResult =
-            creator.AssignRole(
-                adminRole);
+            creator.AssignRole(adminRole);
 
         if (assignRoleResult.IsFailure)
         {
             return assignRoleResult.Error;
         }
 
-        await _unitOfWork.Families
-            .AddAsync(family);
+        cancellationToken.ThrowIfCancellationRequested();
 
-        _unitOfWork.Users.Update(
-            creator);
+        // 5. Adicionar as entidades ao contexto.
+        await _unitOfWork.Families.AddAsync(family);
 
+        await _unitOfWork.FinancialPlans
+            .AddAsync(financialPlan, cancellationToken);
+
+        _unitOfWork.Users.Update(creator);
+
+        // 6. Persistir as alterações.
         await _unitOfWork.CompleteAsync();
 
-        return FamilyMapper.ToDTO(
-            family);
+        return FamilyMapper.ToDTO(family);
     }
 }

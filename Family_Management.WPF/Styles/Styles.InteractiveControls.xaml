@@ -107,25 +107,54 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="DefaultDatePickerStyle" TargetType="{x:Type DatePicker}">
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="BorderBrush" Value="{StaticResource BorderLightBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="5" />
-        <Setter Property="Height" Value="30" />
-        <Setter Property="Margin" Value="0,2" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="BorderBrush" Value="{StaticResource PrimaryColorBrush}" />
-            </Trigger>
-            <Trigger Property="IsFocused" Value="True">
-                <Setter Property="BorderBrush" Value="{StaticResource PrimaryColorBrush}" />
-                <Setter Property="BorderThickness" Value="2" />
-            </Trigger>
-        </Style.Triggers>
-    </Style>
+    <Style x:Key="DefaultDatePickerStyle"
+       TargetType="{x:Type DatePicker}">
+
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+
+    <Setter Property="Height" Value="Auto" />
+    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="Padding" Value="2" />
+    <Setter Property="Margin" Value="0,2" />
+
+    <Setter Property="Language" Value="pt-PT" />
+    <Setter Property="SelectedDateFormat" Value="Short" />
+
+    <Setter Property="Background" Value="White" />
+    <Setter Property="BorderBrush"
+            Value="{StaticResource BorderLightBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="SnapsToDevicePixels" Value="True" />
+
+    <Style.Triggers>
+
+        <Trigger Property="IsMouseOver" Value="True">
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource PrimaryColorBrush}" />
+        </Trigger>
+
+        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource PrimaryColorBrush}" />
+        </Trigger>
+
+        <Trigger Property="Validation.HasError" Value="True">
+            <Setter Property="BorderBrush"
+                    Value="{StaticResource DangerColorBrush}" />
+            <Setter Property="Background" Value="#FFF7F7" />
+        </Trigger>
+
+        <Trigger Property="IsEnabled" Value="False">
+            <Setter Property="Opacity" Value="0.6" />
+            <Setter Property="Background" Value="#F8F8F8" />
+        </Trigger>
+
+    </Style.Triggers>
+
+</Style>
 
     <Style x:Key="HyperlinkLikeButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent"/>
@@ -168,6 +197,103 @@
     <Style x:Key="DefaultListViewStyle" TargetType="{x:Type ListView}"/>
     <Style x:Key="ListViewItemStyle" TargetType="{x:Type ListViewItem}"/>
     <Style TargetType="{x:Type DataGridCell}"/>
-    <Style x:Key="CustomDataGridStyle" TargetType="{x:Type DataGrid}"/>
+    <Style x:Key="CustomDataGridStyle"
+       TargetType="{x:Type DataGrid}">
+
+    <Setter Property="Background" Value="White" />
+    <Setter Property="Foreground"
+            Value="{StaticResource TextDarkBrush}" />
+
+    <Setter Property="BorderBrush"
+            Value="{StaticResource BorderLightBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+
+    <Setter Property="RowBackground" Value="White" />
+    <Setter Property="AlternatingRowBackground" Value="#F7F9FC" />
+    <Setter Property="AlternationCount" Value="2" />
+
+    <Setter Property="GridLinesVisibility" Value="Horizontal" />
+    <Setter Property="HorizontalGridLinesBrush" Value="#E8EDF3" />
+    <Setter Property="HeadersVisibility" Value="Column" />
+
+    <Setter Property="MinRowHeight" Value="40" />
+    <Setter Property="ColumnHeaderHeight" Value="42" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Language" Value="pt-PT" />
+
+    <Setter Property="CanUserAddRows" Value="False" />
+    <Setter Property="CanUserDeleteRows" Value="False" />
+    <Setter Property="CanUserResizeRows" Value="False" />
+
+    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility"
+            Value="Auto" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility"
+            Value="Auto" />
+
+    <Setter Property="EnableRowVirtualization" Value="True" />
+    <Setter Property="EnableColumnVirtualization" Value="True" />
+
+    <Setter Property="ColumnHeaderStyle">
+        <Setter.Value>
+            <Style TargetType="{x:Type DataGridColumnHeader}">
+                <Setter Property="Background" Value="#F0F4F8" />
+                <Setter Property="Foreground"
+                        Value="{StaticResource TextDarkBrush}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Padding" Value="10,8" />
+                <Setter Property="BorderThickness" Value="0,0,0,1" />
+                <Setter Property="BorderBrush"
+                        Value="{StaticResource BorderLightBrush}" />
+                <Setter Property="HorizontalContentAlignment"
+                        Value="Left" />
+                <Setter Property="VerticalContentAlignment"
+                        Value="Center" />
+            </Style>
+        </Setter.Value>
+    </Setter>
+
+    <Setter Property="CellStyle">
+        <Setter.Value>
+            <Style TargetType="{x:Type DataGridCell}">
+
+                <Setter Property="Padding" Value="10,6" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="VerticalContentAlignment"
+                        Value="Center" />
+
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type DataGridCell}">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}">
+
+                                <ContentPresenter
+                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                    SnapsToDevicePixels="True" />
+
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+
+                <Style.Triggers>
+
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="#DCEBFA" />
+                        <Setter Property="Foreground"
+                                Value="{StaticResource TextDarkBrush}" />
+                    </Trigger>
+
+                </Style.Triggers>
+
+            </Style>
+        </Setter.Value>
+    </Setter>
+
+</Style>
 
 </ResourceDictionary>

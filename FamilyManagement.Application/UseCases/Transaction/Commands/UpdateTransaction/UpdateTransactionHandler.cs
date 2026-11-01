@@ -1,4 +1,3 @@
-
 using System;
 using System.Threading.Tasks;
 using FamilyManagement.Application.UseCases.Transactions.DTOs;
@@ -290,6 +289,12 @@ public sealed class UpdateTransactionHandler
 
         if (transaction.BudgetId.HasValue)
         {
+            var requestedDate = command.Date ?? transaction.Date;
+
+            var resultingDate = requestedDate.Kind == DateTimeKind.Utc
+                ? requestedDate.ToLocalTime().Date
+                : requestedDate.Date;
+
             var budget = await _unitOfWork.Budgets
                 .GetByIdAsync(transaction.BudgetId.Value);
 
@@ -316,12 +321,13 @@ public sealed class UpdateTransactionHandler
                     "A nova categoria não corresponde ao orçamento associado.");
             }
 
-            if (budget.Month != transaction.Date.Month ||
-                budget.Year != transaction.Date.Year)
+            if (budget.Month != resultingDate.Month ||
+                budget.Year != resultingDate.Year)
             {
                 return Error.BusinessRule(
                     "Transaction.BudgetPeriodMismatch",
-                    "O orçamento não corresponde ao período da transação.");
+                    "A nova data não pertence ao mês do orçamento associado. "
+                    + "Corrija a associação ao orçamento antes de mudar o mês do movimento.");
             }
 
             if (!string.Equals(
@@ -430,7 +436,8 @@ public sealed class UpdateTransactionHandler
                 command.CategoryId,
                 newAmount,
                 command.AccountId,
-                isConfirmed: null);
+                isConfirmed: null,
+                date: command.Date);
 
             if (updateResult.IsFailure)
             {
@@ -474,21 +481,43 @@ public sealed class UpdateTransactionHandler
         Transaction transaction,
         Account account)
     {
-        if (transaction.FamilyId.HasValue)
+        if (transaction.Scope == RecurringTransactionScope.Family)
         {
-            if (account.FamilyId != transaction.FamilyId)
+            if (!transaction.FamilyId.HasValue)
+            {
+                return Error.BusinessRule(
+                    "Transaction.InvalidFamilyScope",
+                    "A transação familiar não possui uma família associada.");
+            }
+
+            var isFamilyAccount =
+                account.FamilyId == transaction.FamilyId;
+
+            var isOwnPersonalAccount =
+                !account.FamilyId.HasValue &&
+                account.UserId == transaction.UserId;
+
+            if (!isFamilyAccount && !isOwnPersonalAccount)
             {
                 return Error.BusinessRule(
                     "Transaction.AccountScopeMismatch",
-                    "A conta não pertence à família da transação.");
+                    "A conta não pertence à família nem ao responsável pela transação.");
             }
         }
-        else if (account.FamilyId.HasValue ||
-                 account.UserId != transaction.UserId)
+        else if (transaction.Scope == RecurringTransactionScope.Personal)
         {
-            return Error.BusinessRule(
-                "Transaction.AccountScopeMismatch",
-                "A conta não pertence ao proprietário da transação.");
+            if (account.FamilyId.HasValue ||
+                account.UserId != transaction.UserId)
+            {
+                return Error.BusinessRule(
+                    "Transaction.AccountScopeMismatch",
+                    "A conta pessoal não pertence ao responsável pela transação.");
+            }
+        }
+        else
+        {
+            return Error.Validation(
+                "O âmbito financeiro da transação é inválido.");
         }
 
         return Result.Success();
@@ -505,21 +534,43 @@ public sealed class UpdateTransactionHandler
         if (category.IsGlobal)
             return Result.Success();
 
-        if (transaction.FamilyId.HasValue)
+        if (transaction.Scope == RecurringTransactionScope.Family)
         {
-            if (category.FamilyId != transaction.FamilyId)
+            if (!transaction.FamilyId.HasValue)
+            {
+                return Error.BusinessRule(
+                    "Transaction.InvalidFamilyScope",
+                    "A transação familiar não possui uma família associada.");
+            }
+
+            var isFamilyCategory =
+                category.FamilyId == transaction.FamilyId;
+
+            var isOwnPersonalCategory =
+                !category.FamilyId.HasValue &&
+                category.UserId == transaction.UserId;
+
+            if (!isFamilyCategory && !isOwnPersonalCategory)
             {
                 return Error.BusinessRule(
                     "Transaction.CategoryScopeMismatch",
-                    "A categoria não pertence à família da transação.");
+                    "A categoria não pertence à família nem ao responsável.");
             }
         }
-        else if (category.FamilyId.HasValue ||
-                 category.UserId != transaction.UserId)
+        else if (transaction.Scope == RecurringTransactionScope.Personal)
         {
-            return Error.BusinessRule(
-                "Transaction.CategoryScopeMismatch",
-                "A categoria não pertence ao proprietário da transação.");
+            if (category.FamilyId.HasValue ||
+                category.UserId != transaction.UserId)
+            {
+                return Error.BusinessRule(
+                    "Transaction.CategoryScopeMismatch",
+                    "A categoria pessoal não pertence ao responsável.");
+            }
+        }
+        else
+        {
+            return Error.Validation(
+                "O âmbito financeiro da transação é inválido.");
         }
 
         return Result.Success();

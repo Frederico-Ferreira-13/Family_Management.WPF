@@ -1,3 +1,4 @@
+
 using System;
 using System.Linq;
 using System.Threading;
@@ -29,7 +30,45 @@ public sealed class UpdateRecurringTransactionHandler
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        // 1. Obter a recorrência existente.
+        // =====================================================
+        // 1. VALIDAR DADOS INICIAIS
+        // =====================================================
+
+        if (command.RecurringTransactionId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da recorrência é inválido.");
+        }
+
+        if (string.IsNullOrWhiteSpace(command.Description))
+        {
+            return Error.Validation(
+                "A descrição é obrigatória.");
+        }
+
+        if (command.CategoryId == Guid.Empty)
+        {
+            return Error.Validation(
+                "A categoria é obrigatória.");
+        }
+
+        if (command.AccountId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da conta é inválido.");
+        }
+
+        if (command.BeneficiaryUserId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador do beneficiário é inválido.");
+        }
+
+        var description = command.Description.Trim();
+
+        // =====================================================
+        // 2. OBTER A RECORRÊNCIA
+        // =====================================================
 
         var recurringTransaction =
             await _unitOfWork.RecurringTransactions
@@ -49,30 +88,50 @@ public sealed class UpdateRecurringTransactionHandler
                 "Não é possível editar uma recorrência inativa.");
         }
 
-        if (string.IsNullOrWhiteSpace(command.Description))
+        // =====================================================
+        // 3. VALIDAR ÂMBITO FINANCEIRO
+        // =====================================================
+
+        var scope = recurringTransaction.Scope;
+        var familyId = recurringTransaction.FamilyId;
+        var userId = recurringTransaction.UserId;
+
+        if (!Enum.IsDefined(scope))
         {
             return Error.Validation(
-                "A descrição é obrigatória.");
+                "O âmbito da recorrência é inválido.");
         }
 
-        if (command.AccountId == Guid.Empty)
+        if (scope == RecurringTransactionScope.Personal)
         {
-            return Error.Validation(
-                "O identificador da conta é inválido.");
+            if (familyId.HasValue ||
+                recurringTransaction.FinancialPlanId.HasValue ||
+                recurringTransaction.BeneficiaryUserId.HasValue)
+            {
+                return Error.BusinessRule(
+                    "Recurring.InvalidPersonalScope",
+                    "A recorrência pessoal possui associações familiares inconsistentes.");
+            }
         }
-
-        if (command.BeneficiaryUserId == Guid.Empty)
+        else if (scope == RecurringTransactionScope.Family)
         {
-            return Error.Validation(
-                "O identificador do beneficiário é inválido.");
+            if (!familyId.HasValue)
+            {
+                return Error.BusinessRule(
+                    "Recurring.MissingFamily",
+                    "A recorrência familiar não tem uma família associada.");
+            }
         }
 
-        var description = command.Description.Trim();
+        // A edição normal não altera o Scope nem o FamilyId.
+        // A conversão pessoal -> familiar é uma operação própria.
 
-        // 2. Validar o responsável pela recorrência.
+        // =====================================================
+        // 4. VALIDAR UTILIZADOR RESPONSÁVEL
+        // =====================================================
 
         var user = await _unitOfWork.Users
-            .GetByIdAsync(recurringTransaction.UserId);
+            .GetByIdAsync(userId);
 
         if (user is null || !user.IsActive)
         {
@@ -81,12 +140,14 @@ public sealed class UpdateRecurringTransactionHandler
                 "O responsável pela recorrência não existe ou está inativo.");
         }
 
-        // 3. Validar a família, quando aplicável.
+        // =====================================================
+        // 5. VALIDAR FAMÍLIA
+        // =====================================================
 
-        if (recurringTransaction.FamilyId.HasValue)
+        if (scope == RecurringTransactionScope.Family)
         {
             var family = await _unitOfWork.Families
-                .GetByIdAsync(recurringTransaction.FamilyId.Value);
+                .GetByIdAsync(familyId!.Value);
 
             if (family is null || !family.IsActive)
             {
@@ -95,7 +156,7 @@ public sealed class UpdateRecurringTransactionHandler
                     "A família não existe ou está inativa.");
             }
 
-            if (user.FamilyId != recurringTransaction.FamilyId.Value)
+            if (user.FamilyId != familyId.Value)
             {
                 return Error.BusinessRule(
                     "Recurring.FamilyAccessDenied",
@@ -103,9 +164,16 @@ public sealed class UpdateRecurringTransactionHandler
             }
         }
 
-        // 4. Determinar e validar o beneficiário.
-        // Null preserva o beneficiário existente nas receitas.
-        // Uma despesa nunca pode manter um beneficiário.
+        // =====================================================
+        // 6. DETERMINAR O BENEFICIÁRIO
+        // =====================================================
+
+        // Mantemos a semântica atual do comando:
+        //
+        // - Numa receita, null preserva o beneficiário.
+        // - Numa despesa, o beneficiário é removido.
+        //
+        // Uma receita pessoal não pode ter beneficiário familiar.
 
         Guid? beneficiaryUserId =
             command.Type == TransactionType.Income
@@ -120,11 +188,32 @@ public sealed class UpdateRecurringTransactionHandler
                 "Só é possível associar beneficiários a receitas.");
         }
 
+        if (scope == RecurringTransactionScope.Personal &&
+            beneficiaryUserId.HasValue)
+        {
+            return Error.Validation(
+                "Uma recorrência pessoal não pode ter um beneficiário familiar. Converte primeiro a recorrência para o âmbito familiar.");
+        }
+
+        if (scope == RecurringTransactionScope.Family &&
+            command.Type == TransactionType.Income &&
+            !beneficiaryUserId.HasValue)
+        {
+            return Error.Validation(
+                "Seleciona o membro da família que recebe esta receita.");
+        }
+
+        // =====================================================
+        // 7. VALIDAR BENEFICIÁRIO
+        // =====================================================
+
         if (beneficiaryUserId.HasValue)
         {
-            if (!recurringTransaction.FamilyId.HasValue)
+            if (scope != RecurringTransactionScope.Family ||
+                !familyId.HasValue)
             {
-                return Error.Validation(
+                return Error.BusinessRule(
+                    "Recurring.BeneficiaryScopeMismatch",
                     "O beneficiário exige uma recorrência familiar.");
             }
 
@@ -138,8 +227,7 @@ public sealed class UpdateRecurringTransactionHandler
                     "O beneficiário não existe ou está inativo.");
             }
 
-            if (beneficiary.FamilyId !=
-                recurringTransaction.FamilyId.Value)
+            if (beneficiary.FamilyId != familyId.Value)
             {
                 return Error.BusinessRule(
                     "Recurring.BeneficiaryFamilyMismatch",
@@ -147,15 +235,9 @@ public sealed class UpdateRecurringTransactionHandler
             }
         }
 
-        if (command.Type == TransactionType.Income &&
-            recurringTransaction.FamilyId.HasValue &&
-            !beneficiaryUserId.HasValue)
-        {
-            return Error.Validation(
-                "Seleciona o membro da família que recebe esta receita.");
-        }
-
-        // 5. Validar a conta bancária opcional.
+        // =====================================================
+        // 8. VALIDAR CONTA BANCÁRIA OPCIONAL
+        // =====================================================
 
         if (!command.AccountId.HasValue &&
             !recurringTransaction.FinancialPlanId.HasValue)
@@ -171,27 +253,61 @@ public sealed class UpdateRecurringTransactionHandler
 
             if (account is null || !account.IsActive)
             {
-                return Error.Validation(
-                    "A conta selecionada é inválida.");
+                return Error.NotFound(
+                    "Account.NotFound",
+                    "A conta selecionada não existe ou está inativa.");
             }
 
-            if (recurringTransaction.FamilyId.HasValue)
+            if (scope == RecurringTransactionScope.Family)
             {
-                if (account.FamilyId !=
-                    recurringTransaction.FamilyId)
+                // =================================================
+                // RECORRÊNCIA FAMILIAR
+                // =================================================
+                //
+                // Permitimos:
+                //
+                // 1. Conta pertencente à família.
+                // 2. Conta pessoal do responsável.
+                //
+                // Não permitimos contas pessoais de terceiros.
+                //
+                // A conta pessoal mantém a sua titularidade
+                // e as suas regras de privacidade.
+
+                var isFamilyAccount =
+                    account.FamilyId == familyId;
+
+                var isOwnPersonalAccount =
+                    !account.FamilyId.HasValue &&
+                    account.UserId == userId;
+
+                if (!isFamilyAccount &&
+                    !isOwnPersonalAccount)
                 {
                     return Error.BusinessRule(
-                        "Recurring.AccountFamilyMismatch",
-                        "A conta não pertence à família da recorrência.");
+                        "Recurring.AccountScopeMismatch",
+                        "A conta não pertence à família nem ao responsável pela recorrência.");
                 }
             }
-            else if (account.UserId != recurringTransaction.UserId ||
-                     account.FamilyId.HasValue)
+            else
             {
-                return Error.BusinessRule(
-                    "Recurring.AccountOwnerMismatch",
-                    "A conta não pertence ao utilizador.");
+                // =================================================
+                // RECORRÊNCIA PESSOAL
+                // =================================================
+                //
+                // Só pode utilizar uma conta pessoal
+                // pertencente ao responsável.
+
+                if (account.UserId != userId ||
+                    account.FamilyId.HasValue)
+                {
+                    return Error.BusinessRule(
+                        "Recurring.AccountOwnerMismatch",
+                        "A conta pessoal não pertence ao responsável.");
+                }
             }
+
+            // Validar moeda da conta.
 
             if (!string.Equals(
                     account.Balance.Currency,
@@ -202,28 +318,38 @@ public sealed class UpdateRecurringTransactionHandler
             }
         }
 
-        // 6. Validar o plano financeiro existente.
+        // =====================================================
+        // 9. VALIDAR PLANO FINANCEIRO EXISTENTE
+        // =====================================================
 
         if (recurringTransaction.FinancialPlanId.HasValue)
         {
-            var financialPlan = await _unitOfWork.FinancialPlans
-                .GetByIdAsync(
-                    recurringTransaction.FinancialPlanId.Value);
+            if (scope != RecurringTransactionScope.Family ||
+                !familyId.HasValue)
+            {
+                return Error.BusinessRule(
+                    "Recurring.FinancialPlanScopeMismatch",
+                    "Um plano financeiro familiar exige uma recorrência familiar.");
+            }
 
-            if (financialPlan is null || !financialPlan.IsActive)
+            var financialPlan =
+                await _unitOfWork.FinancialPlans
+                    .GetByIdAsync(
+                        recurringTransaction.FinancialPlanId.Value);
+
+            if (financialPlan is null ||
+                !financialPlan.IsActive)
             {
                 return Error.NotFound(
                     "FinancialPlan.NotFound",
                     "O plano financeiro não existe ou está inativo.");
             }
 
-            if (!recurringTransaction.FamilyId.HasValue ||
-                financialPlan.FamilyId !=
-                    recurringTransaction.FamilyId.Value)
+            if (financialPlan.FamilyId != familyId.Value)
             {
                 return Error.BusinessRule(
                     "Recurring.FinancialPlanFamilyMismatch",
-                    "O plano financeiro não pertence à família.");
+                    "O plano financeiro não pertence à família da recorrência.");
             }
 
             if (!string.Equals(
@@ -235,54 +361,87 @@ public sealed class UpdateRecurringTransactionHandler
             }
         }
 
-        // 7. Validar a categoria e o seu âmbito.
+        // =====================================================
+        // 10. VALIDAR CATEGORIA
+        // =====================================================
 
         var category = await _unitOfWork.Categories
             .GetByIdAsync(command.CategoryId);
 
         if (category is null || !category.IsActive)
         {
-            return Error.Validation(
-                "A categoria selecionada é inválida.");
+            return Error.NotFound(
+                "Category.NotFound",
+                "A categoria selecionada não existe ou está inativa.");
         }
 
         if (!category.IsGlobal)
         {
-            if (recurringTransaction.FamilyId.HasValue)
+            if (scope == RecurringTransactionScope.Family)
             {
-                if (category.FamilyId !=
-                    recurringTransaction.FamilyId)
+                // Uma recorrência familiar pode utilizar:
+                //
+                // - Categoria da família.
+                // - Categoria pessoal do responsável.
+
+                var isFamilyCategory =
+                    category.FamilyId == familyId;
+
+                var isOwnPersonalCategory =
+                    !category.FamilyId.HasValue &&
+                    category.UserId == userId;
+
+                if (!isFamilyCategory &&
+                    !isOwnPersonalCategory)
                 {
                     return Error.BusinessRule(
                         "Recurring.CategoryScopeMismatch",
-                        "A categoria não pertence à família.");
+                        "A categoria não pertence à família nem ao responsável.");
                 }
             }
-            else if (category.FamilyId.HasValue ||
-                     category.UserId != recurringTransaction.UserId)
+            else
             {
-                return Error.BusinessRule(
-                    "Recurring.CategoryScopeMismatch",
-                    "A categoria não pertence ao utilizador.");
+                // Uma recorrência pessoal só pode utilizar
+                // categorias globais ou pessoais próprias.
+
+                if (category.FamilyId.HasValue ||
+                    category.UserId != userId)
+                {
+                    return Error.BusinessRule(
+                        "Recurring.CategoryScopeMismatch",
+                        "A categoria não pertence ao responsável.");
+                }
             }
         }
 
-        // 8. Verificar duplicados.
-        // Nas receitas familiares, a combinação relevante
-        // é família + beneficiário + descrição.
+        // =====================================================
+        // 11. VERIFICAR DUPLICADOS
+        // =====================================================
 
-        if (command.Type == TransactionType.Income &&
-            recurringTransaction.FamilyId.HasValue &&
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (scope == RecurringTransactionScope.Family &&
+            command.Type == TransactionType.Income &&
+            familyId.HasValue &&
             beneficiaryUserId.HasValue)
         {
-            var familyId = recurringTransaction.FamilyId.Value;
+            // Receitas familiares:
+            //
+            // A combinação relevante é:
+            // Família + Beneficiário + Descrição.
+            //
+            // Dois membros diferentes podem ter
+            // uma recorrência chamada "Salário".
+
+            var currentFamilyId = familyId.Value;
 
             var familyIncome = await _unitOfWork
                 .RecurringTransactions
                 .FindRecurringTransactionsWithDetailsAsync(
-                    rt => rt.IsActive &&
-                          rt.FamilyId == familyId &&
-                          rt.Type == TransactionType.Income);
+                    rt =>
+                        rt.IsActive &&
+                        rt.FamilyId == currentFamilyId &&
+                        rt.Type == TransactionType.Income);
 
             var duplicate = familyIncome.Any(rt =>
                 rt.Id != recurringTransaction.Id &&
@@ -303,11 +462,14 @@ public sealed class UpdateRecurringTransactionHandler
                      description,
                      StringComparison.OrdinalIgnoreCase))
         {
+            // Mantemos a verificação existente para
+            // recorrências pessoais e despesas.
+
             var exists = await _unitOfWork
                 .RecurringTransactions
                 .RecurringTransactionExistsForUserByDescriptionAndIdAsync(
                     description,
-                    recurringTransaction.UserId,
+                    userId,
                     recurringTransaction.Id);
 
             if (exists)
@@ -318,7 +480,9 @@ public sealed class UpdateRecurringTransactionHandler
             }
         }
 
-        // 9. Validar o valor.
+        // =====================================================
+        // 12. VALIDAR VALOR MONETÁRIO
+        // =====================================================
 
         var moneyResult = Money.TryCreate(
             command.Amount,
@@ -331,9 +495,18 @@ public sealed class UpdateRecurringTransactionHandler
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        // 10. Atualizar os detalhes.
-        // O Domain mantém a proteção contra alterações
-        // de frequência após a geração de movimentos.
+        // =====================================================
+        // 13. ATUALIZAR DETALHES
+        // =====================================================
+
+        // O Domain continua responsável por validar:
+        //
+        // - Datas.
+        // - Frequência.
+        // - Valor monetário.
+        // - Restrições após movimentos gerados.
+        //
+        // Não alteramos Scope nem FamilyId nesta operação.
 
         var updateResult = recurringTransaction.UpdateDetails(
             description: description,
@@ -343,14 +516,20 @@ public sealed class UpdateRecurringTransactionHandler
             categoryId: command.CategoryId,
             accountId: command.AccountId,
             endDate: command.EndDate,
-            isActive: recurringTransaction.IsActive);
+            isActive: recurringTransaction.IsActive,
+            scheduleDate: command.ScheduleDate);
 
         if (updateResult.IsFailure)
         {
             return updateResult.Error;
         }
 
-        // 11. Atualizar o beneficiário.
+        // =====================================================
+        // 14. ATUALIZAR BENEFICIÁRIO
+        // =====================================================
+
+        // As condições de âmbito, tipo e pertença
+        // à família já foram verificadas acima.
 
         var beneficiaryResult =
             recurringTransaction.AssignBeneficiary(
@@ -361,14 +540,20 @@ public sealed class UpdateRecurringTransactionHandler
             return beneficiaryResult.Error;
         }
 
-        // 12. Persistir a recorrência existente.
+        // =====================================================
+        // 15. PERSISTIR
+        // =====================================================
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         _unitOfWork.RecurringTransactions.Update(
             recurringTransaction);
 
-        cancellationToken.ThrowIfCancellationRequested();
-
         await _unitOfWork.CompleteAsync();
+
+        // =====================================================
+        // 16. DEVOLVER DTO
+        // =====================================================
 
         return RecurringTransactionMapper.ToDTO(
             recurringTransaction);

@@ -17,6 +17,8 @@ public class RecurringTransaction : BaseEntity
 
     public Frequency Frequency { get; private set; }
 
+    public RecurringTransactionScope Scope { get; private set; }
+
     public DateTime StartDate { get; private set; }
 
     public DateTime? EndDate { get; private set; }
@@ -24,6 +26,8 @@ public class RecurringTransaction : BaseEntity
     public DateTime? LastGenerateDate { get; private set; }
 
     public DateTime NextDueDate { get; private set; }
+
+    public DateTime? ScheduleAnchorDate { get; private set; }
 
     public Guid CategoryId { get; private set; }
 
@@ -101,6 +105,10 @@ public class RecurringTransaction : BaseEntity
 
         FamilyId = familyId;
 
+        Scope = familyId.HasValue
+            ? RecurringTransactionScope.Family
+            : RecurringTransactionScope.Personal;
+
         BeneficiaryUserId = beneficiaryUserId;
     }
 
@@ -147,6 +155,12 @@ public class RecurringTransaction : BaseEntity
         {
             return Error.Validation(
                 "O identificador da família é inválido.");
+        }
+
+        if (!familyId.HasValue && financialPlanId.HasValue)
+        {
+            return Error.Validation(
+                "Uma recorrência pessoal não pode estar associada a um plano financeiro familiar.");
         }
 
         var beneficiaryValidation = ValidateBeneficiary(
@@ -208,10 +222,26 @@ public class RecurringTransaction : BaseEntity
         if (validation.IsFailure)
             return validation.Error;
 
-        // Esta operação não altera NextDueDate nem LastGenerateDate.
-        // A associação à regra permite identificar o beneficiário.
+        if (Scope == RecurringTransactionScope.Family &&
+            !FamilyId.HasValue)
+        {
+            return Error.BusinessRule(
+                "recurring.invalid_family_scope",
+                "Uma recorrência familiar deve estar associada a uma família.");
+        }
+
+        if (Scope == RecurringTransactionScope.Personal &&
+            (FamilyId.HasValue ||
+            FinancialPlanId.HasValue ||
+            BeneficiaryUserId.HasValue))
+        {
+            return Error.BusinessRule(
+                "recurring.invalid_personal_scope",
+                "Uma recorrência pessoal não pode ter associações financeiras familiares.");
+        }
+
         return Transaction.CreateFromRecurring(
-            date: NextDueDate,
+            date: NormalizeDate(NextDueDate),
             amount: Amount,
             description: Description,
             type: Type,
@@ -221,7 +251,15 @@ public class RecurringTransaction : BaseEntity
             recurringTransactionId: Id,
             isConfirmed: isConfirmed,
             referenceDate: referenceDate,
-            financialPlanId: FinancialPlanId);
+            familyId: Scope == RecurringTransactionScope.Family
+                ? FamilyId
+                : null,
+            financialPlanId: Scope == RecurringTransactionScope.Family
+                ? FinancialPlanId
+                : null,
+            beneficiaryUserId: Scope == RecurringTransactionScope.Family
+                ? BeneficiaryUserId
+                : null);
     }
 
     public Result RecordGeneratedTransaction(
@@ -247,12 +285,15 @@ public class RecurringTransaction : BaseEntity
                 "A transação não pertence a esta recorrência.");
         }
 
-        if (transaction.Date != NextDueDate ||
+        if (NormalizeDate(transaction.Date) != NormalizeDate(NextDueDate) ||
             transaction.UserId != UserId ||
             transaction.AccountId != AccountId ||
             transaction.CategoryId != CategoryId ||
             transaction.Type != Type ||
             transaction.FinancialPlanId != FinancialPlanId ||
+            transaction.FamilyId != FamilyId ||
+            transaction.Scope != Scope ||
+            transaction.BeneficiaryUserId != BeneficiaryUserId ||
             transaction.Amount != Amount)
         {
             return Error.Validation(
@@ -274,12 +315,12 @@ public class RecurringTransaction : BaseEntity
 
         _generatedTransactions.Add(transaction);
 
-        LastGenerateDate = NextDueDate;
+        LastGenerateDate = NormalizeDate(NextDueDate);
 
         NextDueDate = nextDueDate;
 
         if (EndDate.HasValue &&
-            NextDueDate > EndDate.Value)
+            NormalizeDate(NextDueDate) > NormalizeDate(EndDate.Value))
         {
             IsActive = false;
         }
@@ -297,14 +338,43 @@ public class RecurringTransaction : BaseEntity
         Guid categoryId,
         Guid? accountId,
         DateTime? endDate,
-        bool isActive)
+        bool isActive,
+        DateTime? scheduleDate = null)
     {
+        var currentStart = NormalizeDate(StartDate);
+        var currentNext = NormalizeDate(NextDueDate);
+
+        var requestedDate = scheduleDate.HasValue
+            ? NormalizeDate(scheduleDate.Value)
+            : LastGenerateDate.HasValue
+                ? currentNext
+                : currentStart;
+
+        if (requestedDate == default)
+        {
+            return Error.Validation(
+                "A data do agendamento é obrigatória.");
+        }
+
+        var hasGeneratedTransactions = LastGenerateDate.HasValue;
+
+        var scheduleChanged = requestedDate !=
+            (hasGeneratedTransactions ? currentNext : currentStart);
+
+        var resultingStart = hasGeneratedTransactions
+            ? currentStart
+            : requestedDate;
+
+        var resultingNext = scheduleChanged
+            ? requestedDate
+            : currentNext;
+
         var validation = ValidateDetails(
             description,
             amount,
             type,
             frequency,
-            StartDate,
+            resultingStart,
             categoryId,
             accountId,
             endDate);
@@ -315,12 +385,20 @@ public class RecurringTransaction : BaseEntity
         if (amount.Currency != Amount.Currency)
             return DomainErrors.Money.CurrencyMismatch;
 
-        if (LastGenerateDate.HasValue &&
-            frequency != Frequency)
+        if (hasGeneratedTransactions && frequency != Frequency)
         {
             return Error.BusinessRule(
                 "recurring.frequency_already_used",
                 "Crie uma nova recorrência para alterar uma frequência que já gerou movimentos.");
+        }
+
+        if (hasGeneratedTransactions &&
+            scheduleChanged &&
+            requestedDate <= NormalizeDate(LastGenerateDate!.Value))
+        {
+            return Error.BusinessRule(
+                "recurring.schedule_before_history",
+                "A próxima ocorrência deve ser posterior à última ocorrência já gerada.");
         }
 
         var normalizedEndDate = endDate.HasValue
@@ -329,28 +407,33 @@ public class RecurringTransaction : BaseEntity
 
         if (isActive &&
             normalizedEndDate.HasValue &&
-            NextDueDate > normalizedEndDate.Value)
+            resultingNext > normalizedEndDate.Value)
         {
             return Error.BusinessRule(
                 "recurring.end_before_next_occurrence",
-                "A data de fim é anterior à próxima ocorrência.");
+                "A data de fim não pode ser anterior à próxima ocorrência.");
         }
 
+        // Todas as validações acontecem antes de modificar a entidade.
         Description = description.Trim();
-
         Amount = amount;
-
         Type = type;
-
         Frequency = frequency;
-
         CategoryId = categoryId;
-
         AccountId = accountId;
-
         EndDate = normalizedEndDate;
-
         IsActive = isActive;
+
+        if (scheduleChanged)
+        {
+            if (!hasGeneratedTransactions)
+            {
+                StartDate = requestedDate;
+            }
+
+            ScheduleAnchorDate = requestedDate;
+            NextDueDate = requestedDate;
+        }
 
         Touch();
 
@@ -363,7 +446,7 @@ public class RecurringTransaction : BaseEntity
             return Result.Success();
 
         if (EndDate.HasValue &&
-            NextDueDate > EndDate.Value)
+            NormalizeDate(NextDueDate) > NormalizeDate(EndDate.Value))
         {
             return Error.BusinessRule(
                 "recurring.finished",
@@ -399,7 +482,7 @@ public class RecurringTransaction : BaseEntity
         var today = NormalizeDate(
             referenceDate ?? DateTime.Today);
 
-        if (NextDueDate > today)
+        if (NormalizeDate(NextDueDate) > today)
         {
             return Error.BusinessRule(
                 "recurring.not_due",
@@ -407,7 +490,7 @@ public class RecurringTransaction : BaseEntity
         }
 
         if (EndDate.HasValue &&
-            NextDueDate > EndDate.Value)
+            NormalizeDate(NextDueDate) > NormalizeDate(EndDate.Value))
         {
             return Error.BusinessRule(
                 "recurring.finished",
@@ -415,7 +498,7 @@ public class RecurringTransaction : BaseEntity
         }
 
         if (LastGenerateDate.HasValue &&
-            NextDueDate <= LastGenerateDate.Value)
+            NormalizeDate(NextDueDate) <= NormalizeDate(LastGenerateDate.Value))
         {
             return Error.BusinessRule(
                 "recurring.invalid_schedule",
@@ -427,6 +510,8 @@ public class RecurringTransaction : BaseEntity
 
     private DateTime CalculateNextDueDate()
     {
+        var nextDueDate = NormalizeDate(NextDueDate);
+
         if (Frequency == Frequency.Daily)
             return NextDueDate.AddDays(1);
 
@@ -447,13 +532,15 @@ public class RecurringTransaction : BaseEntity
                 "A frequência da recorrência é inválida.")
         };
 
-        var elapsedMonths =
-            (NextDueDate.Year - StartDate.Year) * 12
-            + NextDueDate.Month
-            - StartDate.Month;
+        var anchor = NormalizeDate(
+            ScheduleAnchorDate ?? StartDate);
 
-        return StartDate.AddMonths(
-            elapsedMonths + monthsToAdd);
+        var elapsedMonths =
+            (nextDueDate.Year - anchor.Year) * 12
+            + nextDueDate.Month
+            - anchor.Month;
+
+        return StartDate.AddMonths(elapsedMonths + monthsToAdd);
     }
 
     private static Result ValidateDetails(
@@ -545,8 +632,98 @@ public class RecurringTransaction : BaseEntity
 
     private static DateTime NormalizeDate(DateTime date)
     {
+        var localDate = date.Kind == DateTimeKind.Utc
+            ? date.ToLocalTime()
+            : date;
+
         return DateTime.SpecifyKind(
-            date.Date,
+            localDate.Date,
             DateTimeKind.Unspecified);
     }
+
+    
+    public Result AssociateWithFamily(
+        Guid familyId,
+        Guid beneficiaryUserId,
+        Guid financialPlanId)
+    {
+        if (!IsActive)
+        {
+            return Error.Conflict(
+                "recurring.inactive",
+                "Não é possível alterar o âmbito de uma recorrência inativa.");
+        }
+
+        if (familyId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador da família é inválido.");
+        }
+
+        if (beneficiaryUserId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador do beneficiário é inválido.");
+        }
+
+        if (financialPlanId == Guid.Empty)
+        {
+            return Error.Validation(
+                "O identificador do plano financeiro é inválido.");
+        }
+
+        if (Scope == RecurringTransactionScope.Family)
+        {
+            if (FamilyId == familyId)
+            {
+                return Error.Conflict(
+                    "recurring.already_family",
+                    "A recorrência já pertence a esta família.");
+            }
+
+            return Error.BusinessRule(
+                "recurring.family_change_not_allowed",
+                "Não é possível transferir uma recorrência entre famílias.");
+        }
+
+        if (Scope != RecurringTransactionScope.Personal ||
+            FamilyId.HasValue ||
+            FinancialPlanId.HasValue ||
+            BeneficiaryUserId.HasValue)
+        {
+            return Error.BusinessRule(
+                "recurring.invalid_scope",
+                "A recorrência possui associações familiares inconsistentes.");
+        }
+
+        if (Type != TransactionType.Income)
+        {
+            return Error.Validation(
+                "Esta operação destina-se apenas a receitas recorrentes.");
+        }
+
+        var beneficiaryValidation = ValidateBeneficiary(
+            beneficiaryUserId,
+            Type,
+            familyId);
+
+        if (beneficiaryValidation.IsFailure)
+        {
+            return beneficiaryValidation;
+        }
+
+        // A alteração aplica-se à regra recorrente.
+        // Não modifica transações anteriormente geradas.
+        // A conta bancária mantém a sua titularidade.
+
+        FamilyId = familyId;
+        FinancialPlanId = financialPlanId;
+        BeneficiaryUserId = beneficiaryUserId;
+        Scope = RecurringTransactionScope.Family;
+
+        Touch();
+
+        return Result.Success();
+    }
+
 }

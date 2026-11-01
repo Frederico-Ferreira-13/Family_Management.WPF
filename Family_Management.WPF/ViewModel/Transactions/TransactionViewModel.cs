@@ -71,7 +71,7 @@ public sealed class TransactionViewModel : BaseViewModel
             ?? throw new ArgumentNullException(
                 nameof(deactivateTransactionHandler));
 
-        Title = "Transações";
+        Title = "Movimentos";
 
         RefreshCommand =
             new AsyncRelayCommand(

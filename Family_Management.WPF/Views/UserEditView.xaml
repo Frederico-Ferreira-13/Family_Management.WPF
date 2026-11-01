@@ -5,148 +5,164 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:viewmodels="clr-namespace:Family_Management.WPF.ViewModel.Users"
              mc:Ignorable="d"
-             d:DesignHeight="650"
-             d:DesignWidth="850"
+             d:DesignHeight="750"
+             d:DesignWidth="1100"
              d:DataContext="{d:DesignInstance Type=viewmodels:UserEditViewModel,
                                              IsDesignTimeCreatable=False}">
 
     <Grid Background="{StaticResource GrayBackground}"
-          Margin="20">
+          Margin="24">
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Cabeçalho -->
         <StackPanel Grid.Row="0"
                     Margin="0,0,0,20">
 
             <TextBlock Text="{Binding Title}"
-                       Style="{StaticResource TitleStyle}"/>
+                       Style="{StaticResource TitleStyle}"
+                       TextWrapping="Wrap" />
 
-            <TextBlock Text="Altere os dados e a família associada ao utilizador."
+            <TextBlock Text="Altere os dados do utilizador e consulte as opções de segurança."
                        Foreground="#666"
                        FontSize="14"
-                       Margin="0,5,0,0"/>
+                       TextWrapping="Wrap"
+                       Margin="0,6,0,0" />
 
         </StackPanel>
 
-        <!-- Formulário -->
-        <Border Grid.Row="1"
-                Style="{StaticResource CardBorderStyle}"
-                Padding="25"
-                MaxWidth="650"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Top">
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      HorizontalContentAlignment="Stretch">
 
-            <Grid>
+            <Border Style="{StaticResource CardBorderStyle}"
+                    Padding="28"
+                    MaxWidth="720"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Top">
 
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+                <StackPanel>
 
-                <!-- Nome -->
-                <StackPanel Grid.Row="0"
-                            Margin="0,0,0,15">
+                    <TextBlock Text="Dados do utilizador"
+                               Style="{StaticResource TitleStyle}"
+                               Margin="0,0,0,20" />
 
                     <TextBlock Text="Nome de utilizador"
-                               Style="{StaticResource FieldTextBlockStyle}"/>
+                               Style="{StaticResource FieldTextBlockStyle}" />
 
                     <TextBox Text="{Binding UserName,
                                             Mode=TwoWay,
                                             UpdateSourceTrigger=PropertyChanged,
                                             ValidatesOnNotifyDataErrors=True,
                                             NotifyOnValidationError=True}"
-                             Style="{StaticResource ErrorTextBoxStyle}"/>
-
-                </StackPanel>
-
-                <!-- Email -->
-                <StackPanel Grid.Row="1"
-                            Margin="0,0,0,15">
+                             Style="{StaticResource ErrorTextBoxStyle}"
+                             Height="Auto"
+                             MinHeight="42"
+                             Padding="10,8"
+                             VerticalContentAlignment="Center" />
 
                     <TextBlock Text="E-mail"
-                               Style="{StaticResource FieldTextBlockStyle}"/>
+                               Style="{StaticResource FieldTextBlockStyle}"
+                               Margin="0,18,0,5" />
 
                     <TextBox Text="{Binding Email,
                                             Mode=TwoWay,
                                             UpdateSourceTrigger=PropertyChanged,
                                             ValidatesOnNotifyDataErrors=True,
                                             NotifyOnValidationError=True}"
-                             Style="{StaticResource ErrorTextBoxStyle}"/>
-
-                </StackPanel>
-
-                <!-- Família -->
-                <StackPanel Grid.Row="2"
-                            Margin="0,0,0,15">
+                             Style="{StaticResource ErrorTextBoxStyle}"
+                             Height="Auto"
+                             MinHeight="42"
+                             Padding="10,8"
+                             VerticalContentAlignment="Center" />
 
                     <TextBlock Text="Família"
-                               Style="{StaticResource FieldTextBlockStyle}"/>
+                               Style="{StaticResource FieldTextBlockStyle}"
+                               Margin="0,18,0,5" />
 
                     <ComboBox ItemsSource="{Binding AvailableFamilies}"
                               SelectedItem="{Binding SelectedFamily,
-                                                    Mode=TwoWay,
-                                                    UpdateSourceTrigger=PropertyChanged}"
+                                                     Mode=TwoWay,
+                                                     UpdateSourceTrigger=PropertyChanged}"
                               DisplayMemberPath="Name"
-                              Style="{StaticResource DefaultComboBoxStyle}"/>
+                              Style="{StaticResource DefaultComboBoxStyle}"
+                              Height="Auto"
+                              MinHeight="42" />
 
                     <TextBlock Text="Deixe sem seleção para remover o utilizador da família."
-                               FontSize="11"
+                               FontSize="12"
                                Foreground="#777"
-                               Margin="0,5,0,0"/>
+                               TextWrapping="Wrap"
+                               Margin="0,6,0,0" />
 
-                </StackPanel>
+                    <Border Background="#F3F6FA"
+                            CornerRadius="6"
+                            Padding="12"
+                            Margin="0,20,0,0">
 
-                <!-- Estado -->
-                <Border Grid.Row="3"
-                        Background="#F7F7F7"
-                        CornerRadius="5"
-                        Padding="10"
-                        Margin="0,0,0,20">
+                        <StackPanel Orientation="Horizontal">
 
-                    <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Estado:"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,8,0" />
 
-                        <TextBlock Text="Estado:"
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,8,0"/>
+                            <TextBlock Text="Ativo"
+                                       Visibility="{Binding IsActive,
+                                                            Converter={StaticResource BoolToVis}}" />
 
-                        <TextBlock Text="Ativo"
-                                   Visibility="{Binding IsActive,
-                                                        Converter={StaticResource BoolToVis}}"/>
+                            <TextBlock Text="Inativo"
+                                       Visibility="{Binding IsActive,
+                                                            Converter={StaticResource InverseBoolToVis}}" />
 
-                        <TextBlock Text="Inativo"
-                                   Visibility="{Binding IsActive,
-                                                        Converter={StaticResource InverseBoolToVis}}"/>
+                        </StackPanel>
+
+                    </Border>
+
+                    <WrapPanel HorizontalAlignment="Right"
+                               Margin="0,20,0,0">
+
+                        <Button Content="Cancelar"
+                                Command="{Binding CancelCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Margin="0,0,10,8" />
+
+                        <Button Content="Guardar alterações"
+                                Command="{Binding SaveCommand}"
+                                Style="{StaticResource PrimaryButton}"
+                                Margin="0,0,0,8" />
+
+                    </WrapPanel>
+
+                    <StackPanel Visibility="{Binding CanChangeOwnPassword,
+                                                     Converter={StaticResource BoolToVis}}">
+
+                        <Separator Margin="0,20,0,24" />
+
+                        <TextBlock Text="Segurança"
+                                   Style="{StaticResource TitleStyle}"
+                                   Margin="0,0,0,8" />
+
+                        <TextBlock Text="Para alterar a sua palavra-passe, introduza a palavra-passe atual e confirme a nova."
+                                   Foreground="#666"
+                                   FontSize="13"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,16" />
+
+                        <Button Content="Alterar palavra-passe"
+                                Command="{Binding OpenChangePasswordCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                HorizontalAlignment="Left" />
 
                     </StackPanel>
 
-                </Border>
-
-                <!-- Botões -->
-                <StackPanel Grid.Row="4"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right">
-
-                    <Button Content="Cancelar"
-                            Command="{Binding CancelCommand}"
-                            Style="{StaticResource SecondaryButton}"
-                            Margin="0,0,10,0"/>
-
-                    <Button Content="Guardar alterações"
-                            Command="{Binding SaveCommand}"
-                            Style="{StaticResource PrimaryButton}"/>
-
                 </StackPanel>
 
-            </Grid>
+            </Border>
 
-        </Border>
+        </ScrollViewer>
 
     </Grid>
 

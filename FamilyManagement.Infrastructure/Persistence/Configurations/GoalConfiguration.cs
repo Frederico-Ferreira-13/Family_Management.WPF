@@ -118,5 +118,14 @@ public sealed class GoalConfiguration
             g.FamilyId,
             g.IsActive
         });
+
+        builder.Property(g => g.WorkingCapitalKey)
+            .HasMaxLength(40)
+            .IsRequired(false);
+
+        builder.HasIndex(g => g.WorkingCapitalKey)
+            .IsUnique();
+
+        builder.Ignore(g => g.IsWorkingCapitalFund);
     }
 }

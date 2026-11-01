@@ -1,6 +1,7 @@
-
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using FamilyManagement.Application.UseCases.Transactions.Services;
 using FamilyManagement.Domain.Enums;
 using FamilyManagement.Domain.Interfaces;
@@ -33,9 +34,37 @@ public sealed class TransactionImpactServiceTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _accountRepositoryMock = new Mock<IAccountRepository>();
 
+        var goalRepositoryMock = new Mock<IGoalRepository>();
+
+        var contributionImpactRepositoryMock =
+            new Mock<IGoalContributionImpactRepository>();
+
+        // Configurei os repositórios utilizados pelo serviço.
+        // Cada teste recebe os seus próprios mocks.
         _unitOfWorkMock
             .Setup(x => x.Accounts)
             .Returns(_accountRepositoryMock.Object);
+
+        _unitOfWorkMock
+            .Setup(x => x.Goals)
+            .Returns(goalRepositoryMock.Object);
+
+        _unitOfWorkMock
+            .Setup(x => x.GoalContributionImpacts)
+            .Returns(contributionImpactRepositoryMock.Object);
+
+        // Por defeito, a receita ainda não tem uma contribuição registada.
+        // Na reversão, isto representa uma receita sem histórico de contribuição.
+        contributionImpactRepositoryMock
+            .Setup(x => x.GetByTransactionIdAsync(It.IsAny<Guid>()))
+            .ReturnsAsync((GoalContributionImpact?)null);
+
+        // Por defeito, ainda não existe um fundo de maneio.
+        // Ao aplicar uma receita familiar, o serviço segue o fluxo de criação.
+        goalRepositoryMock
+            .Setup(x => x.FindAsync(
+                It.IsAny<Expression<Func<Goal, bool>>>()))
+            .ReturnsAsync(new List<Goal>());
 
         _service = new TransactionImpactService(
             _unitOfWorkMock.Object);

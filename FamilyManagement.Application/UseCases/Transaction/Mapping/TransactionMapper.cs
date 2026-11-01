@@ -1,4 +1,6 @@
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using FamilyManagement.Application.Common.Extensions;
 using FamilyManagement.Application.UseCases.Transactions.DTOs;
 using FamilyManagement.Domain.Model;
@@ -12,31 +14,36 @@ public static class TransactionMapper
         ArgumentNullException.ThrowIfNull(transaction);
 
         return new TransactionDTO(
-            transaction.Id,
-            transaction.Date,
-            transaction.Amount.Amount,
-            transaction.Amount.Currency,
-            transaction.Description,
-            transaction.Notes,
-            transaction.Type,
-            transaction.Type.GetDisplayName(),
-            transaction.IsConfirmed,
-            transaction.IsActive,
-            transaction.IsRecurringGenerated,
-            transaction.UserId,
-            transaction.User?.UserName,
-            transaction.AccountId,
-            transaction.Account?.Name,
-            transaction.CategoryId,
-            transaction.Category?.Name,
-            transaction.TargetAccountId,
-            transaction.TargetAccount?.Name,
-            transaction.RecurringTransactionId,
-            transaction.BudgetId,
-            transaction.GoalId,
-            transaction.CreatedAt,
-            transaction.UpdatedAt,
-            transaction.FamilyId);
+            Id: transaction.Id,
+            Date: transaction.Date,
+            Amount: transaction.Amount.Amount,
+            Currency: transaction.Amount.Currency,
+            Description: transaction.Description,
+            Notes: transaction.Notes,
+            Type: transaction.Type,
+            TypeDisplay: transaction.Type.GetDisplayName(),
+            IsConfirmed: transaction.IsConfirmed,
+            IsActive: transaction.IsActive,
+            IsRecurringGenerated: transaction.IsRecurringGenerated,
+            UserId: transaction.UserId,
+            UserName: transaction.User?.UserName,
+            AccountId: transaction.AccountId,
+            AccountName: transaction.Account?.Name,
+            CategoryId: transaction.CategoryId,
+            CategoryName: transaction.Category?.Name,
+            TargetAccountId: transaction.TargetAccountId,
+            TargetAccountName: transaction.TargetAccount?.Name,
+            RecurringTransactionId: transaction.RecurringTransactionId,
+            BudgetId: transaction.BudgetId,
+            GoalId: transaction.GoalId,
+            CreatedAt: transaction.CreatedAt,
+            UpdatedAt: transaction.UpdatedAt,
+            FamilyId: transaction.FamilyId,
+            Scope: transaction.Scope,
+            FinancialPlanId: transaction.FinancialPlanId,
+            BeneficiaryUserId: transaction.BeneficiaryUserId,
+            ScheduledDate: transaction.ScheduledDate
+        );
     }
 
     public static IEnumerable<TransactionDTO> ToDTOs(
